@@ -1,0 +1,39 @@
+{
+  "name": "readracing",
+  "version": "1.0.0",
+  "description": "��#\u0000 \u0000r\u0000e\u0000a\u0000d\u0000r\u0000a\u0000c\u0000i\u0000n\u0000g\u0000\r\u0000 \u0000",
+  "homepage": "https://github.com/linee64/readracing#readme",
+  "bugs": {
+    "url": "https://github.com/linee64/readracing/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linee64/readracing.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "baseline-browser-mapping": "^2.9.19",
+    "browserslist": "^4.28.1",
+    "caniuse-lite": "^1.0.30001767",
+    "electron-to-chromium": "^1.5.283",
+    "escalade": "^3.2.0",
+    "fraction.js": "^5.3.4",
+    "nanoid": "^3.3.11",
+    "node-releases": "^2.0.27",
+    "picocolors": "^1.1.1",
+    "postcss-value-parser": "^4.2.0",
+    "source-map-js": "^1.2.1",
+    "update-browserslist-db": "^1.2.3"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.24",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18"
+  }
+}
