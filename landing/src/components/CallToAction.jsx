@@ -10,7 +10,7 @@ const CallToAction = () => {
                 <p className="text-xl text-brand-beige/70 mb-12">
                     Start finishing books with AI.
                 </p>
-                <button className="bg-brand-beige text-brand-black px-10 py-5 text-xl font-bold rounded-sm hover:scale-[1.01] transition-transform duration-200">
+                <button className="bg-brand-gold text-brand-black px-10 py-5 text-xl font-bold rounded-sm hover:bg-brand-gold-dark transition-colors hover:scale-[1.01] duration-200">
                     Get early access
                 </button>
             </div>

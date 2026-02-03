@@ -1,5 +1,6 @@
 import React from 'react';
 import './App.css';
+import Header from './components/Header';
 import Hero from './components/Hero';
 import ProblemSolution from './components/ProblemSolution';
 import Features from './components/Features';
@@ -9,9 +10,11 @@ import Footer from './components/Footer';
 
 function App() {
   return (
-    <main className="min-h-screen bg-brand-beige font-sans text-brand-black selection:bg-brand-black selection:text-brand-beige">
+    <main className="min-h-screen bg-brand-beige font-sans text-brand-black selection:bg-brand-gold selection:text-brand-black">
+      <Header />
       <Hero />
       <ProblemSolution />
+
       <Features />
       <SocialProof />
       <CallToAction />
