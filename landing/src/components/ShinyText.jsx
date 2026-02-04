@@ -5,15 +5,27 @@ const ShinyText = ({ text, disabled = false, speed = 5, className = '' }) => {
 
     return (
         <div
-            className={`text-[#b5b5b5a4] bg-clip-text inline-block ${disabled ? '' : 'animate-shine'} ${className}`}
+            className={`relative inline-block ${className}`}
             style={{
-                backgroundImage: 'linear-gradient(120deg, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0) 60%)',
-                backgroundSize: '200% 100%',
-                WebkitBackgroundClip: 'text',
-                animationDuration: animationDuration,
+                display: 'inline-block', // Ensures wrapping matches inline behavior if needed, though className might override
             }}
         >
-            {text}
+            {/* Base Text - inherits color from className */}
+            <span className="relative z-10">{text}</span>
+
+            {/* Overlay Text - Shine Effect */}
+            <span
+                className={`absolute top-0 left-0 z-20 bg-clip-text text-transparent ${disabled ? '' : 'animate-shine'}`}
+                style={{
+                    backgroundImage: 'linear-gradient(120deg, transparent 40%, rgba(255, 255, 255, 0.8) 50%, transparent 60%)',
+                    backgroundSize: '200% 100%',
+                    WebkitBackgroundClip: 'text',
+                    animationDuration: animationDuration,
+                }}
+                aria-hidden="true"
+            >
+                {text}
+            </span>
         </div>
     );
 };

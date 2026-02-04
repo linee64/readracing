@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 @theme {
-  /* User provided palette */
-  --color-brand-beige: #fcf8ea;
+  /* User provided palette - adjusted for better match with screenshot */
+  --color-brand-beige: #f9f5e9;
   --color-brand-black: #3d1c0b;
-  --color-brand-gold: #ecc558;
+  --color-brand-gold: #e9c46a;
   --color-brand-gold-dark: #d5941d;
 
   /* Typography - switching to Serif (Lora) as requested "slightly cursive" */
@@ -30,4 +30,36 @@ body {
 
 .animate-shine {
   animation: shine 5s linear infinite;
+}
+
+@keyframes star-movement-bottom {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(-100%, 0%);
+    opacity: 0;
+  }
+}
+
+@keyframes star-movement-top {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(100%, 0%);
+    opacity: 0;
+  }
+}
+
+.animate-star-movement-bottom {
+  animation: star-movement-bottom linear infinite alternate;
+}
+
+.animate-star-movement-top {
+  animation: star-movement-top linear infinite alternate;
 }
