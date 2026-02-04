@@ -10,7 +10,7 @@ import SignUp from './pages/SignUp';
 function App() {
   return (
     <Router>
-      <main className="min-h-screen bg-brand-beige font-sans text-brand-black selection:bg-brand-gold selection:text-brand-black flex flex-col">
+      <main className="min-h-screen bg-brand-beige font-sans text-brand-black selection:bg-brand-gold selection:text-brand-black flex flex-col overflow-x-hidden">
         <Header />
 
         <div className="flex-grow">
