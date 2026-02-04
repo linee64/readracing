@@ -1,5 +1,6 @@
 import React from 'react';
 import CornerAccent from './CornerAccent';
+import ShinyText from './ShinyText';
 
 const Hero = () => {
     return (
@@ -9,9 +10,12 @@ const Hero = () => {
                 <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-brand-black mb-6 leading-[1.1] italic">
                     Finish every book<br /> you start.
                 </h1>
-                <p className="text-xl md:text-2xl text-brand-black/70 max-w-2xl mb-10 leading-relaxed mx-auto font-sans not-italic">
-                    AI platform that helps you read regularly, understand deeply, and reach the last page.
-                </p>
+                <ShinyText
+                    text="AI platform that helps you read regularly, understand deeply, and reach the last page."
+                    disabled={false}
+                    speed={3}
+                    className="text-xl md:text-2xl text-brand-black/70 max-w-2xl mb-10 leading-relaxed mx-auto font-sans not-italic"
+                />
                 <div className="flex flex-col items-center gap-4">
                     <button className="bg-brand-gold text-brand-black px-8 py-4 text-lg font-bold rounded-sm hover:bg-brand-gold-dark transition-colors font-sans not-italic">
                         Start reading smarter
