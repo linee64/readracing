@@ -4,7 +4,15 @@ import { Link } from 'react-router-dom';
 
 const SignUp = () => {
     return (
-        <div className="min-h-[80vh] flex items-center justify-center px-4 py-20">
+        <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 py-20">
+            <div className="w-full max-w-md mb-6">
+                <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-brand-black/60 hover:text-brand-black transition-colors group">
+                    <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back to Home
+                </Link>
+            </div>
             <div className="relative w-full max-w-md bg-brand-beige p-8 md:p-12 border border-brand-black/5 shadow-sm">
                 <CornerAccent />
                 <h2 className="text-3xl font-bold mb-8 text-center italic">Start Finishing Books</h2>

@@ -1,5 +1,6 @@
 import React from 'react';
 import CornerAccent from './CornerAccent';
+import BlurTextReact from './BlurTextReact';
 
 const Features = () => {
     const features = [
@@ -30,8 +31,22 @@ const Features = () => {
                     {features.map((feature, index) => (
                         <div key={index} className="relative p-6 md:p-8 bg-brand-beige border border-brand-black/10 rounded-sm hover:border-brand-gold hover:shadow-sm transition-all duration-300 group">
                             <CornerAccent />
-                            <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-brand-black">{feature.title}</h3>
-                            <p className="text-base md:text-lg text-brand-black/70 leading-relaxed">{feature.description}</p>
+                            <BlurTextReact 
+                                text={feature.title}
+                                tag="h3"
+                                className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-brand-black"
+                                delay={60}
+                                animateBy="words"
+                                direction="top"
+                            />
+                            <BlurTextReact 
+                                text={feature.description}
+                                tag="p"
+                                className="text-base md:text-lg text-brand-black/70 leading-relaxed"
+                                delay={30}
+                                animateBy="words"
+                                direction="bottom"
+                            />
                         </div>
                     ))}
                 </div>
