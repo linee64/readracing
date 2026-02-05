@@ -37,6 +37,8 @@ const CallToAction = () => {
                     </div>
                     <div className="clear-both flex justify-center md:justify-end">
                         <StarBorderReact 
+                            as="a"
+                            href="http://localhost:3000"
                             color="#e9c46a"
                             speed="4s"
                             className="hover:scale-[1.02] transition-transform"

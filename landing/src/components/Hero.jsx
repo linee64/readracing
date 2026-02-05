@@ -27,6 +27,8 @@ const Hero = () => {
                     </div>
                     <div className="flex flex-col items-center md:items-start gap-3 w-full sm:w-auto">
                         <StarBorderReact 
+                            as="a"
+                            href="http://localhost:3000"
                             color="#e9c46a"
                             speed="4s"
                             className="hover:scale-[1.02] transition-transform w-full sm:w-auto"
