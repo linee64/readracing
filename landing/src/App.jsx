@@ -12,6 +12,7 @@ function App() {
     <Router>
       <main className="min-h-screen bg-brand-beige font-sans text-brand-black selection:bg-brand-gold selection:text-brand-black flex flex-col overflow-x-hidden">
         <Header />
+        <div className="h-[65px] md:h-[81px]"></div>
 
         <div className="flex-grow">
           <Routes>
