@@ -118,7 +118,7 @@ export default function LibraryPage() {
             const arrayBuffer = await file.arrayBuffer();
             const book = ePub(arrayBuffer);
             const metadata = await book.loaded.metadata;
-            
+
             // Extract cover if possible
             let coverUrl = '';
             try {
@@ -142,7 +142,7 @@ export default function LibraryPage() {
             }
 
             const bookId = `epub-${Date.now()}`;
-            
+
             // Store file in IndexedDB
             await set(bookId, arrayBuffer);
 
@@ -157,7 +157,7 @@ export default function LibraryPage() {
 
             const updatedBooks = [...books, newBookEntry];
             await saveBooks(updatedBooks);
-            
+
         } catch (error) {
             console.error('Error parsing EPUB:', error);
             alert('Failed to parse EPUB file');
@@ -171,18 +171,18 @@ export default function LibraryPage() {
         <div className="min-h-screen bg-cream-50">
             <div className="max-w-7xl mx-auto p-8 pb-20">
                 <DashboardHeader username="Alex" />
-                
+
                 <div className="flex justify-between items-center mb-8">
                     <h2 className="text-3xl font-serif font-bold text-brown-900 italic">My Library</h2>
                     <div className="flex gap-4">
-                        <input 
-                            type="file" 
-                            accept=".epub" 
-                            className="hidden" 
+                        <input
+                            type="file"
+                            accept=".epub"
+                            className="hidden"
                             ref={fileInputRef}
                             onChange={handleFileUpload}
                         />
-                        <button 
+                        <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading}
                             className="bg-green-700 text-cream-50 px-6 py-3 rounded-full font-bold shadow-lg hover:bg-green-800 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
@@ -194,7 +194,7 @@ export default function LibraryPage() {
                             )}
                             {isUploading ? 'Uploading...' : 'Upload EPUB'}
                         </button>
-                        <button 
+                        <button
                             onClick={() => setIsModalOpen(true)}
                             className="bg-brown-900 text-cream-50 px-6 py-3 rounded-full font-bold shadow-lg hover:bg-brown-800 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center gap-2"
                         >
@@ -212,17 +212,17 @@ export default function LibraryPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {books.map((book) => (
-                            <div 
-                                key={book.id} 
+                            <div
+                                key={book.id}
                                 onClick={() => book.id.startsWith('epub-') && router.push(`/reader/${book.id}`)}
                                 className={`bg-white rounded-2xl p-6 shadow-sm border border-cream-200 hover:shadow-md transition-shadow group relative flex flex-col ${book.id.startsWith('epub-') ? 'cursor-pointer' : ''}`}
                             >
                                 <div className="aspect-[2/3] bg-cream-100 rounded-xl mb-4 flex items-center justify-center shadow-inner border border-cream-200 overflow-hidden relative">
                                     <span className="absolute text-4xl opacity-20 group-hover:scale-110 transition-transform duration-500">📖</span>
                                     {book.coverUrl && (
-                                        <img 
-                                            src={book.coverUrl} 
-                                            alt={book.title} 
+                                        <img
+                                            src={book.coverUrl}
+                                            alt={book.title}
                                             className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                             onError={(e) => {
                                                 (e.target as HTMLImageElement).style.display = 'none';
@@ -233,11 +233,11 @@ export default function LibraryPage() {
                                 </div>
                                 <h3 className="text-lg font-serif font-bold text-brown-900 truncate">{book.title}</h3>
                                 <p className="text-sm text-brown-800/60 font-medium truncate mb-4">by {book.author}</p>
-                                
+
                                 <div className="mt-auto">
                                     <div className="w-full bg-cream-100 rounded-full h-2 border border-cream-200 overflow-hidden">
-                                        <div 
-                                            className="bg-brown-900 h-full rounded-full transition-all duration-500" 
+                                        <div
+                                            className="bg-brown-900 h-full rounded-full transition-all duration-500"
                                             style={{ width: `${book.totalPages > 0 ? (book.currentPage / book.totalPages) * 100 : 0}%` }}
                                         ></div>
                                     </div>
@@ -245,7 +245,7 @@ export default function LibraryPage() {
                                         <span>{book.currentPage} / {book.totalPages || '?'} pages</span>
                                         <span>{book.totalPages > 0 ? Math.round((book.currentPage / book.totalPages) * 100) : 0}%</span>
                                     </div>
-                                    
+
                                     {book.id.startsWith('epub-') && (
                                         <div className="mt-4 w-full bg-brown-900 text-cream-50 py-2 rounded-xl font-bold text-center block hover:bg-brown-800 transition-colors">
                                             Read Book
@@ -253,7 +253,7 @@ export default function LibraryPage() {
                                     )}
                                 </div>
 
-                                <button 
+                                <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         handleDeleteBook(book.id);
@@ -275,46 +275,46 @@ export default function LibraryPage() {
                             <form onSubmit={handleAddBook} className="space-y-4">
                                 <div>
                                     <label className="block text-xs font-black text-brown-800/40 uppercase tracking-widest mb-1 ml-1">Title</label>
-                                    <input 
+                                    <input
                                         required
-                                        type="text" 
+                                        type="text"
                                         value={newBook.title}
-                                        onChange={(e) => setNewBook({...newBook, title: e.target.value})}
+                                        onChange={(e) => setNewBook({ ...newBook, title: e.target.value })}
                                         className="w-full bg-white border border-cream-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brown-900/20 text-brown-900 font-medium"
                                         placeholder="e.g. The Great Gatsby"
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-black text-brown-800/40 uppercase tracking-widest mb-1 ml-1">Author</label>
-                                    <input 
+                                    <input
                                         required
-                                        type="text" 
+                                        type="text"
                                         value={newBook.author}
-                                        onChange={(e) => setNewBook({...newBook, author: e.target.value})}
+                                        onChange={(e) => setNewBook({ ...newBook, author: e.target.value })}
                                         className="w-full bg-white border border-cream-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brown-900/20 text-brown-900 font-medium"
                                         placeholder="e.g. F. Scott Fitzgerald"
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-black text-brown-800/40 uppercase tracking-widest mb-1 ml-1">Total Pages</label>
-                                    <input 
+                                    <input
                                         required
-                                        type="number" 
+                                        type="number"
                                         value={newBook.totalPages}
-                                        onChange={(e) => setNewBook({...newBook, totalPages: e.target.value})}
+                                        onChange={(e) => setNewBook({ ...newBook, totalPages: e.target.value })}
                                         className="w-full bg-white border border-cream-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brown-900/20 text-brown-900 font-medium"
                                         placeholder="e.g. 320"
                                     />
                                 </div>
                                 <div className="flex gap-4 mt-8">
-                                    <button 
+                                    <button
                                         type="button"
                                         onClick={() => setIsModalOpen(false)}
                                         className="flex-1 px-6 py-3 rounded-xl font-bold text-brown-900 border-2 border-brown-900 hover:bg-cream-100 transition-colors"
                                     >
                                         Cancel
                                     </button>
-                                    <button 
+                                    <button
                                         type="submit"
                                         className="flex-1 px-6 py-3 rounded-xl font-bold bg-brown-900 text-cream-50 hover:bg-brown-800 shadow-lg transition-colors"
                                     >

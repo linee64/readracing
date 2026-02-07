@@ -7,6 +7,25 @@ export interface Book {
     totalPages: number;
     currentPage: number;
     currentPageCfi?: string;
+    genre?: string;
+    rating?: number;
+    description?: string;
+    language?: string;
+    pagesRead?: number;
+}
+
+export interface BookSearchFilters {
+    genre: string;
+    language: string;
+}
+
+export interface BookSearchState {
+    searchQuery: string;
+    filters: BookSearchFilters;
+    searchResults: Book[];
+    isLoading: boolean;
+    currentPage: number;
+    totalResults: number;
 }
 
 export interface User {
