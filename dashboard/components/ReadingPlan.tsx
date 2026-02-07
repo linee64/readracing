@@ -17,7 +17,9 @@ export default function ReadingPlan() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="space-y-4">
                     <div className="flex items-center gap-3 bg-cream-50 p-4 rounded-xl border border-cream-200 w-fit">
-                        <span className="text-2xl">📚</span>
+                        <span className="text-brown-900">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M12 20c4.4 0 8-3.6 8-8s-3.6-8-8-8-8 3.6-8 8 3.6 8 8 8zm0-18c5.5 0 10 4.5 10 10s-4.5 10-10 10S2 17.5 2 12 6.5 2 12 2zM12.5 7V12l4.5 2.7-.8 1.2L11 13V7h1.5z"/></svg>
+                        </span>
                         <div>
                             <p className="text-brown-900 font-bold">Best time: 8:00 PM - 9:00 PM</p>
                             <p className="text-xs text-brown-800/60 font-medium">Synchronized with your peak focus hours</p>

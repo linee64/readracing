@@ -1,38 +1,92 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Book } from '@/types';
 import ePub from 'epubjs';
-import { set, get } from 'idb-keyval';
+import { set, get, del } from 'idb-keyval';
 
 export default function LibraryPage() {
+    const router = useRouter();
     const [books, setBooks] = useState<Book[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [newBook, setNewBook] = useState({ title: '', author: '', totalPages: '' });
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Load books from localStorage on mount
+    // Load books from IndexedDB on mount
     useEffect(() => {
-        const savedBooks = localStorage.getItem('readracing_library');
-        if (savedBooks) {
-            try {
-                setBooks(JSON.parse(savedBooks));
-            } catch (e) {
-                console.error('Failed to parse books from localStorage', e);
+        const loadBooks = async () => {
+            // Try IndexedDB first
+            const savedBooks = await get('readracing_library_v2') as Book[];
+            if (savedBooks) {
+                setBooks(savedBooks);
+                repairCovers(savedBooks);
+            } else {
+                // Fallback to old localStorage and migrate
+                const oldBooks = localStorage.getItem('readracing_library');
+                if (oldBooks) {
+                    try {
+                        const parsed = JSON.parse(oldBooks);
+                        setBooks(parsed);
+                        // Save to IndexedDB for future
+                        await set('readracing_library_v2', parsed);
+                        repairCovers(parsed);
+                    } catch (e) {
+                        console.error('Failed to parse books from localStorage', e);
+                    }
+                }
             }
-        }
+        };
+        loadBooks();
     }, []);
 
-    // Save books to localStorage whenever they change
-    useEffect(() => {
-        if (books.length > 0) {
-            localStorage.setItem('readracing_library', JSON.stringify(books));
-        }
-    }, [books]);
+    const repairCovers = async (currentBooks: Book[]) => {
+        let needsUpdate = false;
+        const updatedBooks = await Promise.all(currentBooks.map(async (book) => {
+            // If cover is missing or is an expired blob URL
+            if (!book.coverUrl || book.coverUrl.startsWith('blob:')) {
+                if (book.id.startsWith('epub-')) {
+                    try {
+                        const arrayBuffer = await get(book.id);
+                        if (arrayBuffer) {
+                            const epub = ePub(arrayBuffer);
+                            const coverPath = await epub.coverUrl();
+                            if (coverPath) {
+                                const response = await fetch(coverPath);
+                                if (response.ok) {
+                                    const blob = await response.blob();
+                                    const base64 = await new Promise<string>((resolve) => {
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => resolve(reader.result as string);
+                                        reader.readAsDataURL(blob);
+                                    });
+                                    needsUpdate = true;
+                                    return { ...book, coverUrl: base64 };
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error(`Failed to repair cover for ${book.title}:`, e);
+                    }
+                }
+            }
+            return book;
+        }));
 
-    const handleAddBook = (e: React.FormEvent) => {
+        if (needsUpdate) {
+            saveBooks(updatedBooks);
+        }
+    };
+
+    // Save books to IndexedDB whenever they change
+    const saveBooks = async (updatedBooks: Book[]) => {
+        setBooks(updatedBooks);
+        await set('readracing_library_v2', updatedBooks);
+    };
+
+    const handleAddBook = async (e: React.FormEvent) => {
         e.preventDefault();
         const book: Book = {
             id: Date.now().toString(),
@@ -41,15 +95,18 @@ export default function LibraryPage() {
             totalPages: parseInt(newBook.totalPages) || 0,
             currentPage: 0,
         };
-        setBooks([...books, book]);
+        const updatedBooks = [...books, book];
+        await saveBooks(updatedBooks);
         setIsModalOpen(false);
         setNewBook({ title: '', author: '', totalPages: '' });
     };
 
-    const handleDeleteBook = (id: string) => {
+    const handleDeleteBook = async (id: string) => {
         const updatedBooks = books.filter(b => b.id !== id);
-        setBooks(updatedBooks);
-        localStorage.setItem('readracing_library', JSON.stringify(updatedBooks));
+        await saveBooks(updatedBooks);
+        if (id.startsWith('epub-')) {
+            await del(id);
+        }
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,10 +122,23 @@ export default function LibraryPage() {
             // Extract cover if possible
             let coverUrl = '';
             try {
-                const cover = await book.coverUrl();
-                if (cover) coverUrl = cover;
+                const coverPath = await book.coverUrl();
+                if (coverPath) {
+                    // Try to get the blob and convert to base64
+                    const response = await fetch(coverPath);
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        coverUrl = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result as string);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(blob);
+                        });
+                        console.log('Cover converted to base64');
+                    }
+                }
             } catch (e) {
-                console.log('No cover found');
+                console.error('Error extracting cover:', e);
             }
 
             const bookId = `epub-${Date.now()}`;
@@ -86,8 +156,7 @@ export default function LibraryPage() {
             };
 
             const updatedBooks = [...books, newBookEntry];
-            setBooks(updatedBooks);
-            localStorage.setItem('readracing_library', JSON.stringify(updatedBooks));
+            await saveBooks(updatedBooks);
             
         } catch (error) {
             console.error('Error parsing EPUB:', error);
@@ -143,14 +212,24 @@ export default function LibraryPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {books.map((book) => (
-                            <div key={book.id} className="bg-white rounded-2xl p-6 shadow-sm border border-cream-200 hover:shadow-md transition-shadow group relative flex flex-col">
+                            <div 
+                                key={book.id} 
+                                onClick={() => book.id.startsWith('epub-') && router.push(`/reader/${book.id}`)}
+                                className={`bg-white rounded-2xl p-6 shadow-sm border border-cream-200 hover:shadow-md transition-shadow group relative flex flex-col ${book.id.startsWith('epub-') ? 'cursor-pointer' : ''}`}
+                            >
                                 <div className="aspect-[2/3] bg-cream-100 rounded-xl mb-4 flex items-center justify-center shadow-inner border border-cream-200 overflow-hidden relative">
-                                    {book.coverUrl ? (
-                                        <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                    ) : (
-                                        <span className="text-4xl opacity-20 group-hover:scale-110 transition-transform duration-500">📖</span>
+                                    <span className="absolute text-4xl opacity-20 group-hover:scale-110 transition-transform duration-500">📖</span>
+                                    {book.coverUrl && (
+                                        <img 
+                                            src={book.coverUrl} 
+                                            alt={book.title} 
+                                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).style.display = 'none';
+                                            }}
+                                        />
                                     )}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-brown-900/10 to-transparent"></div>
+                                    <div className="absolute inset-0 bg-gradient-to-t from-brown-900/10 to-transparent pointer-events-none"></div>
                                 </div>
                                 <h3 className="text-lg font-serif font-bold text-brown-900 truncate">{book.title}</h3>
                                 <p className="text-sm text-brown-800/60 font-medium truncate mb-4">by {book.author}</p>
@@ -168,18 +247,18 @@ export default function LibraryPage() {
                                     </div>
                                     
                                     {book.id.startsWith('epub-') && (
-                                        <a 
-                                            href={`/reader/${book.id}`}
-                                            className="mt-4 w-full bg-brown-900 text-cream-50 py-2 rounded-xl font-bold text-center block hover:bg-brown-800 transition-colors"
-                                        >
+                                        <div className="mt-4 w-full bg-brown-900 text-cream-50 py-2 rounded-xl font-bold text-center block hover:bg-brown-800 transition-colors">
                                             Read Book
-                                        </a>
+                                        </div>
                                     )}
                                 </div>
 
                                 <button 
-                                    onClick={() => handleDeleteBook(book.id)}
-                                    className="absolute top-4 right-4 w-8 h-8 bg-red-50 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteBook(book.id);
+                                    }}
+                                    className="absolute top-4 right-4 w-8 h-8 bg-red-50 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 z-10"
                                 >
                                     ×
                                 </button>

@@ -6,6 +6,7 @@ export interface Book {
     coverUrl?: string;
     totalPages: number;
     currentPage: number;
+    currentPageCfi?: string;
 }
 
 export interface User {

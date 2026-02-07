@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter, Lora } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
+import { SidebarProvider } from "@/context/SidebarContext";
+import MainContent from "@/components/MainContent";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -26,12 +28,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${lora.variable}`}>
       <body className="font-sans text-brown-900 bg-cream-50 antialiased">
-        <div className="flex">
-          <Sidebar />
-          <main className="flex-1 ml-60 min-h-screen">
-            {children}
-          </main>
-        </div>
+        <SidebarProvider>
+          <div className="flex">
+            <Sidebar />
+            <MainContent>{children}</MainContent>
+          </div>
+        </SidebarProvider>
       </body>
     </html>
   );

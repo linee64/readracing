@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useSidebar } from '@/context/SidebarContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { User } from '@/types';
@@ -17,16 +17,17 @@ const navItems = [
         href: '/dashboard' 
     },
     { 
-        name: 'Library', 
-        icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M8.51 2h6.98c.232 0 .41 0 .566.015c1.108.109 2.015.775 2.4 1.672H5.544c.385-.897 1.292-1.563 2.4-1.672C8.098 2 8.276 2 8.51 2m-2.2 2.723c-1.39 0-2.53.84-2.91 1.954l-.024.07c.398-.12.813-.2 1.232-.253c1.08-.139 2.446-.139 4.032-.139h6.892c1.586 0 2.951 0 4.032.139c.42.054.834.132 1.232.253l-.023-.07c-.38-1.114-1.52-1.954-2.911-1.954z"/><path fill="currentColor" fillRule="evenodd" d="M8.672 7.542h6.656c3.374 0 5.062 0 6.01.987s.724 2.511.278 5.56l-.422 2.892c-.35 2.391-.525 3.587-1.422 4.303s-2.22.716-4.867.716h-5.81c-2.646 0-3.97 0-4.867-.716s-1.072-1.912-1.422-4.303l-.422-2.891c-.447-3.05-.67-4.574.278-5.561s2.636-.987 6.01-.987M8 18c0-.414.373-.75.833-.75h6.334c.46 0 .833.336.833.75s-.373.75-.833.75H8.833c-.46 0-.833-.336-.833-.75" clipRule="evenodd"/></svg>
-        ), 
-        href: '/library' 
-    },
-    { 
         name: 'My Books', 
         icon: (
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" fillRule="evenodd" d="M4.727 2.712c.306-.299.734-.494 1.544-.6C7.105 2.002 8.209 2 9.793 2h4.414c1.584 0 2.688.002 3.522.112c.81.106 1.238.301 1.544.6c.305.3.504.72.613 1.513c.112.817.114 1.899.114 3.45v7.839H7.346c-.903 0-1.519-.001-2.047.138c-.472.124-.91.326-1.299.592V7.676c0-1.552.002-2.634.114-3.451c.109-.793.308-1.213.613-1.513m2.86 3.072a.82.82 0 0 0-.828.81c0 .448.37.811.827.811h8.828a.82.82 0 0 0 .827-.81a.82.82 0 0 0-.827-.811zm-.828 4.594c0-.447.37-.81.827-.81h5.517a.82.82 0 0 1 .828.81a.82.82 0 0 1-.828.811H7.586a.82.82 0 0 1-.827-.81" clipRule="evenodd"/><path fill="currentColor" d="M7.473 17.135c-1.079 0-1.456.007-1.746.083a2.46 2.46 0 0 0-1.697 1.538q.023.571.084 1.019c.109.793.308 1.213.613 1.513c.306.299.734.494 1.544.6c.834.11 1.938.112 3.522.112h4.414c1.584 0 2.688-.002 3.522-.111c.81-.107 1.238-.302 1.544-.601c.216-.213.38-.486.495-.91H7.586a.82.82 0 0 1-.827-.81c0-.448.37-.811.827-.811H19.97c.02-.466.027-1 .03-1.622z"/></svg>
+        ), 
+        href: '/library',
+        alias: '/reader'
+    },
+    { 
+        name: 'Library', 
+        icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M8.51 2h6.98c.232 0 .41 0 .566.015c1.108.109 2.015.775 2.4 1.672H5.544c.385-.897 1.292-1.563 2.4-1.672C8.098 2 8.276 2 8.51 2m-2.2 2.723c-1.39 0-2.53.84-2.91 1.954l-.024.07c.398-.12.813-.2 1.232-.253c1.08-.139 2.446-.139 4.032-.139h6.892c1.586 0 2.951 0 4.032.139c.42.054.834.132 1.232.253l-.023-.07c-.38-1.114-1.52-1.954-2.911-1.954z"/><path fill="currentColor" fillRule="evenodd" d="M8.672 7.542h6.656c3.374 0 5.062 0 6.01.987s.724 2.511.278 5.56l-.422 2.892c-.35 2.391-.525 3.587-1.422 4.303s-2.22.716-4.867.716h-5.81c-2.646 0-3.97 0-4.867-.716s-1.072-1.912-1.422-4.303l-.422-2.891c-.447-3.05-.67-4.574.278-5.561s2.636-.987 6.01-.987M8 18c0-.414.373-.75.833-.75h6.334c.46 0 .833.336.833.75s-.373.75-.833.75H8.833c-.46 0-.833-.336-.833-.75" clipRule="evenodd"/></svg>
         ), 
         href: '/books' 
     },
@@ -74,7 +75,7 @@ const mockUser: User = {
 
 export default function Sidebar() {
     const pathname = usePathname();
-    const [isCollapsed, setIsCollapsed] = useState(false);
+    const { isCollapsed, setIsCollapsed } = useSidebar();
 
     return (
         <aside className={`fixed left-0 top-0 h-screen bg-cream-100 flex flex-col border-r border-cream-200 transition-all duration-300 z-[100] ${isCollapsed ? 'w-20' : 'w-64'}`}>
@@ -106,20 +107,23 @@ export default function Sidebar() {
 
             {/* Navigation section */}
             <nav className={`flex-1 space-y-1 transition-all duration-300 ${isCollapsed ? 'px-2' : 'px-4'}`}>
-                {navItems.map((item) => (
-                    <Link
-                        key={item.name}
-                        href={item.href}
-                        className={`flex items-center gap-3 py-3 text-sm font-medium transition-all duration-200 ${isCollapsed ? 'px-0 justify-center' : 'px-4'} ${pathname === item.href
-                                ? 'bg-brown-900 text-cream-50 rounded-xl shadow-sm'
-                                : 'text-brown-800 hover:bg-cream-200 rounded-xl'
-                            }`}
-                        title={isCollapsed ? item.name : ''}
-                    >
-                        <span className="text-xl">{item.icon}</span>
-                        {!isCollapsed && <span className="whitespace-nowrap overflow-hidden">{item.name}</span>}
-                    </Link>
-                ))}
+                {navItems.map((item) => {
+                    const isActive = pathname.startsWith(item.href) || (item.alias && pathname.startsWith(item.alias));
+                    return (
+                        <Link
+                            key={item.name}
+                            href={item.href}
+                            className={`flex items-center gap-3 py-3 text-sm font-medium transition-all duration-200 ${isCollapsed ? 'px-0 justify-center' : 'px-4'} ${isActive
+                                    ? 'bg-brown-900 text-cream-50 rounded-xl shadow-sm'
+                                    : 'text-brown-800 hover:bg-cream-200 rounded-xl'
+                                }`}
+                            title={isCollapsed ? item.name : ''}
+                        >
+                            <span className="text-xl">{item.icon}</span>
+                            {!isCollapsed && <span className="whitespace-nowrap overflow-hidden">{item.name}</span>}
+                        </Link>
+                    );
+                })}
             </nav>
 
             {/* User profile card */}

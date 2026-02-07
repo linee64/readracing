@@ -24,8 +24,18 @@ const mockHighlights: Highlight[] = [
 
 export default function RecentHighlights() {
     return (
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-cream-200 flex flex-col h-full">
-            <h2 className="text-2xl font-serif font-semibold mb-6 text-brown-900 italic">Your Highlights</h2>
+        <div className="bg-white rounded-2xl p-8 shadow-sm border border-cream-200 flex flex-col h-full relative overflow-hidden">
+            {/* Background Icon Decoration */}
+            <div className="absolute -right-4 -bottom-4 text-brown-900/5 pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24"><path fill="currentColor" d="M13 19c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2zM15 5h4v14h-4zM2 19c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2zM4 5h4v14H4z"/></svg>
+            </div>
+
+            <div className="flex items-center gap-3 mb-6">
+                <div className="text-brown-900">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M13 19c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2zM15 5h4v14h-4zM2 19c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2zM4 5h4v14H4z"/></svg>
+                </div>
+                <h2 className="text-2xl font-serif font-semibold text-brown-900 italic">Recent Highlights</h2>
+            </div>
 
             <div className="space-y-6 flex-1">
                 {mockHighlights.map((highlight, index) => (
