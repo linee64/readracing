@@ -29,6 +29,27 @@ export default function BooksPage() {
     const [viewingBook, setViewingBook] = useState<Book | null>(null);
     const [toast, setToast] = useState<{ message: string; visible: boolean } | null>(null);
 
+    const handleAddBook = async (bookId: string) => {
+        const bookToAdd = searchResults.find(b => b.id === bookId);
+        if (!bookToAdd) return;
+
+        try {
+            const { get, set } = await import('idb-keyval');
+            const currentLibrary = await get('readracing_library_v2') as Book[] || [];
+            
+            if (currentLibrary.some(b => b.id === bookId)) {
+                setToast({ message: 'Book already in library', visible: true });
+            } else {
+                await set('readracing_library_v2', [...currentLibrary, bookToAdd]);
+                setToast({ message: 'Added to My Books!', visible: true });
+            }
+            
+            setTimeout(() => setToast(null), 3000);
+        } catch (err) {
+            console.error('Failed to add book:', err);
+        }
+    };
+
     const showToast = (message: string) => {
         setToast({ message, visible: true });
         setTimeout(() => {
@@ -36,29 +57,40 @@ export default function BooksPage() {
         }, 3000);
     };
 
-    const handleAddBook = (id: string) => {
-        showToast('✓ Book added to your library');
-    };
+    const handleManualAdd = async (bookData: any) => {
+        try {
+            const { get, set } = await import('idb-keyval');
+            const currentLibrary = await get('readracing_library_v2') as Book[] || [];
+            
+            const newBook: Book = {
+                ...bookData,
+                currentPage: 0,
+                coverUrl: bookData.coverUrl || ''
+            };
 
-    const handleManualAdd = (bookData: any) => {
-        showToast('✓ Book created and added to library');
+            await set('readracing_library_v2', [...currentLibrary, newBook]);
+            showToast('✓ Book created and added to library');
+        } catch (err) {
+            console.error('Failed to add manual book:', err);
+            showToast('❌ Failed to add book');
+        }
     };
 
     return (
-        <div className="min-h-screen bg-[#F5F1E8] text-[#2C2416] font-sans">
+        <div className="min-h-screen bg-cream-50 text-brown-900 font-sans">
             {/* Header / Hero */}
-            <div className="max-w-7xl mx-auto px-6 pt-12 pb-8">
-                <header className="mb-10">
-                    <h1 className="text-4xl md:text-5xl font-serif font-bold text-[#3D2817] mb-2 leading-tight">
-                        Welcome back, Alex!
+            <div className="max-w-7xl mx-auto px-8 pt-16 pb-10">
+                <header className="mb-12">
+                    <h1 className="text-5xl md:text-6xl font-serif font-black text-brown-900 mb-4 leading-tight tracking-tight">
+                        Explore Your Next Great Read
                     </h1>
-                    <p className="text-[#8B7E6A] text-xl font-medium font-sans">
-                        Discover your next great read
+                    <p className="text-brown-800/60 text-2xl font-medium font-sans max-w-2xl">
+                        Discover a world of stories, knowledge, and inspiration. Your next favorite book is just a search away.
                     </p>
                 </header>
 
                 {/* Search and Filters */}
-                <div className="mb-12">
+                <div className="mb-16">
                     <SearchBar
                         query={searchQuery}
                         onQueryChange={updateSearchQuery}
@@ -70,11 +102,11 @@ export default function BooksPage() {
                 </div>
 
                 {/* Content */}
-                <main className="pb-24">
+                <main className="pb-32">
                     {isLoading ? (
                         <LoadingSkeleton />
                     ) : searchResults.length > 0 ? (
-                        <div className="space-y-12">
+                        <div className="space-y-16">
                             <BookGrid
                                 books={searchResults}
                                 onAdd={handleAddBook}
@@ -83,32 +115,34 @@ export default function BooksPage() {
 
                             {/* Pagination */}
                             {totalResults > 8 && (
-                                <div className="flex justify-center items-center gap-2 mt-12 pb-12 font-sans">
+                                <div className="flex justify-center items-center gap-3 mt-16 pb-12 font-sans">
                                     <button
                                         onClick={() => setPage(Math.max(1, currentPage - 1))}
                                         disabled={currentPage === 1}
-                                        className="h-10 px-4 rounded-lg bg-white border border-[#E5DCC8] text-[#3D2817] disabled:opacity-50 hover:bg-[#F5F1E8] transition-colors"
+                                        className="h-12 px-6 rounded-xl bg-white border-2 border-cream-200 text-brown-900 font-bold disabled:opacity-30 hover:border-brown-900/20 transition-all active:scale-95"
                                     >
                                         Previous
                                     </button>
 
-                                    {Array.from({ length: Math.ceil(totalResults / 8) }).map((_, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => setPage(i + 1)}
-                                            className={`w-10 h-10 rounded-lg text-sm font-semibold transition-all ${currentPage === i + 1
-                                                    ? 'bg-[#3D2817] text-white'
-                                                    : 'bg-white border border-[#E5DCC8] text-[#8B7E6A] hover:bg-[#F5F1E8]'
-                                                }`}
-                                        >
-                                            {i + 1}
-                                        </button>
-                                    ))}
+                                    <div className="flex items-center gap-2">
+                                        {Array.from({ length: Math.ceil(totalResults / 8) }).map((_, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => setPage(i + 1)}
+                                                className={`w-12 h-12 rounded-xl text-sm font-black transition-all border-2 ${currentPage === i + 1
+                                                        ? 'bg-brown-900 border-brown-900 text-cream-50 shadow-lg scale-110'
+                                                        : 'bg-white border-cream-200 text-brown-800/40 hover:border-brown-900/20 hover:text-brown-900'
+                                                    }`}
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        ))}
+                                    </div>
 
                                     <button
                                         onClick={() => setPage(Math.min(Math.ceil(totalResults / 8), currentPage + 1))}
                                         disabled={currentPage === Math.ceil(totalResults / 8)}
-                                        className="h-10 px-4 rounded-lg bg-white border border-[#E5DCC8] text-[#3D2817] disabled:opacity-50 hover:bg-[#F5F1E8] transition-colors"
+                                        className="h-12 px-6 rounded-xl bg-white border-2 border-cream-200 text-brown-900 font-bold disabled:opacity-30 hover:border-brown-900/20 transition-all active:scale-95"
                                     >
                                         Next
                                     </button>
@@ -120,9 +154,6 @@ export default function BooksPage() {
                     )}
                 </main>
             </div>
-
-            {/* Floating Button */}
-            <AddBookButton onClick={() => setIsAddModalOpen(true)} />
 
             {/* Modals */}
             <AddBookModal

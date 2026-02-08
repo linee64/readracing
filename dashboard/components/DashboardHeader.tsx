@@ -1,4 +1,8 @@
 
+'use client';
+
+import React from 'react';
+
 export default function DashboardHeader({ username }: { username: string }) {
     const currentDate = new Date().toLocaleDateString('en-US', {
         weekday: 'long',

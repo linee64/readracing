@@ -81,12 +81,12 @@ export default function Sidebar() {
         <aside className={`fixed left-0 top-0 h-screen bg-cream-100 flex flex-col border-r border-cream-200 transition-all duration-300 z-[100] ${isCollapsed ? 'w-20' : 'w-64'}`}>
             {/* Logo Section */}
             <div className={`relative flex items-center gap-3 transition-all duration-300 ${isCollapsed ? 'p-4 justify-center' : 'p-8'}`}>
-                <div className="relative w-10 h-10 flex-shrink-0">
+                <div className="relative w-10 h-10 flex-shrink-0 bg-white rounded-xl shadow-sm border border-cream-200 p-1.5 flex items-center justify-center">
                     <Image 
                         src="/landing-logo.png" 
                         alt="ReadRacing Logo" 
                         fill
-                        className="object-contain"
+                        className="object-contain p-1"
                     />
                 </div>
                 {!isCollapsed && (
@@ -109,18 +109,34 @@ export default function Sidebar() {
             <nav className={`flex-1 space-y-1 transition-all duration-300 ${isCollapsed ? 'px-2' : 'px-4'}`}>
                 {navItems.map((item) => {
                     const isActive = pathname.startsWith(item.href) || (item.alias && pathname.startsWith(item.alias));
+                    const isLeaderboard = item.name === 'Leaderboard';
+                    
                     return (
                         <Link
                             key={item.name}
                             href={item.href}
-                            className={`flex items-center gap-3 py-3 text-sm font-medium transition-all duration-200 ${isCollapsed ? 'px-0 justify-center' : 'px-4'} ${isActive
-                                    ? 'bg-brown-900 text-cream-50 rounded-xl shadow-sm'
-                                    : 'text-brown-800 hover:bg-cream-200 rounded-xl'
-                                }`}
+                            className={`flex items-center gap-3 py-3 text-sm font-medium transition-all duration-300 ${isCollapsed ? 'px-0 justify-center' : 'px-4'} ${isActive
+                                    ? 'bg-brown-900 text-cream-50 rounded-xl shadow-md ring-2 ring-brand-gold/20'
+                                    : isLeaderboard 
+                                        ? 'text-brown-800 hover:bg-brand-gold/10 hover:text-brand-gold-dark rounded-xl border border-transparent hover:border-brand-gold/30'
+                                        : 'text-brown-800 hover:bg-cream-200 rounded-xl'
+                                } group relative`}
                             title={isCollapsed ? item.name : ''}
                         >
-                            <span className="text-xl">{item.icon}</span>
-                            {!isCollapsed && <span className="whitespace-nowrap overflow-hidden">{item.name}</span>}
+                            <span className={`text-xl transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'} ${isLeaderboard && !isActive ? 'text-brand-gold-dark/80' : ''}`}>
+                                {item.icon}
+                            </span>
+                            {!isCollapsed && (
+                                <span className={`whitespace-nowrap overflow-hidden ${isLeaderboard && !isActive ? 'font-bold' : ''}`}>
+                                    {item.name}
+                                </span>
+                            )}
+                            {isLeaderboard && !isCollapsed && (
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-gold opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-gold"></span>
+                                </span>
+                            )}
                         </Link>
                     );
                 })}

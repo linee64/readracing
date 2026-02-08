@@ -14,6 +14,7 @@ export default function ReaderPage() {
     const renditionRef = useRef<Rendition | null>(null);
     
     const [isLoaded, setIsLoaded] = useState(false);
+    const [isPaginated, setIsPaginated] = useState(false);
     const [title, setTitle] = useState('');
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
@@ -76,6 +77,17 @@ export default function ReaderPage() {
                 if (!isMounted) return;
                 setTitle(metadata.title);
 
+                // 1. Generate locations BEFORE showing the book to ensure correct numbering
+                await book.ready;
+                // Use a smaller number for faster generation if needed, but 1000 is usually fine
+                await book.locations.generate(1000);
+                
+                if (!isMounted) return;
+                const total = book.locations.length();
+                setTotalPages(total);
+                setIsPaginated(true);
+
+                // 2. Now render the book
                 const rendition = book.renderTo(viewerRef.current, {
                     width: '100%',
                     height: '100%',
@@ -83,7 +95,7 @@ export default function ReaderPage() {
                     manager: 'default',
                     allowScriptedContent: true,
                     spread: 'always',
-                    minSpreadWidth: 600, // Ensure spread only on reasonable widths
+                    minSpreadWidth: 600,
                 });
 
                 renditionRef.current = rendition;
@@ -103,10 +115,15 @@ export default function ReaderPage() {
                 // Apply styles to ensure 2 columns and no overflow
                 rendition.themes.default({
                     'body': {
-                        'padding': '30px 40px !important',
+                        'padding': '40px 60px !important',
                         'margin': '0 !important',
                         'font-size': '18px !important',
-                        'line-height': '1.45 !important'
+                        'line-height': '1.6 !important',
+                        'color': '#2C2416 !important',
+                        'font-family': 'Georgia, serif !important'
+                    },
+                    'p': {
+                        'margin-bottom': '1em !important'
                     },
                     'img': {
                         'max-width': '100%',
@@ -122,8 +139,12 @@ export default function ReaderPage() {
                     // Pre-set pages if we have them in library to avoid lag
                     if (currentBook.currentPage) {
                         setCurrentPage(currentBook.currentPage);
-                        setLeftPage(currentBook.currentPage);
-                        setRightPage(currentBook.currentPage + 1 <= (currentBook.totalPages || 0) ? currentBook.currentPage + 1 : 0);
+                        // Ensure page pairing: 1-2, 3-4, etc.
+                        // Use the same offset logic (+1) as in relocated
+                        const adjustedCurr = currentBook.currentPage;
+                        const startPage = adjustedCurr % 2 === 0 ? adjustedCurr - 1 : adjustedCurr;
+                        setLeftPage(startPage);
+                        setRightPage(startPage + 1 <= (currentBook.totalPages || 0) ? startPage + 1 : 0);
                     }
                     if (currentBook.totalPages) {
                         setTotalPages(currentBook.totalPages);
@@ -157,32 +178,30 @@ export default function ReaderPage() {
                 if (!isMounted) return;
                 setIsLoaded(true);
 
-                // Load total pages (locations)
-                book.ready.then(() => {
-                    if (!isMounted || !bookRef.current) return;
-                    return book.locations.generate(1000);
-                }).then(() => {
-                    if (!isMounted || !bookRef.current) return;
-                    const total = book.locations.length();
-                    setTotalPages(total);
-                    updateLibraryProgress(currentPage, total);
-                }).catch(err => {
-                    console.warn('Error generating locations:', err);
-                });
-
                 // Handle location changes
                 rendition.on('relocated', async (relocatedLocation: any) => {
                     if (!isMounted || !bookRef.current) return;
                     const cfi = relocatedLocation.start.cfi;
-                    if (bookRef.current.locations && bookRef.current.locations.length() > 0) {
-                        const percent = bookRef.current.locations.percentageFromCfi(cfi);
-                        const curr = Math.floor(percent * bookRef.current.locations.length());
-                        setCurrentPage(curr);
-                        
-                        setLeftPage(curr);
-                        setRightPage(curr + 1 <= bookRef.current.locations.length() ? curr + 1 : 0);
+                    
+                    let curr = 0;
+                    const total = bookRef.current.locations.length();
 
-                        updateLibraryProgress(curr, bookRef.current.locations.length(), cfi);
+                    if (total > 0) {
+                        const percent = bookRef.current.locations.percentageFromCfi(cfi);
+                        curr = Math.floor(percent * total) + 1; // +1 to start from 1
+                    } else {
+                        curr = relocatedLocation.start.index + 1;
+                    }
+
+                    if (curr > 0) {
+                        setCurrentPage(curr);
+                        // Ensure page pairing: 1-2, 3-4, etc.
+                        const startPage = curr % 2 === 0 ? curr - 1 : curr;
+                        setLeftPage(startPage);
+                        // Important: check against total to avoid non-existent right page
+                        const actualTotal = total > 0 ? total : bookRef.current.spine.length;
+                        setRightPage(startPage + 1 <= actualTotal ? startPage + 1 : 0);
+                        updateLibraryProgress(curr, actualTotal, cfi);
                     }
                 });
 
@@ -276,11 +295,16 @@ export default function ReaderPage() {
                     ref={viewerRef} 
                     className="w-full max-w-5xl bg-white shadow-2xl rounded-2xl border border-cream-200 h-full overflow-hidden"
                 >
-                    {!isLoaded && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="animate-pulse text-brown-900/40 font-serif italic text-xl">
-                                Opening your book...
+                    {(!isLoaded || !isPaginated) && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-50">
+                            <div className="animate-pulse text-brown-900/40 font-serif italic text-xl mb-4">
+                                {!isPaginated ? 'Preparing your book...' : 'Opening your book...'}
                             </div>
+                            {!isPaginated && (
+                                <div className="w-48 h-1 bg-cream-100 rounded-full overflow-hidden">
+                                    <div className="h-full bg-brown-900/20 animate-progress"></div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -310,12 +334,9 @@ export default function ReaderPage() {
                     <div className="flex-1 text-center">{leftPage > 0 ? leftPage : ''}</div>
                     <div className="flex-1 text-center">{rightPage > 0 ? rightPage : ''}</div>
                 </div>
-                <div className="flex items-center gap-4 text-[8px] font-black text-brown-800/10 uppercase tracking-[0.2em]">
-                    <span>Use arrows or buttons to navigate</span>
-                </div>
                 {totalPages > 0 && (
-                    <div className="text-[9px] font-serif font-bold text-brown-900/40">
-                        {currentPage} / {totalPages}
+                    <div className="text-[10px] font-black text-brown-800/20 uppercase tracking-[0.2em] mt-0.5">
+                        Progress: {Math.round((currentPage / totalPages) * 100)}%
                     </div>
                 )}
             </div>

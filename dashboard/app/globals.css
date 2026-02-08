@@ -6,6 +6,8 @@
   --color-cream-200: #E8DCC8;
   --color-brown-800: #4A3728;
   --color-brown-900: #3D2617;
+  --color-brand-gold: #e9c46a;
+  --color-brand-gold-dark: #d5941d;
 
   --font-serif: "Lora", Georgia, serif;
   --font-sans: "Inter", system-ui, sans-serif;
@@ -30,4 +32,16 @@ h4,
 h5,
 h6 {
   font-family: var(--font-serif);
+}
+
+@layer utilities {
+  .animate-progress {
+    animation: progress 2s ease-in-out infinite;
+  }
+
+  @keyframes progress {
+    0% { width: 0%; transform: translateX(-100%); }
+    50% { width: 100%; transform: translateX(0); }
+    100% { width: 0%; transform: translateX(100%); }
+  }
 }

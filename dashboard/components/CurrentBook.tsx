@@ -38,32 +38,43 @@ export default function CurrentBook() {
     }, []);
 
     if (isLoading) {
-        return (
-            <div className="bg-white rounded-2xl p-8 shadow-sm mt-8 border border-cream-200 animate-pulse">
-                <div className="h-8 bg-cream-100 w-48 mb-6 rounded-lg"></div>
-                <div className="flex gap-8">
-                    <div className="w-40 h-60 bg-cream-100 rounded-xl"></div>
-                    <div className="flex-1 space-y-4">
-                        <div className="h-10 bg-cream-100 w-3/4 rounded-lg"></div>
-                        <div className="h-6 bg-cream-100 w-1/2 rounded-lg"></div>
-                        <div className="h-20 bg-cream-100 w-full rounded-lg"></div>
-                    </div>
-                </div>
-            </div>
-        );
+        return null; // Don't show skeleton if we don't know yet
     }
 
-    if (!book) {
+    if (!book || book.currentPage === 0) {
         return (
-            <div className="bg-white rounded-2xl p-8 shadow-sm mt-8 border border-cream-200 text-center">
-                <h2 className="text-2xl font-serif font-semibold mb-2 text-brown-900 italic">No book reading yet</h2>
-                <p className="text-brown-800/40 mb-6">Go to your library to start your reading journey!</p>
-                <button 
-                    onClick={() => router.push('/library')}
-                    className="bg-brown-900 text-cream-50 px-8 py-3 rounded-full font-bold shadow-lg hover:bg-brown-800 transition-all"
-                >
-                    Go to Library
-                </button>
+            <div className="bg-white rounded-2xl p-10 shadow-sm mt-8 border border-cream-200 text-center flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brown-900/10 via-brown-900/30 to-brown-900/10"></div>
+                
+                <div className="w-20 h-20 bg-cream-100 rounded-full flex items-center justify-center mb-6 text-4xl shadow-inner border border-cream-200">
+                    📚
+                </div>
+                
+                <h2 className="text-3xl font-serif font-bold mb-3 text-brown-900">Start Your Reading Journey</h2>
+                <p className="text-brown-800/60 mb-8 max-w-md text-lg leading-relaxed">
+                    You haven't started any books yet. Choose a book from your library or discover something new!
+                </p>
+                
+                <div className="flex gap-4">
+                    <button 
+                        onClick={() => router.push('/library')}
+                        className="bg-brown-900 text-cream-50 px-10 py-4 rounded-full font-bold shadow-lg hover:bg-brown-800 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center gap-2"
+                    >
+                        <span>📂</span> My Library
+                    </button>
+                    <button 
+                        onClick={() => router.push('/books')}
+                        className="bg-white border-2 border-brown-900 text-brown-900 px-10 py-4 rounded-full font-bold hover:bg-cream-100 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center gap-2"
+                    >
+                        <span>✨</span> Discover Books
+                    </button>
+                </div>
+
+                <div className="mt-10 flex items-center gap-6 text-sm text-brown-800/40 font-medium uppercase tracking-widest">
+                    <span className="flex items-center gap-2">✓ AI-Powered</span>
+                    <span className="flex items-center gap-2">✓ Personalized</span>
+                    <span className="flex items-center gap-2">✓ Progress Tracking</span>
+                </div>
             </div>
         );
     }

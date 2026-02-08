@@ -48,5 +48,6 @@ export interface LeaderboardEntry {
     userName: string;
     userAvatar?: string;
     booksCount: number;
+    pagesCount: number;
     rank: number;
 }

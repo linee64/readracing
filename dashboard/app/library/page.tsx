@@ -52,7 +52,12 @@ export default function LibraryPage() {
                         const arrayBuffer = await get(book.id);
                         if (arrayBuffer) {
                             const epub = ePub(arrayBuffer);
-                            const coverPath = await epub.coverUrl();
+                            // Add a timeout to epub.coverUrl()
+                            const coverPath = await Promise.race([
+                                epub.coverUrl(),
+                                new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+                            ]) as string | null;
+
                             if (coverPath) {
                                 const response = await fetch(coverPath);
                                 if (response.ok) {
@@ -114,53 +119,93 @@ export default function LibraryPage() {
         if (!file) return;
 
         setIsUploading(true);
+        const bookId = `epub-${Date.now()}`;
+
         try {
             const arrayBuffer = await file.arrayBuffer();
-            const book = ePub(arrayBuffer);
-            const metadata = await book.loaded.metadata;
+            
+            // 1. First, save the file to IndexedDB immediately
+            // This ensures the file is there even if parsing fails
+            await set(bookId, arrayBuffer);
+            console.log('File saved to IndexedDB');
 
-            // Extract cover if possible
-            let coverUrl = '';
+            // 2. Create basic entry first so user sees SOMETHING
+            const initialEntry: Book = {
+                id: bookId,
+                title: file.name.replace('.epub', ''),
+                author: 'Loading...',
+                totalPages: 0,
+                currentPage: 0,
+                coverUrl: ''
+            };
+            
+            setBooks(prev => [...prev, initialEntry]);
+
+            // 3. Try to parse metadata in background
             try {
-                const coverPath = await book.coverUrl();
-                if (coverPath) {
-                    // Try to get the blob and convert to base64
-                    const response = await fetch(coverPath);
-                    if (response.ok) {
-                        const blob = await response.blob();
-                        coverUrl = await new Promise((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result as string);
-                            reader.onerror = reject;
-                            reader.readAsDataURL(blob);
-                        });
-                        console.log('Cover converted to base64');
+                const book = ePub(arrayBuffer);
+                
+                await Promise.race([
+                    book.ready,
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000))
+                ]);
+
+                const metadata = await book.loaded.metadata;
+                
+                // Extract cover
+                let coverUrl = '';
+                try {
+                    const coverPath = await Promise.race([
+                        book.coverUrl(),
+                        new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+                    ]) as string | null;
+
+                    if (coverPath) {
+                        const response = await fetch(coverPath);
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            coverUrl = await new Promise((resolve) => {
+                                const reader = new FileReader();
+                                reader.onloadend = () => resolve(reader.result as string);
+                                reader.readAsDataURL(blob);
+                            });
+                        }
                     }
+                } catch (coverErr) {
+                    console.warn('Cover extraction failed, continuing without cover', coverErr);
                 }
-            } catch (e) {
-                console.error('Error extracting cover:', e);
+
+                // 4. Update the entry with real metadata
+                const finalEntry: Book = {
+                    ...initialEntry,
+                    title: metadata.title || initialEntry.title,
+                    author: metadata.creator || 'Unknown Author',
+                    coverUrl: coverUrl
+                };
+
+                // Update state and persistent storage
+                setBooks(prev => {
+                    const updated = prev.map(b => b.id === bookId ? finalEntry : b);
+                    set('readracing_library_v2', updated);
+                    return updated;
+                });
+
+                // Cleanup epubjs object
+                try { book.destroy(); } catch(e) {}
+
+            } catch (parseErr) {
+                console.error('Metadata parsing failed, ensuring basic entry is saved', parseErr);
+                // The initialEntry is already in the 'books' state from step 2.
+                // We just need to make sure the persistent storage is updated.
+                setBooks(prev => {
+                    set('readracing_library_v2', prev);
+                    return prev;
+                });
             }
 
-            const bookId = `epub-${Date.now()}`;
-
-            // Store file in IndexedDB
-            await set(bookId, arrayBuffer);
-
-            const newBookEntry: Book = {
-                id: bookId,
-                title: metadata.title || file.name.replace('.epub', ''),
-                author: metadata.creator || 'Unknown Author',
-                totalPages: 0, // Will be calculated during reading
-                currentPage: 0,
-                coverUrl: coverUrl
-            };
-
-            const updatedBooks = [...books, newBookEntry];
-            await saveBooks(updatedBooks);
-
         } catch (error) {
-            console.error('Error parsing EPUB:', error);
-            alert('Failed to parse EPUB file');
+            console.error('Critical upload error:', error);
+            alert('Failed to upload file. Please try again.');
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -183,6 +228,12 @@ export default function LibraryPage() {
                             onChange={handleFileUpload}
                         />
                         <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="bg-brown-900 text-cream-50 px-6 py-3 rounded-full font-bold shadow-lg hover:bg-brown-800 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center gap-2"
+                        >
+                            <span>➕</span> Add Manually
+                        </button>
+                        <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading}
                             className="bg-green-700 text-cream-50 px-6 py-3 rounded-full font-bold shadow-lg hover:bg-green-800 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
@@ -193,12 +244,6 @@ export default function LibraryPage() {
                                 <span>📁</span>
                             )}
                             {isUploading ? 'Uploading...' : 'Upload EPUB'}
-                        </button>
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="bg-brown-900 text-cream-50 px-6 py-3 rounded-full font-bold shadow-lg hover:bg-brown-800 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center gap-2"
-                        >
-                            <span>+</span> Add New Book
                         </button>
                     </div>
                 </div>
@@ -224,6 +269,7 @@ export default function LibraryPage() {
                                             src={book.coverUrl}
                                             alt={book.title}
                                             className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                            crossOrigin="anonymous"
                                             onError={(e) => {
                                                 (e.target as HTMLImageElement).style.display = 'none';
                                             }}

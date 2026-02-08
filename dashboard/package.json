@@ -14,6 +14,8 @@
     "react-dom": "19.2.3"
   },
   "devDependencies": {
+    "@iconify-json/ic": "^1.2.4",
+    "@iconify-json/material-symbols": "^1.2.54",
     "@iconify-json/mdi": "^1.2.3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
