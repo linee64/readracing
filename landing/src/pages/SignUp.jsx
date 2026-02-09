@@ -30,8 +30,8 @@ const SignUp = () => {
             if (signUpError) throw signUpError;
 
             if (data.user) {
-                // Redirect to dashboard or show success message
-                window.location.href = 'http://localhost:3001/dashboard';
+                // Redirect to verify email page
+                navigate('/verify-email');
             }
         } catch (err) {
             setError(err.message);

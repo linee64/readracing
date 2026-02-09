@@ -22,10 +22,15 @@ const Login = () => {
             });
 
             if (loginError) throw loginError;
-
+            
             if (data.user) {
+                if (!data.user.email_confirmed_at) {
+                    await supabase.auth.signOut();
+                    navigate('/verify-email');
+                    return;
+                }
                 // Redirect to dashboard
-                window.location.href = 'http://localhost:3001/dashboard';
+                window.location.href = 'https://readracing-dash.vercel.app/dashboard';
             }
         } catch (err) {
             setError(err.message);

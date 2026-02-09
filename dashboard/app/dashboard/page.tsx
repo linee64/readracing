@@ -1,16 +1,32 @@
+'use client';
 
+import React, { useEffect, useState } from 'react';
 import DashboardHeader from '@/components/DashboardHeader';
 import MetricsCards from '@/components/MetricsCards';
 import CurrentBook from '@/components/CurrentBook';
 import ReadingPlan from '@/components/ReadingPlan';
 import RecentHighlights from '@/components/RecentHighlights';
 import LeaderboardPreview from '@/components/LeaderboardPreview';
+import { supabase } from '@/lib/supabase';
 
 export default function DashboardPage() {
+    const [username, setUsername] = useState<string>('Reader');
+
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Reader';
+                setUsername(name);
+            }
+        };
+        getUser();
+    }, []);
+
     return (
         <div className="min-h-screen bg-cream-50">
             <div className="max-w-7xl mx-auto p-8 pb-20">
-                <DashboardHeader username="Alex" />
+                <DashboardHeader username={username} />
                 <MetricsCards />
                 <CurrentBook />
                 <ReadingPlan />

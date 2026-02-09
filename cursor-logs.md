@@ -129,13 +129,27 @@
   - Проверена общая структура ридера на предмет других потенциальных ошибок сборки.
 
 - Исправление типизации в `ReadingPlan.tsx`:
-  - Добавлен интерфейс `Day` для строгого определения структуры данных дней недели.
-  - Типизировано состояние `days` с использованием `useState<Day[]>`.
-  - Исправлен колбэк `setState` в функции `handleMarkAsDone`, добавлена явная типизация аргументов `prev` и `d`.
-  - Устранены потенциальные ошибки при обновлении состояния массива объектов.
-
-## 2026-02-08
-- Обновление страницы Reading Plan:
+  - Union-тип `Day` заменен на единый интерфейс с опциональными полями `completed` и `current`.
+  - Список дней переведен в состояние `useState<Day[]>`.
+  - Реализован обработчик `handleMarkAsDone`, корректно обновляющий состояние без ошибок типизации.
+135→  - Добавлена директива `"use client"` для поддержки клиентской логики.
+136→  - Успешно пройдена проверка сборки TypeScript (`npm run build`).
+137→- Обновление ссылок перенаправления (Landing to Dashboard):
+138→  - В [Login.jsx](file:///c:/Users/алматы2/Desktop/Aidar's%20main/ReadRacing/landing/src/pages/Login.jsx) и [SignUp.jsx](file:///c:/Users/алматы2/Desktop/Aidar's%20main/ReadRacing/landing/src/pages/SignUp.jsx) адрес редиректа изменен с `localhost:3001` на `https://readracing-dash.vercel.app/dashboard`.
+139→- Реализация системы подтверждения почты:
+140→  - Создана страница [VerifyEmail.jsx](file:///c:/Users/алматы2/Desktop/Aidar's%20main/ReadRacing/landing/src/pages/VerifyEmail.jsx) для уведомления пользователей о необходимости верификации.
+141→  - В [SignUp.jsx](file:///c:/Users/алматы2/Desktop/Aidar's%20main/ReadRacing/landing/src/pages/SignUp.jsx) изменен редирект после регистрации на `/verify-email`.
+142→  - В [Login.jsx](file:///c:/Users/алматы2/Desktop/Aidar's%20main/ReadRacing/landing/src/pages/Login.jsx) добавлена проверка `email_confirmed_at`. Неверифицированные пользователи разлогиниваются и направляются на страницу подтверждения.
+143→  - В [App.jsx](file:///c:/Users/алматы2/Desktop/Aidar's%20main/ReadRacing/landing/src/App.jsx) зарегистрирован новый маршрут `/verify-email`.
+144→- Брендирование коммуникаций:
+145→  - Создан премиальный HTML-шаблон для писем Supabase ([supabase-email-template.html](file:///c:/Users/алматы2/Desktop/Aidar's%20main/ReadRacing/supabase-email-template.html)) с использованием фирменной бежево-золотой палитры.
+146→- Интеграция данных пользователя в Dashboard:
+147→  - Создан клиент Supabase в [dashboard/lib/supabase.ts](file:///c:/Users/алматы2/Desktop/Aidar's%20main/ReadRacing/dashboard/lib/supabase.ts).
+148→  - Страница [DashboardPage](file:///c:/Users/алматы2/Desktop/Aidar's%20main/ReadRacing/dashboard/app/dashboard/page.tsx) обновлена для динамического получения имени пользователя через `supabase.auth.getUser()`.
+149→  - Статическое имя "Alex" в заголовке заменено на реальные данные из профиля пользователя (`full_name` или часть email).
+150→
+151→## 2026-02-09 (Update 2)
+- Обновление вкладки Reading Plan:
   - Компонент `ReadingPlan.tsx` переведен в режим `'use client'`.
   - Дизайн обновлен до премиального стиля: закругленные углы `rounded-[2.5rem]`, золотые градиенты для текущего дня, анимация шиммера для кнопок.
   - Создана новая страница `/plan` (`dashboard/app/plan/page.tsx`) с полным обзором плана и AI-инсайтами.
