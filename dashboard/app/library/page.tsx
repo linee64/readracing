@@ -10,9 +10,7 @@ import { set, get, del } from 'idb-keyval';
 export default function LibraryPage() {
     const router = useRouter();
     const [books, setBooks] = useState<Book[]>([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    const [newBook, setNewBook] = useState({ title: '', author: '', totalPages: '' });
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Load books from IndexedDB on mount
@@ -89,21 +87,6 @@ export default function LibraryPage() {
     const saveBooks = async (updatedBooks: Book[]) => {
         setBooks(updatedBooks);
         await set('readracing_library_v2', updatedBooks);
-    };
-
-    const handleAddBook = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const book: Book = {
-            id: Date.now().toString(),
-            title: newBook.title,
-            author: newBook.author,
-            totalPages: parseInt(newBook.totalPages) || 0,
-            currentPage: 0,
-        };
-        const updatedBooks = [...books, book];
-        await saveBooks(updatedBooks);
-        setIsModalOpen(false);
-        setNewBook({ title: '', author: '', totalPages: '' });
     };
 
     const handleDeleteBook = async (id: string) => {
@@ -228,15 +211,9 @@ export default function LibraryPage() {
                             onChange={handleFileUpload}
                         />
                         <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="bg-brown-900 text-cream-50 px-6 py-3 rounded-full font-bold shadow-lg hover:bg-brown-800 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center gap-2"
-                        >
-                            <span>➕</span> Add Manually
-                        </button>
-                        <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading}
-                            className="bg-green-700 text-cream-50 px-6 py-3 rounded-full font-bold shadow-lg hover:bg-green-800 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
+                            className="bg-brown-900 text-cream-50 px-6 py-3 rounded-full font-bold shadow-lg hover:bg-brown-800 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
                         >
                             {isUploading ? (
                                 <span className="animate-spin">⏳</span>
@@ -310,65 +287,6 @@ export default function LibraryPage() {
                                 </button>
                             </div>
                         ))}
-                    </div>
-                )}
-
-                {/* Add Book Modal */}
-                {isModalOpen && (
-                    <div className="fixed inset-0 bg-brown-900/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-                        <div className="bg-cream-50 rounded-3xl p-8 max-w-md w-full shadow-2xl border border-cream-200">
-                            <h3 className="text-2xl font-serif font-bold text-brown-900 mb-6 italic">Add New Book</h3>
-                            <form onSubmit={handleAddBook} className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-black text-brown-800/40 uppercase tracking-widest mb-1 ml-1">Title</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        value={newBook.title}
-                                        onChange={(e) => setNewBook({ ...newBook, title: e.target.value })}
-                                        className="w-full bg-white border border-cream-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brown-900/20 text-brown-900 font-medium"
-                                        placeholder="e.g. The Great Gatsby"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-black text-brown-800/40 uppercase tracking-widest mb-1 ml-1">Author</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        value={newBook.author}
-                                        onChange={(e) => setNewBook({ ...newBook, author: e.target.value })}
-                                        className="w-full bg-white border border-cream-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brown-900/20 text-brown-900 font-medium"
-                                        placeholder="e.g. F. Scott Fitzgerald"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-black text-brown-800/40 uppercase tracking-widest mb-1 ml-1">Total Pages</label>
-                                    <input
-                                        required
-                                        type="number"
-                                        value={newBook.totalPages}
-                                        onChange={(e) => setNewBook({ ...newBook, totalPages: e.target.value })}
-                                        className="w-full bg-white border border-cream-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brown-900/20 text-brown-900 font-medium"
-                                        placeholder="e.g. 320"
-                                    />
-                                </div>
-                                <div className="flex gap-4 mt-8">
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsModalOpen(false)}
-                                        className="flex-1 px-6 py-3 rounded-xl font-bold text-brown-900 border-2 border-brown-900 hover:bg-cream-100 transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="flex-1 px-6 py-3 rounded-xl font-bold bg-brown-900 text-cream-50 hover:bg-brown-800 shadow-lg transition-colors"
-                                    >
-                                        Add Book
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
                     </div>
                 )}
             </div>

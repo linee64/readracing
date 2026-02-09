@@ -1,11 +1,65 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export default function SettingsPage() {
     const [notifications, setNotifications] = useState(true);
     const [readingGoal, setReadingGoal] = useState('30');
     const [language, setLanguage] = useState('English');
+    const [isLangOpen, setIsLangOpen] = useState(false);
+    const [isGoalOpen, setIsGoalOpen] = useState(false);
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    
+    const [user, setUser] = useState({
+        name: 'User',
+        email: 'user@example.com',
+        isPro: false
+    });
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+            if (supabaseUser) {
+                setUser({
+                    name: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
+                    email: supabaseUser.email || '',
+                    isPro: true // This would normally come from a profile table
+                });
+            }
+        };
+        fetchUser();
+    }, []);
+
+    const languages = ['English', 'Russian'];
+    const goals = [
+        { value: '15', label: '15 min' },
+        { value: '30', label: '30 min' },
+        { value: '45', label: '45 min' },
+        { value: '60', label: '60 min' },
+    ];
+
+    const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (avatarUrl) URL.revokeObjectURL(avatarUrl);
+            const url = URL.createObjectURL(file);
+            setAvatarUrl(url);
+        }
+    };
+
+    const removeAvatar = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (avatarUrl) URL.revokeObjectURL(avatarUrl);
+        setAvatarUrl(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const handleSave = () => {
+        // In a real app, this would persist settings to a database
+        alert('Settings saved successfully!');
+    };
 
     const currentDate = new Date().toLocaleDateString('en-US', {
         weekday: 'long',
@@ -13,12 +67,6 @@ export default function SettingsPage() {
         month: 'long',
         day: 'numeric',
     });
-
-    const user = {
-        name: 'Alex',
-        email: 'alex@readracing.com',
-        isPro: true
-    };
 
     return (
         <div className="min-h-screen bg-cream-50">
@@ -47,30 +95,67 @@ export default function SettingsPage() {
                             </span>
                             Profile Settings
                         </h2>
+                        
                         <div className="flex items-center gap-6 mb-8">
-                            <div className="w-20 h-20 bg-cream-200 rounded-2xl flex items-center justify-center text-3xl font-bold text-brown-800 border-2 border-dashed border-brown-300">
-                                {user.name.charAt(0)}
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                accept="image/*"
+                                onChange={handleAvatarUpload}
+                            />
+                            <div 
+                                onClick={() => fileInputRef.current?.click()}
+                                className="w-24 h-24 bg-cream-100 rounded-2xl flex items-center justify-center text-4xl font-bold text-brown-800 border-2 border-dashed border-brown-300 cursor-pointer hover:bg-cream-200 hover:border-brown-400 transition-all relative group overflow-hidden"
+                            >
+                                {avatarUrl ? (
+                                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover rounded-2xl" />
+                                ) : (
+                                    user.name.charAt(0)
+                                )}
+                                
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                </div>
+
+                                {avatarUrl && (
+                                    <button 
+                                        onClick={removeAvatar}
+                                        className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600 z-10"
+                                        title="Remove photo"
+                                    >
+                                        ×
+                                    </button>
+                                )}
                             </div>
-                            <button className="text-sm font-bold text-brown-900 bg-cream-100 px-6 py-2.5 rounded-xl hover:bg-cream-200 transition-colors border border-cream-300">
-                                Change Avatar
-                            </button>
+                            <div className="flex flex-col">
+                                <p className="text-brown-900 font-bold text-lg">{user.name}</p>
+                                <p className="text-brown-800/60 font-medium">{user.email}</p>
+                            </div>
                         </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-brown-800/70 ml-1">Full Name</label>
                                 <input
                                     type="text"
                                     defaultValue={user.name}
-                                    className="w-full bg-cream-50 border border-cream-200 rounded-2xl px-5 py-3 text-brown-900 font-medium focus:outline-none focus:ring-2 focus:ring-brown-900/10 transition-all"
+                                    className="w-full bg-cream-50/50 border border-cream-200 rounded-2xl px-5 py-3 text-brown-900 font-medium focus:outline-none focus:ring-2 focus:ring-brown-900/10 transition-all"
                                 />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-brown-800/70 ml-1">Email Address</label>
-                                <input
-                                    type="email"
-                                    defaultValue={user.email}
-                                    className="w-full bg-cream-50 border border-cream-200 rounded-2xl px-5 py-3 text-brown-900 font-medium focus:outline-none focus:ring-2 focus:ring-brown-900/10 transition-all"
-                                />
+                                <div className="relative group">
+                                    <input
+                                        type="email"
+                                        value={user.email}
+                                        readOnly
+                                        className="w-full bg-cream-50/30 border border-cream-200 rounded-2xl px-5 py-3 text-brown-800/40 font-medium cursor-not-allowed select-none"
+                                    />
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <span className="text-[10px] font-black text-brown-800/30 uppercase tracking-widest">Read Only</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -89,31 +174,104 @@ export default function SettingsPage() {
                                     <h3 className="font-bold text-brown-900 text-lg">Daily Reading Goal</h3>
                                     <p className="text-sm text-brown-800/60 font-medium">Minutes per day you want to read</p>
                                 </div>
-                                <select
-                                    value={readingGoal}
-                                    onChange={(e) => setReadingGoal(e.target.value)}
-                                    className="bg-white border border-cream-200 rounded-xl px-4 py-2 text-brown-900 font-bold focus:outline-none"
-                                >
-                                    <option value="15">15 min</option>
-                                    <option value="30">30 min</option>
-                                    <option value="45">45 min</option>
-                                    <option value="60">60 min</option>
-                                </select>
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setIsGoalOpen(!isGoalOpen)}
+                                        className="bg-white border border-cream-200 rounded-xl px-5 py-2.5 text-brown-900 font-bold focus:outline-none flex items-center gap-3 min-w-[140px] justify-between hover:border-brown-900/20 transition-all shadow-sm"
+                                    >
+                                        {goals.find(g => g.value === readingGoal)?.label}
+                                        <svg 
+                                            xmlns="http://www.w3.org/2000/svg" 
+                                            width="20" 
+                                            height="20" 
+                                            viewBox="0 0 24 24"
+                                            className={`transition-transform duration-200 ${isGoalOpen ? 'rotate-180' : ''}`}
+                                        >
+                                            <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m6 9l6 6l6-6"/>
+                                        </svg>
+                                    </button>
+                                    
+                                    {isGoalOpen && (
+                                        <>
+                                            <div className="fixed inset-0 z-10" onClick={() => setIsGoalOpen(false)}></div>
+                                            <div className="absolute right-0 mt-2 w-full bg-white border border-cream-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 animate-in fade-in zoom-in duration-200">
+                                                {goals.map((goal) => (
+                                                    <button
+                                                        key={goal.value}
+                                                        onClick={() => {
+                                                            setReadingGoal(goal.value);
+                                                            setIsGoalOpen(false);
+                                                        }}
+                                                        className={`w-full text-left px-5 py-3 text-sm font-bold transition-colors flex items-center justify-between ${
+                                                            readingGoal === goal.value 
+                                                            ? 'bg-brown-900 text-cream-50' 
+                                                            : 'text-brown-900 hover:bg-cream-50'
+                                                        }`}
+                                                    >
+                                                        {goal.label}
+                                                        {readingGoal === goal.value && (
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                                                                <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="m5 12l5 5L20 7"/>
+                                                            </svg>
+                                                        )}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                             <div className="flex items-center justify-between p-4 bg-cream-50 rounded-2xl border border-cream-100">
                                 <div>
                                     <h3 className="font-bold text-brown-900 text-lg">App Language</h3>
                                     <p className="text-sm text-brown-800/60 font-medium">Preferred language for the interface</p>
                                 </div>
-                                <select
-                                    value={language}
-                                    onChange={(e) => setLanguage(e.target.value)}
-                                    className="bg-white border border-cream-200 rounded-xl px-4 py-2 text-brown-900 font-bold focus:outline-none"
-                                >
-                                    <option value="English">English</option>
-                                    <option value="Russian">Russian</option>
-                                    <option value="Kazakh">Kazakh</option>
-                                </select>
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setIsLangOpen(!isLangOpen)}
+                                        className="bg-white border border-cream-200 rounded-xl px-5 py-2.5 text-brown-900 font-bold focus:outline-none flex items-center gap-3 min-w-[140px] justify-between hover:border-brown-900/20 transition-all shadow-sm"
+                                    >
+                                        {language}
+                                        <svg 
+                                            xmlns="http://www.w3.org/2000/svg" 
+                                            width="20" 
+                                            height="20" 
+                                            viewBox="0 0 24 24"
+                                            className={`transition-transform duration-200 ${isLangOpen ? 'rotate-180' : ''}`}
+                                        >
+                                            <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m6 9l6 6l6-6"/>
+                                        </svg>
+                                    </button>
+                                    
+                                    {isLangOpen && (
+                                        <>
+                                            <div className="fixed inset-0 z-10" onClick={() => setIsLangOpen(false)}></div>
+                                            <div className="absolute right-0 mt-2 w-full bg-white border border-cream-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 animate-in fade-in zoom-in duration-200">
+                                                {languages.map((lang) => (
+                                                    <button
+                                                        key={lang}
+                                                        onClick={() => {
+                                                            setLanguage(lang);
+                                                            setIsLangOpen(false);
+                                                        }}
+                                                        className={`w-full text-left px-5 py-3 text-sm font-bold transition-colors flex items-center justify-between ${
+                                                            language === lang 
+                                                            ? 'bg-brown-900 text-cream-50' 
+                                                            : 'text-brown-900 hover:bg-cream-50'
+                                                        }`}
+                                                    >
+                                                        {lang}
+                                                        {language === lang && (
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                                                                <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="m5 12l5 5L20 7"/>
+                                                            </svg>
+                                                        )}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -126,12 +284,14 @@ export default function SettingsPage() {
                                 <div>
                                     <h2 className="text-2xl font-serif font-bold mb-2 flex items-center gap-3">
                                         Subscription
-                                        <span className="bg-brand-gold text-brown-900 text-[10px] uppercase font-black px-3 py-1 rounded-full tracking-wider">
-                                            Pro Plan
-                                        </span>
+                                        {user.isPro && (
+                                            <span className="bg-brand-gold text-brown-900 text-[10px] uppercase font-black px-3 py-1 rounded-full tracking-wider">
+                                                Pro Plan
+                                            </span>
+                                        )}
                                     </h2>
                                     <p className="text-cream-50/70 font-medium">
-                                        Your subscription is active until December 31, 2026.
+                                        {user.isPro ? 'Your subscription is active until December 31, 2026.' : 'You are currently on the Free plan.'}
                                     </p>
                                 </div>
                                 <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md">
@@ -141,19 +301,19 @@ export default function SettingsPage() {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                                 <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
                                     <p className="text-xs font-bold text-cream-50/40 uppercase mb-1">Status</p>
-                                    <p className="font-bold text-lg">Active</p>
+                                    <p className="font-bold text-lg">{user.isPro ? 'Active' : 'Free'}</p>
                                 </div>
                                 <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
                                     <p className="text-xs font-bold text-cream-50/40 uppercase mb-1">Billing</p>
-                                    <p className="font-bold text-lg">Annual</p>
+                                    <p className="font-bold text-lg">{user.isPro ? 'Annual' : 'N/A'}</p>
                                 </div>
                                 <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
                                     <p className="text-xs font-bold text-cream-50/40 uppercase mb-1">Next Payment</p>
-                                    <p className="font-bold text-lg">$49.00 / year</p>
+                                    <p className="font-bold text-lg">{user.isPro ? '$49.00 / year' : 'Upgrade for Pro features'}</p>
                                 </div>
                             </div>
                             <button className="w-full md:w-auto bg-brand-gold text-brown-900 font-bold px-8 py-4 rounded-2xl shadow-lg hover:scale-105 transition-transform">
-                                Manage Subscription
+                                {user.isPro ? 'Manage Subscription' : 'Upgrade to Pro'}
                             </button>
                         </div>
                     </section>

@@ -2,8 +2,12 @@ import React from 'react';
 import TextTypeReact from './TextTypeReact';
 import StarBorderReact from './StarBorderReact';
 import ShinyText from './ShinyText';
+import { useAuth } from '../context/AuthContext';
 
 const CallToAction = () => {
+    const { user } = useAuth();
+    const dashboardUrl = "https://readracing-dash.vercel.app/dashboard";
+
     return (
         <section id="try-free" className="py-16 md:py-32 px-4 bg-brand-black text-brand-beige overflow-hidden">
             <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
@@ -38,7 +42,7 @@ const CallToAction = () => {
                     <div className="clear-both flex justify-center md:justify-end">
                         <StarBorderReact 
                             as="a"
-                            href="http://localhost:3000"
+                            href={user ? dashboardUrl : "/login"}
                             color="#e9c46a"
                             speed="4s"
                             className="hover:scale-[1.02] transition-transform"

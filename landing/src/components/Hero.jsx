@@ -3,8 +3,12 @@ import CornerAccent from './CornerAccent';
 import ShinyText from './ShinyText';
 import TextTypeReact from './TextTypeReact';
 import StarBorderReact from './StarBorderReact';
+import { useAuth } from '../context/AuthContext';
 
 const Hero = () => {
+    const { user } = useAuth();
+    const dashboardUrl = "https://readracing-dash.vercel.app/dashboard";
+    
     return (
         <section className="bg-brand-beige min-h-[85vh] md:min-h-[90vh] flex flex-col justify-center px-4 max-w-7xl mx-auto pt-4 md:pt-5 pb-8 md:pb-11 relative overflow-hidden md:overflow-visible">
             <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center relative p-2 sm:p-8 md:p-12">
@@ -28,7 +32,7 @@ const Hero = () => {
                     <div className="flex flex-col items-center md:items-start gap-3 w-full sm:w-auto">
                         <StarBorderReact 
                             as="a"
-                            href="http://localhost:3000"
+                            href={user ? dashboardUrl : "/login"}
                             color="#e9c46a"
                             speed="4s"
                             className="hover:scale-[1.02] transition-transform w-full sm:w-auto"

@@ -1,14 +1,15 @@
 'use client';
 
-import { LeaderboardEntry } from '@/types';
-import { useState } from 'react';
+import { LeaderboardEntry, Book } from '@/types';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { get } from 'idb-keyval';
 
 const mockFullLeaderboard: LeaderboardEntry[] = [
     { id: '1', userId: '101', userName: 'Sarah Jenkins', booksCount: 24, pagesCount: 12450, rank: 1 },
     { id: '2', userId: '102', userName: 'Michael Ross', booksCount: 21, pagesCount: 10200, rank: 2 },
     { id: '3', userId: '103', userName: 'Emma Wilson', booksCount: 19, pagesCount: 9800, rank: 3 },
     { id: '4', userId: '104', userName: 'David Chen', booksCount: 15, pagesCount: 7500, rank: 4 },
-    { id: '5', userId: '105', userName: 'Alex (You)', booksCount: 8, pagesCount: 4200, rank: 5 },
     { id: '6', userId: '106', userName: 'Jessica Lee', booksCount: 7, pagesCount: 3800, rank: 6 },
     { id: '7', userId: '107', userName: 'Ryan Thompson', booksCount: 6, pagesCount: 3100, rank: 7 },
     { id: '8', userId: '108', userName: 'Sophia Garcia', booksCount: 5, pagesCount: 2900, rank: 8 },
@@ -19,9 +20,45 @@ const mockFullLeaderboard: LeaderboardEntry[] = [
 export default function LeaderboardPage() {
     const [timeframe, setTimeframe] = useState<'weekly' | 'monthly' | 'all-time'>('weekly');
     const [metric, setMetric] = useState<'books' | 'pages'>('books');
+    const [userData, setUserData] = useState({ name: 'You', booksCount: 0, pagesCount: 0 });
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            // Get real user from Supabase
+            const { data: { user } } = await supabase.auth.getUser();
+            const name = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'You';
+
+            // Get real stats from IndexedDB
+            const library = await get('readracing_library_v2') as Book[];
+            let booksCount = 0;
+            let pagesCount = 0;
+
+            if (library && library.length > 0) {
+                booksCount = library.length;
+                pagesCount = library.reduce((acc, book) => acc + (book.currentPage || 0), 0);
+            }
+
+            setUserData({ name: `${name} (You)`, booksCount, pagesCount });
+        };
+
+        fetchUserData();
+    }, []);
+
+    // Combine mock data with real user data
+    const fullLeaderboard = [
+        ...mockFullLeaderboard,
+        { 
+            id: 'current-user', 
+            userId: 'current-user', 
+            userName: userData.name, 
+            booksCount: userData.booksCount, 
+            pagesCount: userData.pagesCount, 
+            rank: 5 
+        }
+    ];
 
     // Sort based on selected metric
-    const sortedData = [...mockFullLeaderboard].sort((a, b) => 
+    const sortedData = [...fullLeaderboard].sort((a, b) => 
         metric === 'books' ? b.booksCount - a.booksCount : b.pagesCount - a.pagesCount
     ).map((user, index) => ({ ...user, rank: index + 1 }));
 
@@ -221,7 +258,7 @@ export default function LeaderboardPage() {
                         #{sortedData.find(u => u.userName.includes('(You)'))?.rank}
                     </div>
                     <div>
-                        <h2 className="text-2xl font-serif font-bold">You're doing great, Alex!</h2>
+                        <h2 className="text-2xl font-serif font-bold">You're doing great, {userData.name.split(' ')[0]}!</h2>
                         <p className="text-cream-50/60 font-medium">
                             {metric === 'books' 
                                 ? `Only ${sortedData[3].booksCount - sortedData[4].booksCount + 1} books away from overtaking ${sortedData[3].userName}.`

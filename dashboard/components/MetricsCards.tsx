@@ -39,7 +39,7 @@ function MetricCard({ icon, number, subtitle, hasProgressBar, progress }: Metric
 }
 
 export default function MetricsCards() {
-    const [pageStats, setPageStats] = useState({ current: 0, total: 0 });
+    const [stats, setStats] = useState({ pagesCurrent: 0, pagesTotal: 0, booksCount: 0 });
 
     useEffect(() => {
         const loadStats = async () => {
@@ -48,14 +48,18 @@ export default function MetricsCards() {
                 // Sum up pages from all books in library
                 const totalCurrent = library.reduce((acc, book) => acc + (book.currentPage || 0), 0);
                 const totalMax = library.reduce((acc, book) => acc + (book.totalPages || 0), 0);
-                setPageStats({ current: totalCurrent, total: totalMax });
+                setStats({ 
+                    pagesCurrent: totalCurrent, 
+                    pagesTotal: totalMax,
+                    booksCount: library.length
+                });
             }
         };
         loadStats();
     }, []);
 
-    const progressPercent = pageStats.total > 0 
-        ? Math.min(Math.round((pageStats.current / pageStats.total) * 100), 100) 
+    const progressPercent = stats.pagesTotal > 0 
+        ? Math.min(Math.round((stats.pagesCurrent / stats.pagesTotal) * 100), 100) 
         : 0;
 
     return (
@@ -76,7 +80,7 @@ export default function MetricsCards() {
                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M14 2a8 8 0 0 0-8 8a8 8 0 0 0 8 8a8 8 0 0 0 8-8a8 8 0 0 0-8-8M4.93 5.82A8.01 8.01 0 0 0 2 12a8 8 0 0 0 8 8c.64 0 1.27-.08 1.88-.23c-1.76-.39-3.38-1.27-4.71-2.48A6 6 0 0 1 4 12c0-.3.03-.59.07-.89C4.03 10.74 4 10.37 4 10c0-1.44.32-2.87.93-4.18m13.16.26L19.5 7.5L13 14l-3.79-3.79l1.42-1.42L13 11.17"/></svg>
                     </div>
                 }
-                number="8 books"
+                number={`${stats.booksCount} books`}
                 subtitle="This year"
             />
 
@@ -88,7 +92,7 @@ export default function MetricsCards() {
                         </span>
                     </div>
                 }
-                number={<span>{pageStats.current} pages</span>}
+                number={<span>{stats.pagesCurrent} pages</span>}
                 subtitle="Daily Goal: 60"
                 hasProgressBar
                 progress={progressPercent}

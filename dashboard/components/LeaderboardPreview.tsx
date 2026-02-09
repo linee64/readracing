@@ -1,21 +1,58 @@
 
 'use client';
 
-import React from 'react';
-import { LeaderboardEntry } from '@/types';
+import React, { useEffect, useState } from 'react';
+import { LeaderboardEntry, Book } from '@/types';
+import { supabase } from '@/lib/supabase';
+import { get } from 'idb-keyval';
+import Link from 'next/link';
 
 const mockLeaderboard: LeaderboardEntry[] = [
     { id: '1', userId: '101', userName: 'Sarah Jenkins', booksCount: 24, pagesCount: 12450, rank: 1 },
     { id: '2', userId: '102', userName: 'Michael Ross', booksCount: 21, pagesCount: 10200, rank: 2 },
     { id: '3', userId: '103', userName: 'Emma Wilson', booksCount: 19, pagesCount: 9800, rank: 3 },
     { id: '4', userId: '104', userName: 'David Chen', booksCount: 15, pagesCount: 7500, rank: 4 },
-    { id: '5', userId: '105', userName: 'Alex (You)', booksCount: 8, pagesCount: 4200, rank: 5 },
 ];
 
 export default function LeaderboardPreview() {
-    const [metric, setMetric] = React.useState<'books' | 'pages'>('books');
+    const [metric, setMetric] = useState<'books' | 'pages'>('books');
+    const [userData, setUserData] = useState({ name: 'You', booksCount: 0, pagesCount: 0 });
 
-    const sortedData = [...mockLeaderboard].sort((a, b) => 
+    useEffect(() => {
+        const fetchUserData = async () => {
+            // Get real user from Supabase
+            const { data: { user } } = await supabase.auth.getUser();
+            const name = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'You';
+
+            // Get real stats from IndexedDB
+            const library = await get('readracing_library_v2') as Book[];
+            let booksCount = 0;
+            let pagesCount = 0;
+
+            if (library && library.length > 0) {
+                booksCount = library.length;
+                pagesCount = library.reduce((acc, book) => acc + (book.currentPage || 0), 0);
+            }
+
+            setUserData({ name: `${name} (You)`, booksCount, pagesCount });
+        };
+
+        fetchUserData();
+    }, []);
+
+    const fullLeaderboard = [
+        ...mockLeaderboard,
+        { 
+            id: 'current-user', 
+            userId: 'current-user', 
+            userName: userData.name, 
+            booksCount: userData.booksCount, 
+            pagesCount: userData.pagesCount, 
+            rank: 5 
+        }
+    ];
+
+    const sortedData = [...fullLeaderboard].sort((a, b) => 
         metric === 'books' ? b.booksCount - a.booksCount : b.pagesCount - a.pagesCount
     ).map((user, index) => ({ ...user, rank: index + 1 }));
 
@@ -113,10 +150,13 @@ export default function LeaderboardPreview() {
                 })}
             </div>
 
-            <button className="mt-8 py-4 px-6 bg-cream-50 hover:bg-white border border-cream-200 rounded-2xl text-sm font-bold text-brown-900 shadow-sm transition-all duration-300 flex items-center justify-center gap-3 group/btn hover:border-brand-gold/30 hover:shadow-md active:scale-95">
+            <Link 
+                href="/leaderboard"
+                className="mt-8 py-4 px-6 bg-cream-50 hover:bg-white border border-cream-200 rounded-2xl text-sm font-bold text-brown-900 shadow-sm transition-all duration-300 flex items-center justify-center gap-3 group/btn hover:border-brand-gold/30 hover:shadow-md active:scale-95"
+            >
                 <span className="relative z-10">View Full Global Board</span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" className="group-hover/btn:translate-x-1 transition-transform duration-300 text-brand-gold-dark"><path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 12h14m-7-7l7 7l-7 7"/></svg>
-            </button>
+            </Link>
         </div>
     );
 }

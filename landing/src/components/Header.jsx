@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import BlurTextReact from './BlurTextReact';
+import { useAuth } from '../context/AuthContext';
 
 const Header = () => {
+    const { user } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const location = useLocation();
     const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
@@ -93,12 +95,23 @@ const Header = () => {
                     <div className="flex-1 flex items-center justify-end gap-1.5 md:gap-4 relative z-[120]">
                         {!isAuthPage && (
                             <>
-                                <Link to="/login" className="hidden sm:block text-sm font-medium text-brand-black/70 hover:text-brand-black transition-colors italic">
-                                    Log In
-                                </Link>
-                                <Link to="/signup" className="bg-brand-black text-brand-beige px-2.5 md:px-4 py-1.5 md:py-2 text-[10px] md:text-sm font-medium rounded-sm hover:opacity-90 transition-opacity italic">
-                                    Sign In
-                                </Link>
+                                {!user ? (
+                                    <>
+                                        <Link to="/login" className="hidden sm:block text-sm font-medium text-brand-black/70 hover:text-brand-black transition-colors italic">
+                                            Log In
+                                        </Link>
+                                        <Link to="/signup" className="bg-brand-black text-brand-beige px-2.5 md:px-4 py-1.5 md:py-2 text-[10px] md:text-sm font-medium rounded-sm hover:opacity-90 transition-opacity italic">
+                                            Sign In
+                                        </Link>
+                                    </>
+                                ) : (
+                                    <a 
+                                        href="https://readracing-dash.vercel.app/dashboard" 
+                                        className="bg-brand-black text-brand-beige px-4 py-2 text-sm font-medium rounded-sm hover:opacity-90 transition-opacity italic"
+                                    >
+                                        Dashboard
+                                    </a>
+                                )}
                             </>
                         )}
                         
@@ -172,12 +185,23 @@ const Header = () => {
                         <div className="space-y-6">
                             <p className="text-[10px] uppercase tracking-[0.3em] text-brand-black/30 font-bold ml-1">Account</p>
                             <div className="flex flex-col gap-4">
-                                <Link to="/login" className="w-full py-5 text-center font-bold text-brand-black italic bg-white border border-brand-black/5 rounded-xl hover:bg-brand-black hover:text-white transition-all shadow-sm">
-                                    Log In
-                                </Link>
-                                <Link to="/signup" className="w-full py-5 text-center font-bold text-brand-beige italic bg-brand-black rounded-xl hover:opacity-90 transition-all shadow-lg">
-                                    Get Started
-                                </Link>
+                                {!user ? (
+                                    <>
+                                        <Link to="/login" className="w-full py-5 text-center font-bold text-brand-black italic bg-white border border-brand-black/5 rounded-xl hover:bg-brand-black hover:text-white transition-all shadow-sm">
+                                            Log In
+                                        </Link>
+                                        <Link to="/signup" className="w-full py-5 text-center font-bold text-brand-beige italic bg-brand-black rounded-xl hover:opacity-90 transition-all shadow-lg">
+                                            Get Started
+                                        </Link>
+                                    </>
+                                ) : (
+                                    <a 
+                                        href="https://readracing-dash.vercel.app/dashboard" 
+                                        className="w-full py-5 text-center font-bold text-brand-beige italic bg-brand-black rounded-xl hover:opacity-90 transition-all shadow-lg"
+                                    >
+                                        Dashboard
+                                    </a>
+                                )}
                             </div>
                         </div>
                     </div>
