@@ -3,11 +3,17 @@
 
 import React, { useState } from 'react';
 
+type Day = {
+    day: string;
+    completed?: boolean;
+    current?: boolean;
+};
+
 export default function ReadingPlan() {
     const [isDone, setIsDone] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
 
-    const initialDays = [
+    const initialDays: Day[] = [
         { day: 'M', completed: true },
         { day: 'T', completed: true },
         { day: 'W', completed: true },
@@ -17,7 +23,7 @@ export default function ReadingPlan() {
         { day: 'S' },
     ];
 
-    const [days, setDays] = useState(initialDays);
+    const [days, setDays] = useState<Day[]>(initialDays);
 
     const handleMarkAsDone = () => {
         if (isDone) return;
@@ -26,7 +32,9 @@ export default function ReadingPlan() {
         // Simulate sync with calendar
         setTimeout(() => {
             setIsDone(true);
-            setDays(prev => prev.map(d => d.current ? { ...d, completed: true, current: false } : d));
+            setDays((prev: Day[]) => prev.map((d: Day) => 
+                d.current ? { ...d, completed: true, current: false } : d
+            ));
             setIsSyncing(false);
         }, 800);
     };
