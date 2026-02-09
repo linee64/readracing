@@ -1,8 +1,45 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CornerAccent from '../components/CornerAccent';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 const SignUp = () => {
+    const navigate = useNavigate();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [name, setName] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const handleSignUp = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
+
+        try {
+            const { data, error: signUpError } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        full_name: name,
+                    }
+                }
+            });
+
+            if (signUpError) throw signUpError;
+
+            if (data.user) {
+                // Redirect to dashboard or show success message
+                window.location.href = 'http://localhost:3001/dashboard';
+            }
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 py-20">
             <div className="w-full max-w-md mb-6">
@@ -17,11 +54,20 @@ const SignUp = () => {
                 <CornerAccent />
                 <h2 className="text-3xl font-bold mb-8 text-center italic">Start Finishing Books</h2>
 
-                <form className="flex flex-col gap-6">
+                {error && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded font-sans">
+                        {error}
+                    </div>
+                )}
+
+                <form className="flex flex-col gap-6" onSubmit={handleSignUp}>
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium uppercase tracking-wide opacity-70">Name</label>
                         <input
+                            required
                             type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
                             className="bg-transparent border-b border-brand-black/20 py-2 focus:outline-none focus:border-brand-gold transition-colors font-sans text-lg"
                             placeholder="Your name"
                         />
@@ -30,7 +76,10 @@ const SignUp = () => {
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium uppercase tracking-wide opacity-70">Email</label>
                         <input
+                            required
                             type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             className="bg-transparent border-b border-brand-black/20 py-2 focus:outline-none focus:border-brand-gold transition-colors font-sans text-lg"
                             placeholder="reader@example.com"
                         />
@@ -39,14 +88,21 @@ const SignUp = () => {
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium uppercase tracking-wide opacity-70">Password</label>
                         <input
+                            required
                             type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                             className="bg-transparent border-b border-brand-black/20 py-2 focus:outline-none focus:border-brand-gold transition-colors font-sans text-lg"
                             placeholder="••••••••"
                         />
                     </div>
 
-                    <button className="bg-brand-gold text-brand-black py-4 font-bold mt-4 hover:bg-brand-gold-dark transition-colors font-sans">
-                        Create Account
+                    <button 
+                        type="submit"
+                        disabled={loading}
+                        className="bg-brand-gold text-brand-black py-4 font-bold mt-4 hover:bg-brand-gold-dark transition-colors font-sans disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {loading ? 'Creating Account...' : 'Create Account'}
                     </button>
                 </form>
 

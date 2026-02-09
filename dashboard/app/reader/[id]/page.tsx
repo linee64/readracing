@@ -104,7 +104,7 @@ export default function ReaderPage() {
                 resizeObserver = new ResizeObserver(() => {
                     if (renditionRef.current && isLoaded) {
                         try {
-                            renditionRef.current.resize();
+                            (renditionRef.current as any).resize();
                         } catch (e) {
                             console.warn('Resize failed:', e);
                         }
@@ -168,7 +168,7 @@ export default function ReaderPage() {
                 setTimeout(() => {
                     if (renditionRef.current && isMounted) {
                         try {
-                            renditionRef.current.resize();
+                            (renditionRef.current as any).resize();
                         } catch (e) {
                             console.warn('Initial resize failed:', e);
                         }
