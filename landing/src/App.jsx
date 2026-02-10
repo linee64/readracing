@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import VerifyEmail from './pages/VerifyEmail';
+import { Analytics } from "@vercel/analytics/next"
 
 function App() {
   return (
