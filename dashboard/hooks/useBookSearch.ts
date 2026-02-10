@@ -182,7 +182,6 @@ const MOCK_BOOKS: Book[] = [
         id: 'epub-fantasy-2',
         title: 'Тарас Бульба',
         author: 'Николай Гоголь',
-        authorUrl: '',
         coverUrl: 'https://covers.openlibrary.org/b/id/12643710-L.jpg',
         epubUrl: 'https://www.gutenberg.org/ebooks/35508.epub.images',
         totalPages: 200,
