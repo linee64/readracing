@@ -39,7 +39,92 @@ export default function BooksPage() {
             
             if (currentLibrary.some(b => b.id === bookId)) {
                 setToast({ message: 'Book already in library', visible: true });
+                return;
+            }
+
+            // If the book has an epubUrl, download it and save to IndexedDB
+            if (bookToAdd.epubUrl) {
+                setToast({ message: 'Downloading book...', visible: true });
+                
+                let arrayBuffer: ArrayBuffer | null = null;
+                const isLocal = bookToAdd.epubUrl.startsWith('/');
+
+                try {
+                    if (isLocal) {
+                        // For local files, fetch directly and don't use proxies
+                        const response = await fetch(bookToAdd.epubUrl);
+                        if (response.ok) {
+                            arrayBuffer = await response.arrayBuffer();
+                        } else {
+                            console.error(`Local book file not found at ${bookToAdd.epubUrl}. Please add it to public/books/`);
+                            setToast({ message: '❌ Local file not found in public/books/', visible: true });
+                            return;
+                        }
+                    } else {
+                        // For external URLs, use the proxy rotation system
+                        const proxies = [
+                            (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                            (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                            (url: string) => `https://thingproxy.freeboard.io/fetch/${url}`,
+                        ];
+
+                        // Try direct fetch first (some servers might have CORS enabled)
+                        try {
+                            const response = await fetch(bookToAdd.epubUrl!, { signal: AbortSignal.timeout(10000) });
+                            if (response.ok) {
+                                arrayBuffer = await response.arrayBuffer();
+                            }
+                        } catch (e) {
+                            console.log('Direct fetch failed, trying proxies...');
+                        }
+
+                        if (!arrayBuffer) {
+                            for (const getProxyUrl of proxies) {
+                                try {
+                                    const targetUrl = getProxyUrl(bookToAdd.epubUrl!);
+                                    console.log(`Trying proxy: ${targetUrl}`);
+                                    const response = await fetch(targetUrl, { signal: AbortSignal.timeout(45000) }); // Increased to 45s for proxies
+                                    if (response.ok) {
+                                        arrayBuffer = await response.arrayBuffer();
+                                        if (arrayBuffer && arrayBuffer.byteLength > 0) {
+                                            console.log('Download successful via proxy');
+                                            break;
+                                        }
+                                    }
+                                } catch (e) { 
+                                    console.warn(`Proxy failed:`, e);
+                                    continue; 
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('Download process failed:', e);
+                }
+
+                if (arrayBuffer && arrayBuffer.byteLength > 0) {
+                    try {
+                        // Save the EPUB file to IndexedDB using the book's ID
+                        await set(bookId, arrayBuffer);
+                        
+                        const bookWithEpub: Book = {
+                            ...bookToAdd,
+                            id: bookId 
+                        };
+                        
+                        await set('readracing_library_v2', [...currentLibrary, bookWithEpub]);
+                        setToast({ message: '✓ Downloaded and added to My Books!', visible: true });
+                    } catch (err) {
+                        console.error('Failed to save EPUB to IDB:', err);
+                        setToast({ message: '❌ Error saving file', visible: true });
+                        return;
+                    }
+                } else {
+                    setToast({ message: '❌ Download failed. Try again later.', visible: true });
+                    return;
+                }
             } else {
+                // Regular mock book without EPUB (shouldn't happen with our new list)
                 await set('readracing_library_v2', [...currentLibrary, bookToAdd]);
                 setToast({ message: 'Added to My Books!', visible: true });
             }

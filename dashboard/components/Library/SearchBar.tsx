@@ -11,7 +11,7 @@ interface SearchBarProps {
     totalResults: number;
 }
 
-const GENRES = ['All', 'Classic', 'Modern Prose', 'Sci-Fi', 'Fantasy', 'Mystery', 'Romance'];
+const GENRES = ['All', 'Classic', 'Fantasy', 'Detectives', 'Romance'];
 const LANGUAGES = ['All', 'Russian', 'English'];
 
 const CustomDropdown = ({ 

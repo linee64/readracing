@@ -259,8 +259,8 @@ export default function LibraryPage() {
                         {books.map((book) => (
                             <div
                                 key={book.id}
-                                onClick={() => book.id.startsWith('epub-') && router.push(`/reader/${book.id}`)}
-                                className={`bg-white rounded-2xl p-6 shadow-sm border border-cream-200 hover:shadow-md transition-shadow group relative flex flex-col ${book.id.startsWith('epub-') ? 'cursor-pointer' : ''}`}
+                                onClick={() => router.push(`/reader/${book.id}`)}
+                                className="bg-white rounded-2xl p-6 shadow-sm border border-cream-200 hover:shadow-md transition-shadow group relative flex flex-col cursor-pointer"
                             >
                                 <div className="aspect-[2/3] bg-cream-100 rounded-xl mb-4 flex items-center justify-center shadow-inner border border-cream-200 overflow-hidden relative">
                                     <span className="absolute text-4xl opacity-20 group-hover:scale-110 transition-transform duration-500">📖</span>
@@ -292,11 +292,9 @@ export default function LibraryPage() {
                                         <span>{book.totalPages > 0 ? Math.round((book.currentPage / book.totalPages) * 100) : 0}%</span>
                                     </div>
 
-                                    {book.id.startsWith('epub-') && (
-                                        <div className="mt-4 w-full bg-brown-900 text-cream-50 py-2 rounded-xl font-bold text-center block hover:bg-brown-800 transition-colors">
-                                            Read Book
-                                        </div>
-                                    )}
+                                    <div className="mt-4 w-full bg-brown-900 text-cream-50 py-2 rounded-xl font-bold text-center block hover:bg-brown-800 transition-colors">
+                                        Read Book
+                                    </div>
                                 </div>
 
                                 <button

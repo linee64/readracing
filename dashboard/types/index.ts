@@ -4,6 +4,7 @@ export interface Book {
     title: string;
     author: string;
     coverUrl?: string;
+    epubUrl?: string; // URL to download the EPUB file
     totalPages: number;
     currentPage: number;
     currentPageCfi?: string;

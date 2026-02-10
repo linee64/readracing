@@ -11,7 +11,7 @@ interface QuickViewModalProps {
 }
 
 const QuickViewModal: React.FC<QuickViewModalProps> = ({ book, isOpen, onClose, onAdd }) => {
-    const [activeTab, setActiveTab] = useState<'Description' | 'Reviews' | 'Details'>('Description');
+    const [activeTab, setActiveTab] = useState<'Description' | 'Details'>('Description');
 
     if (!isOpen || !book) return null;
 
@@ -55,7 +55,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ book, isOpen, onClose, 
                         </div>
 
                         <div className="flex gap-8 border-b border-[#E5DCC8] mb-8 font-sans">
-                            {(['Description', 'Reviews', 'Details'] as const).map(tab => (
+                            {(['Description', 'Details'] as const).map(tab => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
@@ -73,18 +73,6 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ book, isOpen, onClose, 
                         <div className="flex-1 text-[#2C2416] leading-relaxed mb-8 font-sans">
                             {activeTab === 'Description' && (
                                 <p>{book.description || 'No description available.'}</p>
-                            )}
-                            {activeTab === 'Reviews' && (
-                                <div className="space-y-4">
-                                    <div className="p-4 bg-[#F5F1E8] rounded-xl border border-[#E5DCC8]">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <div className="w-8 h-8 rounded-full bg-[#3D2817] text-white text-[10px] flex items-center justify-center">JD</div>
-                                            <span className="font-semibold text-sm">Verified Reader</span>
-                                            <span className="text-yellow-500 text-xs ml-auto">★★★★★</span>
-                                        </div>
-                                        <p className="text-sm text-[#8B7E6A]">Absolutely loved this book! A modern classic.</p>
-                                    </div>
-                                </div>
                             )}
                             {activeTab === 'Details' && (
                                 <div className="grid grid-cols-2 gap-y-4 text-sm">

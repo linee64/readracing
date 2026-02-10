@@ -9,9 +9,9 @@ const Header = () => {
     const location = useLocation();
     const isAuthPage = false; // We don't have auth pages in landing anymore
 
-    const dashboardUrl = "http://localhost:3000/dashboard";
-    const loginUrl = "http://localhost:3000/login";
-    const signupUrl = "http://localhost:3000/signup";
+    const dashboardUrl = "https://readracing-dash.vercel.app/dashboard";
+    const loginUrl = "https://readracing-dash.vercel.app/login";
+    const signupUrl = "https://readracing-dash.vercel.app/signup";
 
     // Body scroll lock when menu is open
     useEffect(() => {

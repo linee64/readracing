@@ -29,9 +29,7 @@ export default function ReaderPage() {
             if (library) {
                 const updatedLibrary = library.map(b => {
                     if (b.id === id) {
-                        // Use Math.max to ensure we only progress forward, but allowing updates
                         const newPage = Math.max(b.currentPage || 0, curr);
-                        console.log(`Updating book ${b.title}: ${b.currentPage} -> ${newPage}`);
                         return { 
                             ...b, 
                             currentPage: newPage,
@@ -43,18 +41,14 @@ export default function ReaderPage() {
                 });
                 
                 await set('readracing_library_v2', updatedLibrary);
-                console.log('IndexedDB updated successfully');
-
-                // Sync to Supabase for Global Leaderboard
+                
                 const { data: { session } } = await supabase.auth.getSession();
                 const user = session?.user;
                 if (user) {
                     const totalPagesRead = updatedLibrary.reduce((acc, book) => acc + (book.currentPage || 0), 0);
                     const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown Reader';
                     
-                    console.log('Syncing to Supabase:', { user: name, pages: totalPagesRead });
-                    
-                    const { error } = await supabase
+                    await supabase
                         .from('profiles')
                         .upsert({ 
                             id: user.id, 
@@ -62,17 +56,7 @@ export default function ReaderPage() {
                             pages_read: totalPagesRead,
                             updated_at: new Date().toISOString()
                         });
-                    
-                    if (error) {
-                        console.error('Supabase sync error:', error.message);
-                    } else {
-                        console.log('Successfully synced progress to Supabase:', totalPagesRead, 'pages');
-                    }
-                } else {
-                    console.warn('No active session found for sync');
                 }
-            } else {
-                console.error('Library not found in IndexedDB');
             }
         } catch (e) {
             console.error('Error updating progress:', e);
@@ -87,13 +71,10 @@ export default function ReaderPage() {
             if (!id || !viewerRef.current) return;
 
             try {
-                // Clear previous rendition if it exists
                 if (renditionRef.current) {
                     try {
                         renditionRef.current.destroy();
-                    } catch (e) {
-                        console.error('Error destroying previous rendition:', e);
-                    }
+                    } catch (e) {}
                     renditionRef.current = null;
                 }
 
@@ -113,17 +94,7 @@ export default function ReaderPage() {
                 if (!isMounted) return;
                 setTitle(metadata.title);
 
-                // 1. Generate locations BEFORE showing the book to ensure correct numbering
-                await book.ready;
-                // Use a smaller number for faster generation if needed, but 1000 is usually fine
-                await book.locations.generate(1000);
-                
-                if (!isMounted) return;
-                const total = book.locations.length();
-                setTotalPages(total);
-                setIsPaginated(true);
-
-                // 2. Now render the book
+                // 1. Render IMMEDIATELY
                 const rendition = book.renderTo(viewerRef.current, {
                     width: '100%',
                     height: '100%',
@@ -136,19 +107,7 @@ export default function ReaderPage() {
 
                 renditionRef.current = rendition;
 
-                // Use ResizeObserver for more reliable resizing
-                resizeObserver = new ResizeObserver(() => {
-                    if (renditionRef.current && isLoaded) {
-                        try {
-                            (renditionRef.current as any).resize();
-                        } catch (e) {
-                            console.warn('Resize failed:', e);
-                        }
-                    }
-                });
-                resizeObserver.observe(viewerRef.current);
-
-                // Apply styles to ensure clean layout
+                // Apply styles
                 rendition.themes.default({
                     'body': {
                         'padding': '40px 60px !important',
@@ -157,91 +116,69 @@ export default function ReaderPage() {
                         'line-height': '1.5 !important',
                         'color': '#2C2416 !important',
                         'font-family': 'Georgia, serif !important'
-                    },
-                    'p': {
-                        'margin-bottom': '1em !important'
-                    },
-                    'img': {
-                        'max-width': '100%',
-                        'height': 'auto'
                     }
                 });
                 
-                // Get saved progress
                 const library = await get('readracing_library_v2') as Book[];
                 const currentBook = library?.find(b => b.id === id);
                 
                 if (currentBook) {
-                    // Pre-set pages if we have them in library to avoid lag
-                    if (currentBook.currentPage) {
-                        setCurrentPage(currentBook.currentPage);
-                        // Ensure page pairing: 1-2, 3-4, etc.
-                        // Use the same offset logic (+1) as in relocated
-                        const adjustedCurr = currentBook.currentPage;
-                        const startPage = adjustedCurr % 2 === 0 ? adjustedCurr - 1 : adjustedCurr;
-                        setLeftPage(startPage);
-                        setRightPage(startPage + 1 <= (currentBook.totalPages || 0) ? startPage + 1 : 0);
-                    }
-                    if (currentBook.totalPages) {
-                        setTotalPages(currentBook.totalPages);
-                    }
+                    if (currentBook.currentPage) setCurrentPage(currentBook.currentPage);
+                    if (currentBook.totalPages) setTotalPages(currentBook.totalPages);
                 }
 
                 if (currentBook?.currentPageCfi) {
-                    try {
-                        if (isMounted) await rendition.display(currentBook.currentPageCfi);
-                    } catch (e) {
-                        console.error('Error displaying book at CFI:', e);
-                        if (isMounted) await rendition.display();
-                    }
+                    await rendition.display(currentBook.currentPageCfi);
                 } else {
-                    if (isMounted) await rendition.display();
+                    await rendition.display();
                 }
                 
                 if (!isMounted) return;
-
-                // Force a resize after display to ensure correct layout
-                setTimeout(() => {
-                    if (renditionRef.current && isMounted) {
-                        try {
-                            (renditionRef.current as any).resize();
-                        } catch (e) {
-                            console.warn('Initial resize failed:', e);
-                        }
-                    }
-                }, 200);
-                
-                if (!isMounted) return;
                 setIsLoaded(true);
+
+                // 2. Background location generation
+                book.ready.then(() => {
+                    return book.locations.generate(1000);
+                }).then(() => {
+                    if (!isMounted) return;
+                    const total = book.locations.length();
+                    setTotalPages(total);
+                    setIsPaginated(true);
+                }).catch(() => {
+                    if (isMounted) setIsPaginated(true);
+                });
 
                 // Handle location changes
                 rendition.on('relocated', async (relocatedLocation: any) => {
                     if (!isMounted || !bookRef.current) return;
                     const cfi = relocatedLocation.start.cfi;
-                    
-                    let curr = 0;
                     const total = bookRef.current.locations.length();
+                    let curr = 0;
 
                     if (total > 0) {
                         const percent = bookRef.current.locations.percentageFromCfi(cfi);
-                        curr = Math.floor(percent * total) + 1; // +1 to start from 1
+                        curr = Math.floor(percent * total) + 1;
                     } else {
                         curr = relocatedLocation.start.index + 1;
                     }
 
                     if (curr > 0) {
                         setCurrentPage(curr);
-                        // Ensure page pairing: 1-2, 3-4, etc.
                         const startPage = curr % 2 === 0 ? curr - 1 : curr;
                         setLeftPage(startPage);
-                        // Important: check against total to avoid non-existent right page
                         const actualTotal = total > 0 ? total : bookRef.current.spine.length;
                         setRightPage(startPage + 1 <= actualTotal ? startPage + 1 : 0);
                         updateLibraryProgress(curr, actualTotal, cfi);
                     }
                 });
 
-                // Add keyboard navigation inside the iframe
+                resizeObserver = new ResizeObserver(() => {
+                    if (renditionRef.current && isMounted) {
+                        try { (renditionRef.current as any).resize(); } catch (e) {}
+                    }
+                });
+                resizeObserver.observe(viewerRef.current);
+
                 rendition.on('keyup', (event: KeyboardEvent) => {
                     if (event.key === 'ArrowLeft') prevPage();
                     if (event.key === 'ArrowRight') nextPage();
@@ -253,32 +190,18 @@ export default function ReaderPage() {
             }
         };
 
-        // Small delay to ensure container is ready
         const timer = setTimeout(loadBook, 100);
 
         return () => {
             isMounted = false;
             clearTimeout(timer);
-            if (resizeObserver) {
-                resizeObserver.disconnect();
-            }
-            
-            // Comprehensive cleanup
+            if (resizeObserver) resizeObserver.disconnect();
             if (renditionRef.current) {
-                try {
-                    renditionRef.current.destroy();
-                } catch (e) {
-                    // Ignore destruction errors
-                }
+                try { renditionRef.current.destroy(); } catch (e) {}
                 renditionRef.current = null;
             }
-
             if (bookRef.current) {
-                try {
-                    bookRef.current.destroy();
-                } catch (e) {
-                    // Ignore destruction errors
-                }
+                try { bookRef.current.destroy(); } catch (e) {}
                 bookRef.current = null;
             }
         };
@@ -289,41 +212,25 @@ export default function ReaderPage() {
             if (e.key === 'ArrowLeft') prevPage();
             if (e.key === 'ArrowRight') nextPage();
         };
-
         window.addEventListener('keydown', handleKeyDown);
-        
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
+        return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    const prevPage = () => {
-        if (renditionRef.current) {
-            renditionRef.current.prev();
-        }
-    };
-    
-    const nextPage = () => {
-        if (renditionRef.current) {
-            renditionRef.current.next();
-        }
-    };
+    const prevPage = () => renditionRef.current?.prev();
+    const nextPage = () => renditionRef.current?.next();
 
     return (
         <div className="h-screen flex flex-col bg-cream-50 overflow-hidden">
-            {/* Header */}
             <div className="bg-white border-b border-cream-200 px-6 py-1 flex justify-between items-center shadow-sm">
-                <div className="flex items-center gap-4">
-                    <button 
-                        onClick={() => router.push('/library')}
-                        className="text-brown-900 font-bold flex items-center gap-1 hover:opacity-70 transition-opacity text-xs"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                        Library
-                    </button>
-                </div>
+                <button 
+                    onClick={() => router.push('/library')}
+                    className="text-brown-900 font-bold flex items-center gap-1 hover:opacity-70 transition-opacity text-xs"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    Library
+                </button>
                 <h1 className="font-serif font-bold text-brown-900 truncate max-w-md text-center flex-1 text-sm">{title || 'Loading...'}</h1>
-                <div className="w-24"></div> {/* Spacer for symmetry */}
+                <div className="w-24"></div>
             </div>
 
             <div className="flex-1 relative p-4 md:p-8 flex justify-center items-center overflow-hidden">
@@ -334,37 +241,20 @@ export default function ReaderPage() {
                     {(!isLoaded || !isPaginated) && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-50">
                             <div className="animate-pulse text-brown-900/40 font-serif italic text-xl mb-4">
-                                {!isPaginated ? 'Preparing your book...' : 'Opening your book...'}
+                                {!isPaginated ? 'Preparing pages...' : 'Opening book...'}
                             </div>
-                            {!isPaginated && (
-                                <div className="w-48 h-1 bg-cream-100 rounded-full overflow-hidden">
-                                    <div className="h-full bg-brown-900/20 animate-progress"></div>
-                                </div>
-                            )}
                         </div>
                     )}
                 </div>
 
-                {/* Navigation Controls Overlay */}
                 <div className="absolute inset-y-0 left-0 w-10 md:w-12 flex items-center justify-center">
-                    <button 
-                        onClick={prevPage}
-                        className="w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-cream-200 flex items-center justify-center text-lg hover:bg-white transition-all hover:scale-110"
-                    >
-                        ‹
-                    </button>
+                    <button onClick={prevPage} className="w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-cream-200 flex items-center justify-center text-lg hover:bg-white transition-all hover:scale-110">‹</button>
                 </div>
                 <div className="absolute inset-y-0 right-0 w-10 md:w-12 flex items-center justify-center">
-                    <button 
-                        onClick={nextPage}
-                        className="w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-cream-200 flex items-center justify-center text-lg hover:bg-white transition-all hover:scale-110"
-                    >
-                        ›
-                    </button>
+                    <button onClick={nextPage} className="w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full shadow-lg border border-cream-200 flex items-center justify-center text-lg hover:bg-white transition-all hover:scale-110">›</button>
                 </div>
             </div>
 
-            {/* Footer / Progress Bar */}
             <div className="bg-white border-t border-cream-200 py-1 px-4 flex flex-col items-center gap-0">
                 <div className="flex justify-between w-full max-w-4xl px-8 text-[11px] font-serif font-bold text-brown-900/60">
                     <div className="flex-1 text-center">{leftPage > 0 ? leftPage : ''}</div>
