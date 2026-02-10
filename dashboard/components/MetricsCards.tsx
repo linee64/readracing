@@ -48,10 +48,16 @@ export default function MetricsCards() {
                 // Sum up pages from all books in library
                 const totalCurrent = library.reduce((acc, book) => acc + (book.currentPage || 0), 0);
                 const totalMax = library.reduce((acc, book) => acc + (book.totalPages || 0), 0);
+                
+                // Count only fully read books
+                const completedBooksCount = library.filter(book => 
+                    book.totalPages > 0 && (book.currentPage || 0) >= book.totalPages
+                ).length;
+
                 setStats({ 
                     pagesCurrent: totalCurrent, 
                     pagesTotal: totalMax,
-                    booksCount: library.length
+                    booksCount: completedBooksCount
                 });
             }
         };

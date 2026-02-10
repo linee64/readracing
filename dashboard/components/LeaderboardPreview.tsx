@@ -15,46 +15,92 @@ const mockLeaderboard: LeaderboardEntry[] = [
 ];
 
 export default function LeaderboardPreview() {
-    const [metric, setMetric] = useState<'books' | 'pages'>('books');
     const [userData, setUserData] = useState({ name: 'You', booksCount: 0, pagesCount: 0 });
+    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const fetchUserData = async () => {
-            // Get real user from Supabase
-            const { data: { user } } = await supabase.auth.getUser();
-            const name = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'You';
+        const fetchData = async () => {
+            try {
+                // 1. Get current user data
+                const { data: { user } } = await supabase.auth.getUser();
+                const name = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'You';
 
-            // Get real stats from IndexedDB
-            const library = await get('readracing_library_v2') as Book[];
-            let booksCount = 0;
-            let pagesCount = 0;
+                const library = await get('readracing_library_v2') as Book[];
+                let booksCount = 0;
+                let pagesCount = 0;
 
-            if (library && library.length > 0) {
-                booksCount = library.length;
-                pagesCount = library.reduce((acc, book) => acc + (book.currentPage || 0), 0);
+                if (library && library.length > 0) {
+                    booksCount = library.filter(book => 
+                        book.totalPages > 0 && (book.currentPage || 0) >= book.totalPages
+                    ).length;
+                    pagesCount = library.reduce((acc, book) => acc + (book.currentPage || 0), 0);
+                }
+
+                setUserData({ name: `${name} (You)`, booksCount, pagesCount });
+
+                // 2. Get global leaderboard from Supabase
+                const { data: profiles, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .order('pages_read', { ascending: false });
+
+                if (error) throw error;
+
+                let finalBoard: LeaderboardEntry[] = [];
+                
+                // If we have 5 or more real users, use only them
+                if (profiles && profiles.length >= 5) {
+                    finalBoard = profiles.map((p, index) => ({
+                        id: p.id,
+                        userId: p.id,
+                        userName: p.id === user?.id ? `${p.full_name} (You)` : p.full_name,
+                        booksCount: 0, // We don't track this in profiles yet
+                        pagesCount: p.pages_read,
+                        rank: index + 1
+                    }));
+                } else {
+                    // Otherwise mix with bots
+                    const realUsers = (profiles || []).map(p => ({
+                        id: p.id,
+                        userId: p.id,
+                        userName: p.id === user?.id ? `${p.full_name} (You)` : p.full_name,
+                        booksCount: 0,
+                        pagesCount: p.pages_read,
+                        rank: 0
+                    }));
+
+                    // Filter out bots that might have same name as real users (optional but good)
+                    const realUserIds = new Set(realUsers.map(u => u.id));
+                    const remainingBots = mockLeaderboard.filter(bot => !realUserIds.has(bot.id));
+                    
+                    finalBoard = [...realUsers, ...remainingBots]
+                        .sort((a, b) => b.pagesCount - a.pagesCount)
+                        .map((u, i) => ({ ...u, rank: i + 1 }));
+                }
+
+                setLeaderboard(finalBoard.slice(0, 5));
+            } catch (e) {
+                console.error('Failed to fetch leaderboard:', e);
+                // Fallback to mock data on error
+                setLeaderboard(mockLeaderboard);
+            } finally {
+                setIsLoading(false);
             }
-
-            setUserData({ name: `${name} (You)`, booksCount, pagesCount });
         };
 
-        fetchUserData();
+        fetchData();
     }, []);
 
-    const fullLeaderboard = [
-        ...mockLeaderboard,
-        { 
-            id: 'current-user', 
-            userId: 'current-user', 
-            userName: userData.name, 
-            booksCount: userData.booksCount, 
-            pagesCount: userData.pagesCount, 
-            rank: 5 
-        }
-    ];
+    if (isLoading) {
+        return (
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-cream-200 flex flex-col h-full items-center justify-center">
+                <div className="w-8 h-8 border-4 border-brand-gold border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        );
+    }
 
-    const sortedData = [...fullLeaderboard].sort((a, b) => 
-        metric === 'books' ? b.booksCount - a.booksCount : b.pagesCount - a.pagesCount
-    ).map((user, index) => ({ ...user, rank: index + 1 }));
+    const sortedData = leaderboard;
 
     return (
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-cream-200 flex flex-col h-full relative overflow-hidden group/board">
@@ -65,20 +111,6 @@ export default function LeaderboardPreview() {
                 <div>
                     <h2 className="text-2xl font-serif font-bold text-brown-900 leading-tight">Top Readers</h2>
                     <p className="text-xs text-brown-800/50 font-medium uppercase tracking-wider mt-1">Global Standings • This Week</p>
-                </div>
-                <div className="flex bg-cream-100 p-1 rounded-xl border border-cream-200 shadow-inner">
-                    <button 
-                        onClick={() => setMetric('books')}
-                        className={`p-1.5 rounded-lg transition-all ${metric === 'books' ? 'bg-white shadow-sm text-brand-gold-dark' : 'text-brown-800/40 hover:text-brown-800'}`}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.5c-1.35-.85-3.8-1.5-5.5-1.5c-1.65 0-3.35.3-4.75 1.05c-.1.05-.15.05-.25.05c-.25 0-.5-.25-.5-.5V6c.6-.45 1.25-.75 2-1c1.11-.35 2.33-.5 3.5-.5c1.95 0 4.05.4 5.5 1.5c1.45-1.1 3.55-1.5 5.5-1.5c1.17 0 2.39.15 3.5.5c.75.25 1.4.55 2 1v14.6c0 .25-.25.5-.5.5c-.1 0-.15 0-.25-.05c-1.4-.75-3.1-1.05-4.75-1.05c-1.7 0-4.15.65-5.5 1.5"/></svg>
-                    </button>
-                    <button 
-                        onClick={() => setMetric('pages')}
-                        className={`p-1.5 rounded-lg transition-all ${metric === 'pages' ? 'bg-white shadow-sm text-brand-gold-dark' : 'text-brown-800/40 hover:text-brown-800'}`}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M13 13v8h8v-8zm6 6h-4v-4h4zm-6-7h8V4h-8zm2-6h4v4h-4zm-9 1h6v2H6v3h3v2H6v3h4v2H4V4h6v2H6z"/></svg>
-                    </button>
                 </div>
             </div>
 
@@ -139,11 +171,11 @@ export default function LeaderboardPreview() {
                             <div className="text-right">
                                 <div className="flex items-center gap-1 justify-end">
                                     <span className={`text-lg font-black ${isTop3 ? 'text-brown-900' : 'text-brown-800'}`}>
-                                        {user.booksCount}
+                                        {user.pagesCount.toLocaleString()}
                                     </span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" className="text-brown-900/20"><path fill="currentColor" d="M12 21.5c-1.35-.85-3.8-1.5-5.5-1.5c-1.65 0-3.35.3-4.75 1.05c-.1.05-.15.05-.25.05c-.25 0-.5-.25-.5-.5V6c.6-.45 1.25-.75 2-1c1.11-.35 2.33-.5 3.5-.5c1.95 0 4.05.4 5.5 1.5c1.45-1.1 3.55-1.5 5.5-1.5c1.17 0 2.39.15 3.5.5c.75.25 1.4.55 2 1v14.6c0 .25-.25.5-.5.5c-.1 0-.15 0-.25-.05c-1.4-.75-3.1-1.05-4.75-1.05c-1.7 0-4.15.65-5.5 1.5"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" className="text-brown-900/20"><path fill="currentColor" d="M13 13v8h8v-8zm6 6h-4v-4h4zm-6-7h8V4h-8zm2-6h4v4h-4zm-9 1h6v2H6v3h3v2H6v3h4v2H4V4h6v2H6z"/></svg>
                                 </div>
-                                <span className="text-[9px] text-brown-800/40 uppercase font-black tracking-tighter">Books read</span>
+                                <span className="text-[9px] text-brown-800/40 uppercase font-black tracking-tighter">Pages read</span>
                             </div>
                         </div>
                     );

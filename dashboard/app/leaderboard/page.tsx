@@ -19,49 +19,90 @@ const mockFullLeaderboard: LeaderboardEntry[] = [
 
 export default function LeaderboardPage() {
     const [timeframe, setTimeframe] = useState<'weekly' | 'monthly' | 'all-time'>('weekly');
-    const [metric, setMetric] = useState<'books' | 'pages'>('books');
     const [userData, setUserData] = useState({ name: 'You', booksCount: 0, pagesCount: 0 });
+    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const fetchUserData = async () => {
-            // Get real user from Supabase
-            const { data: { user } } = await supabase.auth.getUser();
-            const name = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'You';
+        const fetchData = async () => {
+            try {
+                // 1. Get current user data
+                const { data: { user } } = await supabase.auth.getUser();
+                const name = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'You';
 
-            // Get real stats from IndexedDB
-            const library = await get('readracing_library_v2') as Book[];
-            let booksCount = 0;
-            let pagesCount = 0;
+                const library = await get('readracing_library_v2') as Book[];
+                let booksCount = 0;
+                let pagesCount = 0;
 
-            if (library && library.length > 0) {
-                booksCount = library.length;
-                pagesCount = library.reduce((acc, book) => acc + (book.currentPage || 0), 0);
+                if (library && library.length > 0) {
+                    booksCount = library.filter(book => 
+                        book.totalPages > 0 && (book.currentPage || 0) >= book.totalPages
+                    ).length;
+                    pagesCount = library.reduce((acc, book) => acc + (book.currentPage || 0), 0);
+                }
+
+                setUserData({ name: `${name} (You)`, booksCount, pagesCount });
+
+                // 2. Get global leaderboard from Supabase
+                const { data: profiles, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .order('pages_read', { ascending: false });
+
+                if (error) throw error;
+
+                let finalBoard: LeaderboardEntry[] = [];
+                
+                // If we have 5 or more real users, use only them
+                if (profiles && profiles.length >= 5) {
+                    finalBoard = profiles.map((p, index) => ({
+                        id: p.id,
+                        userId: p.id,
+                        userName: p.id === user?.id ? `${p.full_name} (You)` : p.full_name,
+                        booksCount: 0,
+                        pagesCount: p.pages_read,
+                        rank: index + 1
+                    }));
+                } else {
+                    // Otherwise mix with bots
+                    const realUsers = (profiles || []).map(p => ({
+                        id: p.id,
+                        userId: p.id,
+                        userName: p.id === user?.id ? `${p.full_name} (You)` : p.full_name,
+                        booksCount: 0,
+                        pagesCount: p.pages_read,
+                        rank: 0
+                    }));
+
+                    const realUserIds = new Set(realUsers.map(u => u.id));
+                    const remainingBots = mockFullLeaderboard.filter(bot => !realUserIds.has(bot.id));
+                    
+                    finalBoard = [...realUsers, ...remainingBots]
+                        .sort((a, b) => b.pagesCount - a.pagesCount)
+                        .map((u, i) => ({ ...u, rank: i + 1 }));
+                }
+
+                setLeaderboard(finalBoard);
+            } catch (e) {
+                console.error('Failed to fetch leaderboard:', e);
+                setLeaderboard(mockFullLeaderboard);
+            } finally {
+                setIsLoading(false);
             }
-
-            setUserData({ name: `${name} (You)`, booksCount, pagesCount });
         };
 
-        fetchUserData();
+        fetchData();
     }, []);
 
-    // Combine mock data with real user data
-    const fullLeaderboard = [
-        ...mockFullLeaderboard,
-        { 
-            id: 'current-user', 
-            userId: 'current-user', 
-            userName: userData.name, 
-            booksCount: userData.booksCount, 
-            pagesCount: userData.pagesCount, 
-            rank: 5 
-        }
-    ];
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-brand-gold border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        );
+    }
 
-    // Sort based on selected metric
-    const sortedData = [...fullLeaderboard].sort((a, b) => 
-        metric === 'books' ? b.booksCount - a.booksCount : b.pagesCount - a.pagesCount
-    ).map((user, index) => ({ ...user, rank: index + 1 }));
-
+    const sortedData = leaderboard;
     const top3 = sortedData.slice(0, 3);
     const others = sortedData.slice(3);
 
@@ -75,30 +116,6 @@ export default function LeaderboardPage() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">
-                    {/* Metric Toggle */}
-                    <div className="flex bg-white p-1 rounded-2xl border border-cream-200 shadow-sm">
-                        <button
-                            onClick={() => setMetric('books')}
-                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${
-                                metric === 'books' 
-                                ? 'bg-brand-gold text-brown-900 shadow-sm' 
-                                : 'text-brown-800/50 hover:text-brown-900'
-                            }`}
-                        >
-                            Books
-                        </button>
-                        <button
-                            onClick={() => setMetric('pages')}
-                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${
-                                metric === 'pages' 
-                                ? 'bg-brand-gold text-brown-900 shadow-sm' 
-                                : 'text-brown-800/50 hover:text-brown-900'
-                            }`}
-                        >
-                            Pages
-                        </button>
-                    </div>
-
                     {/* Timeframe Toggle */}
                     <div className="flex bg-cream-200/50 p-1.5 rounded-2xl border border-cream-200">
                         {(['weekly', 'monthly', 'all-time'] as const).map((t) => (
@@ -134,7 +151,7 @@ export default function LeaderboardPage() {
                         <div className="mt-4 text-center">
                             <h3 className="font-serif font-bold text-xl text-brown-900">{top3[1].userName}</h3>
                             <p className="text-slate-500 font-black text-sm uppercase tracking-tighter">
-                                {metric === 'books' ? `${top3[1].booksCount} books` : `${top3[1].pagesCount.toLocaleString()} pages`}
+                                {top3[1].pagesCount.toLocaleString()} pages
                             </p>
                         </div>
                         <div className="w-full h-32 bg-gradient-to-b from-slate-200/50 to-transparent mt-4 rounded-t-3xl border-x border-t border-slate-200"></div>
@@ -159,7 +176,7 @@ export default function LeaderboardPage() {
                         <div className="mt-6 text-center">
                             <h3 className="font-serif font-bold text-2xl text-brown-900">{top3[0].userName}</h3>
                             <p className="text-brand-gold-dark font-black text-base uppercase tracking-widest">
-                                {metric === 'books' ? `${top3[0].booksCount} books` : `${top3[0].pagesCount.toLocaleString()} pages`}
+                                {top3[0].pagesCount.toLocaleString()} pages
                             </p>
                         </div>
                         <div className="w-full h-44 bg-gradient-to-b from-brand-gold/20 to-transparent mt-4 rounded-t-3xl border-x border-t border-brand-gold/30 relative overflow-hidden">
@@ -182,7 +199,7 @@ export default function LeaderboardPage() {
                         <div className="mt-4 text-center">
                             <h3 className="font-serif font-bold text-lg text-brown-900">{top3[2].userName}</h3>
                             <p className="text-amber-700/60 font-black text-xs uppercase tracking-tighter">
-                                {metric === 'books' ? `${top3[2].booksCount} books` : `${top3[2].pagesCount.toLocaleString()} pages`}
+                                {top3[2].pagesCount.toLocaleString()} pages
                             </p>
                         </div>
                         <div className="w-full h-24 bg-gradient-to-b from-amber-100/40 to-transparent mt-4 rounded-t-3xl border-x border-t border-amber-200/50"></div>
@@ -234,12 +251,12 @@ export default function LeaderboardPage() {
                                         <div className="flex flex-col items-end">
                                             <div className="flex items-center gap-1.5">
                                                 <span className="text-lg font-black text-brown-900">
-                                                    {metric === 'books' ? user.booksCount : user.pagesCount.toLocaleString()}
+                                                    {user.pagesCount.toLocaleString()}
                                                 </span>
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" className="text-brown-900/20"><path fill="currentColor" d="M12 21.5c-1.35-.85-3.8-1.5-5.5-1.5c-1.65 0-3.35.3-4.75 1.05c-.1.05-.15.05-.25.05c-.25 0-.5-.25-.5-.5V6c.6-.45 1.25-.75 2-1c1.11-.35 2.33-.5 3.5-.5c1.95 0 4.05.4 5.5 1.5c1.45-1.1 3.55-1.5 5.5-1.5c1.17 0 2.39.15 3.5.5c.75.25 1.4.55 2 1v14.6c0 .25-.25.5-.5.5c-.1 0-.15 0-.25-.05c-1.4-.75-3.1-1.05-4.75-1.05c-1.7 0-4.15.65-5.5 1.5"/></svg>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" className="text-brown-900/20"><path fill="currentColor" d="M13 13v8h8v-8zm6 6h-4v-4h4zm-6-7h8V4h-8zm2-6h4v4h-4zm-9 1h6v2H6v3h3v2H6v3h4v2H4V4h6v2H6z"/></svg>
                                             </div>
                                             <div className="text-[9px] text-brown-800/30 font-black uppercase tracking-tighter">
-                                                {metric === 'books' ? 'Books Completed' : 'Pages Read'}
+                                                Pages Read
                                             </div>
                                         </div>
                                     </td>
@@ -260,10 +277,7 @@ export default function LeaderboardPage() {
                     <div>
                         <h2 className="text-2xl font-serif font-bold">You're doing great, {userData.name.split(' ')[0]}!</h2>
                         <p className="text-cream-50/60 font-medium">
-                            {metric === 'books' 
-                                ? `Only ${sortedData[3].booksCount - sortedData[4].booksCount + 1} books away from overtaking ${sortedData[3].userName}.`
-                                : `Only ${(sortedData[3].pagesCount - sortedData[4].pagesCount + 100).toLocaleString()} pages away from overtaking ${sortedData[3].userName}.`
-                            }
+                            Only {(sortedData[3].pagesCount - sortedData[4].pagesCount + 100).toLocaleString()} pages away from overtaking {sortedData[3].userName}.
                         </p>
                     </div>
                 </div>

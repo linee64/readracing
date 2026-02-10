@@ -37,6 +37,22 @@ export default function ReaderPage() {
                     return b;
                 });
                 await set('readracing_library_v2', updatedLibrary);
+
+                // Sync to Supabase for Global Leaderboard
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const totalPagesRead = updatedLibrary.reduce((acc, book) => acc + (book.currentPage || 0), 0);
+                    const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown Reader';
+                    
+                    await supabase
+                        .from('profiles')
+                        .upsert({ 
+                            id: user.id, 
+                            full_name: name, 
+                            pages_read: totalPagesRead,
+                            updated_at: new Date().toISOString()
+                        });
+                }
             }
         } catch (e) {
             console.error('Error updating progress:', e);
@@ -112,13 +128,13 @@ export default function ReaderPage() {
                 });
                 resizeObserver.observe(viewerRef.current);
 
-                // Apply styles to ensure 2 columns and no overflow
+                // Apply styles to ensure clean layout
                 rendition.themes.default({
                     'body': {
                         'padding': '40px 60px !important',
                         'margin': '0 !important',
-                        'font-size': '18px !important',
-                        'line-height': '1.6 !important',
+                        'font-size': '16px !important',
+                        'line-height': '1.5 !important',
                         'color': '#2C2416 !important',
                         'font-family': 'Georgia, serif !important'
                     },
@@ -290,10 +306,10 @@ export default function ReaderPage() {
                 <div className="w-24"></div> {/* Spacer for symmetry */}
             </div>
 
-            <div className="flex-1 relative p-1 md:p-2 flex justify-center overflow-hidden">
+            <div className="flex-1 relative p-4 md:p-8 flex justify-center items-center overflow-hidden">
                 <div 
                     ref={viewerRef} 
-                    className="w-full max-w-5xl bg-white shadow-2xl rounded-2xl border border-cream-200 h-full overflow-hidden"
+                    className="w-full max-w-4xl bg-white shadow-2xl rounded-2xl border border-cream-200 h-full max-h-[80vh] overflow-hidden"
                 >
                     {(!isLoaded || !isPaginated) && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-50">
