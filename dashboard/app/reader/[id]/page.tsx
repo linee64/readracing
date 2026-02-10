@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import ePub, { Rendition } from 'epubjs';
 import { get, set } from 'idb-keyval';
 import { Book } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 export default function ReaderPage() {
     const { id } = useParams();
