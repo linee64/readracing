@@ -8,13 +8,14 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import VerifyEmail from './pages/VerifyEmail';
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/react"
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <main className="min-h-screen bg-brand-beige font-sans text-brand-black selection:bg-brand-gold selection:text-brand-black flex flex-col overflow-x-hidden">
+          <Analytics />
           <Header />
           <div className="h-[65px] md:h-[81px]"></div>
 
