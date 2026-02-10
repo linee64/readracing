@@ -39,6 +39,18 @@ export default function LeaderboardPreview() {
 
                 setUserData({ name: `${name} (You)`, booksCount, pagesCount });
 
+                // Forced sync of current user progress to Supabase
+                if (user) {
+                    await supabase
+                        .from('profiles')
+                        .upsert({ 
+                            id: user.id, 
+                            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown Reader', 
+                            pages_read: pagesCount,
+                            updated_at: new Date().toISOString()
+                        });
+                }
+
                 // 2. Get global leaderboard from Supabase
                 const { data: profiles, error } = await supabase
                     .from('profiles')
