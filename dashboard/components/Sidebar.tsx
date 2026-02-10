@@ -3,7 +3,8 @@
 import { useSidebar } from '@/context/SidebarContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User } from '@/types';
+import { supabase } from '@/lib/supabase';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 
 const navItems = [
@@ -67,15 +68,42 @@ const navItems = [
     },
 ];
 
-const mockUser: User = {
-    id: '1',
-    name: 'Alex',
-    isPro: true,
-};
-
 export default function Sidebar() {
     const pathname = usePathname();
     const { isCollapsed, setIsCollapsed } = useSidebar();
+    const [user, setUser] = useState<any>(null);
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            setUser(session?.user || null);
+        };
+        fetchUser();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user || null);
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        window.location.href = '/';
+    };
+
+    const handleLogin = () => {
+        const email = prompt('Enter email:');
+        const password = prompt('Enter password:');
+        if (email && password) {
+            supabase.auth.signInWithPassword({ email, password }).then(({ error }) => {
+                if (error) alert(error.message);
+                else window.location.reload();
+            });
+        }
+    };
+
+    const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Guest';
 
     return (
         <aside className={`fixed left-0 top-0 h-screen bg-cream-100 flex flex-col border-r border-cream-200 transition-all duration-300 z-[100] ${isCollapsed ? 'w-20' : 'w-64'}`}>
@@ -144,21 +172,53 @@ export default function Sidebar() {
 
             {/* User profile card */}
             <div className={`border-t border-cream-200 mt-auto transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-4'}`}>
-                <div className={`bg-white/50 rounded-2xl flex items-center gap-3 border border-cream-200 shadow-sm transition-all duration-300 ${isCollapsed ? 'p-2 justify-center' : 'p-4'}`}>
-                    <div className="w-10 h-10 bg-cream-200 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-brown-800">
-                        {mockUser.name.charAt(0)}
-                    </div>
-                    {!isCollapsed && (
-                        <div className="flex flex-col overflow-hidden">
-                            <span className="font-semibold text-sm text-brown-900 truncate">{mockUser.name}</span>
-                            {mockUser.isPro && (
-                                <span className="bg-brown-900 text-cream-50 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full w-fit">
-                                    Pro
-                                </span>
+                {user ? (
+                    <div className={`bg-white/50 rounded-2xl flex flex-col gap-2 border border-cream-200 shadow-sm transition-all duration-300 ${isCollapsed ? 'p-2 items-center' : 'p-4'}`}>
+                        <div className="flex items-center gap-3 w-full">
+                            <div className="w-10 h-10 bg-brown-900 text-cream-50 rounded-full flex-shrink-0 flex items-center justify-center font-bold shadow-inner">
+                                {userName.charAt(0).toUpperCase()}
+                            </div>
+                            {!isCollapsed && (
+                                <div className="flex flex-col overflow-hidden flex-1">
+                                    <span className="font-semibold text-sm text-brown-900 truncate">{userName}</span>
+                                    <span className="bg-brand-gold/20 text-brand-gold-dark text-[10px] uppercase font-bold px-2 py-0.5 rounded-full w-fit">
+                                        Pro
+                                    </span>
+                                </div>
                             )}
                         </div>
-                    )}
-                </div>
+                        {!isCollapsed && (
+                            <button 
+                                onClick={handleLogout}
+                                className="mt-2 w-full py-2 px-4 bg-cream-200 hover:bg-red-50 text-brown-800 hover:text-red-600 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                Logout
+                            </button>
+                        )}
+                        {isCollapsed && (
+                            <button 
+                                onClick={handleLogout}
+                                className="p-2 text-brown-400 hover:text-red-600 transition-colors"
+                                title="Logout"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                            </button>
+                        )}
+                    </div>
+                ) : (
+                    <button 
+                        onClick={handleLogin}
+                        className={`w-full bg-brown-900 text-cream-50 rounded-2xl flex items-center gap-3 border border-brown-800 shadow-sm transition-all duration-300 hover:bg-brown-800 ${isCollapsed ? 'p-2 justify-center' : 'p-4'}`}
+                    >
+                        <div className="w-10 h-10 bg-cream-100/10 rounded-full flex-shrink-0 flex items-center justify-center font-bold">
+                            ?
+                        </div>
+                        {!isCollapsed && (
+                            <span className="font-semibold text-sm">Sign In</span>
+                        )}
+                    </button>
+                )}
             </div>
         </aside>
     );

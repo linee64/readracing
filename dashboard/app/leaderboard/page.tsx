@@ -27,7 +27,8 @@ export default function LeaderboardPage() {
         const fetchData = async () => {
             try {
                 // 1. Get current user data
-                const { data: { user } } = await supabase.auth.getUser();
+                const { data: { session } } = await supabase.auth.getSession();
+                const user = session?.user;
                 const name = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'You';
 
                 const library = await get('readracing_library_v2') as Book[];
