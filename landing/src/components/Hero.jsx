@@ -7,7 +7,8 @@ import { useAuth } from '../context/AuthContext';
 
 const Hero = () => {
     const { user } = useAuth();
-    const dashboardUrl = "https://readracing-dash.vercel.app/dashboard";
+    const dashboardUrl = "http://localhost:3000/dashboard";
+    const loginUrl = "http://localhost:3000/login";
     
     return (
         <section className="bg-brand-beige min-h-[85vh] md:min-h-[90vh] flex flex-col justify-center px-4 max-w-7xl mx-auto pt-4 md:pt-5 pb-8 md:pb-11 relative overflow-hidden md:overflow-visible">
@@ -32,7 +33,7 @@ const Hero = () => {
                     <div className="flex flex-col items-center md:items-start gap-3 w-full sm:w-auto">
                         <StarBorderReact 
                             as="a"
-                            href={user ? dashboardUrl : "/login"}
+                            href={user ? dashboardUrl : loginUrl}
                             color="#e9c46a"
                             speed="4s"
                             className="hover:scale-[1.02] transition-transform w-full sm:w-auto"

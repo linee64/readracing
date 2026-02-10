@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
-import CornerAccent from '../components/CornerAccent';
-import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+'use client';
 
-const SignUp = () => {
-    const navigate = useNavigate();
+import React, { useState } from 'react';
+import CornerAccent from '@/components/CornerAccent';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+
+export default function SignUpPage() {
+    const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<string | null>(null);
 
-    const handleSignUp = async (e) => {
+    const handleSignUp = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
@@ -31,9 +34,9 @@ const SignUp = () => {
 
             if (data.user) {
                 // Redirect to verify email page
-                navigate('/verify-email');
+                router.push('/verify-email');
             }
-        } catch (err) {
+        } catch (err: any) {
             setError(err.message);
         } finally {
             setLoading(false);
@@ -41,16 +44,16 @@ const SignUp = () => {
     };
 
     return (
-        <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 py-20">
+        <div className="min-h-screen flex flex-col items-center justify-center px-4 py-20 bg-brand-beige">
             <div className="w-full max-w-md mb-6">
-                <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-brand-black/60 hover:text-brand-black transition-colors group">
+                <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-brand-black/60 hover:text-brand-black transition-colors group">
                     <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                     </svg>
                     Back to Home
                 </Link>
             </div>
-            <div className="relative w-full max-w-md bg-brand-beige p-8 md:p-12 border border-brand-black/5 shadow-sm">
+            <div className="relative w-full max-w-md bg-brand-beige p-8 md:p-12 border border-brand-black/5 shadow-sm text-brand-black">
                 <CornerAccent />
                 <h2 className="text-3xl font-bold mb-8 text-center italic">Start Finishing Books</h2>
 
@@ -68,7 +71,7 @@ const SignUp = () => {
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="bg-transparent border-b border-brand-black/20 py-2 focus:outline-none focus:border-brand-gold transition-colors font-sans text-lg"
+                            className="bg-transparent border-b border-brand-black/20 py-2 focus:outline-none focus:border-brand-gold transition-colors font-sans text-lg text-brand-black"
                             placeholder="Your name"
                         />
                     </div>
@@ -80,7 +83,7 @@ const SignUp = () => {
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="bg-transparent border-b border-brand-black/20 py-2 focus:outline-none focus:border-brand-gold transition-colors font-sans text-lg"
+                            className="bg-transparent border-b border-brand-black/20 py-2 focus:outline-none focus:border-brand-gold transition-colors font-sans text-lg text-brand-black"
                             placeholder="reader@example.com"
                         />
                     </div>
@@ -92,7 +95,7 @@ const SignUp = () => {
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="bg-transparent border-b border-brand-black/20 py-2 focus:outline-none focus:border-brand-gold transition-colors font-sans text-lg"
+                            className="bg-transparent border-b border-brand-black/20 py-2 focus:outline-none focus:border-brand-gold transition-colors font-sans text-lg text-brand-black"
                             placeholder="••••••••"
                         />
                     </div>
@@ -106,12 +109,10 @@ const SignUp = () => {
                     </button>
                 </form>
 
-                <p className="mt-8 text-center text-sm opacity-60 font-sans">
-                    Already a member? <Link to="/login" className="border-b border-brand-black pb-0.5 hover:text-brand-gold transition-colors">Log In</Link>
+                <p className="mt-8 text-center text-sm opacity-60 font-sans text-brand-black">
+                    Already a member? <Link href="/login" className="border-b border-brand-black pb-0.5 hover:text-brand-gold transition-colors">Log In</Link>
                 </p>
             </div>
         </div>
     );
-};
-
-export default SignUp;
+}

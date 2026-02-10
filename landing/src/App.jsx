@@ -5,9 +5,6 @@ import { AuthProvider } from './context/AuthContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/Home';
-import Login from './pages/Login';
-import SignUp from './pages/SignUp';
-import VerifyEmail from './pages/VerifyEmail';
 import { Analytics } from "@vercel/analytics/react"
 
 function App() {
@@ -22,9 +19,6 @@ function App() {
           <div className="flex-grow">
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<SignUp />} />
-              <Route path="/verify-email" element={<VerifyEmail />} />
             </Routes>
           </div>
 

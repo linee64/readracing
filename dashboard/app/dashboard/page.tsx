@@ -13,6 +13,13 @@ export default function DashboardPage() {
     const [username, setUsername] = useState<string>('Reader');
 
     useEffect(() => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user) {
+                const name = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Reader';
+                setUsername(name);
+            }
+        });
+
         const getUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
@@ -21,6 +28,8 @@ export default function DashboardPage() {
             }
         };
         getUser();
+
+        return () => subscription.unsubscribe();
     }, []);
 
     return (

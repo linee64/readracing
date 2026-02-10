@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardHeader from '@/components/DashboardHeader';
 import { Book } from '@/types';
+import { supabase } from '@/lib/supabase';
 import ePub from 'epubjs';
 import { set, get, del } from 'idb-keyval';
 
@@ -11,7 +12,29 @@ export default function LibraryPage() {
     const router = useRouter();
     const [books, setBooks] = useState<Book[]>([]);
     const [isUploading, setIsUploading] = useState(false);
+    const [username, setUsername] = useState<string>('Reader');
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Get current user for header
+    useEffect(() => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user) {
+                const name = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Reader';
+                setUsername(name);
+            }
+        });
+
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Reader';
+                setUsername(name);
+            }
+        };
+        getUser();
+
+        return () => subscription.unsubscribe();
+    }, []);
 
     // Load books from IndexedDB on mount
     useEffect(() => {
@@ -198,7 +221,7 @@ export default function LibraryPage() {
     return (
         <div className="min-h-screen bg-cream-50">
             <div className="max-w-7xl mx-auto p-8 pb-20">
-                <DashboardHeader username="Alex" />
+                <DashboardHeader username={username} />
 
                 <div className="flex justify-between items-center mb-8">
                     <h2 className="text-3xl font-serif font-bold text-brown-900 italic">My Library</h2>

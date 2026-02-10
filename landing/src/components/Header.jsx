@@ -7,7 +7,11 @@ const Header = () => {
     const { user } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const location = useLocation();
-    const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
+    const isAuthPage = false; // We don't have auth pages in landing anymore
+
+    const dashboardUrl = "http://localhost:3000/dashboard";
+    const loginUrl = "http://localhost:3000/login";
+    const signupUrl = "http://localhost:3000/signup";
 
     // Body scroll lock when menu is open
     useEffect(() => {
@@ -97,16 +101,16 @@ const Header = () => {
                             <>
                                 {!user ? (
                                     <>
-                                        <Link to="/login" className="hidden sm:block text-sm font-medium text-brand-black/70 hover:text-brand-black transition-colors italic">
+                                        <a href={loginUrl} className="hidden sm:block text-sm font-medium text-brand-black/70 hover:text-brand-black transition-colors italic">
                                             Log In
-                                        </Link>
-                                        <Link to="/signup" className="bg-brand-black text-brand-beige px-2.5 md:px-4 py-1.5 md:py-2 text-[10px] md:text-sm font-medium rounded-sm hover:opacity-90 transition-opacity italic">
+                                        </a>
+                                        <a href={signupUrl} className="bg-brand-black text-brand-beige px-2.5 md:px-4 py-1.5 md:py-2 text-[10px] md:text-sm font-medium rounded-sm hover:opacity-90 transition-opacity italic">
                                             Sign In
-                                        </Link>
+                                        </a>
                                     </>
                                 ) : (
                                     <a 
-                                        href="https://readracing-dash.vercel.app/dashboard" 
+                                        href={dashboardUrl} 
                                         className="bg-brand-black text-brand-beige px-4 py-2 text-sm font-medium rounded-sm hover:opacity-90 transition-opacity italic"
                                     >
                                         Dashboard
@@ -187,16 +191,16 @@ const Header = () => {
                             <div className="flex flex-col gap-4">
                                 {!user ? (
                                     <>
-                                        <Link to="/login" className="w-full py-5 text-center font-bold text-brand-black italic bg-white border border-brand-black/5 rounded-xl hover:bg-brand-black hover:text-white transition-all shadow-sm">
+                                        <a href={loginUrl} className="w-full py-5 text-center font-bold text-brand-black italic bg-white border border-brand-black/5 rounded-xl hover:bg-brand-black hover:text-white transition-all shadow-sm">
                                             Log In
-                                        </Link>
-                                        <Link to="/signup" className="w-full py-5 text-center font-bold text-brand-beige italic bg-brand-black rounded-xl hover:opacity-90 transition-all shadow-lg">
+                                        </a>
+                                        <a href={signupUrl} className="w-full py-5 text-center font-bold text-brand-beige italic bg-brand-black rounded-xl hover:opacity-90 transition-all shadow-lg">
                                             Get Started
-                                        </Link>
+                                        </a>
                                     </>
                                 ) : (
                                     <a 
-                                        href="https://readracing-dash.vercel.app/dashboard" 
+                                        href={dashboardUrl} 
                                         className="w-full py-5 text-center font-bold text-brand-beige italic bg-brand-black rounded-xl hover:opacity-90 transition-all shadow-lg"
                                     >
                                         Dashboard

@@ -14,11 +14,21 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+      })
+      .catch(err => {
+        console.warn('Auth session recovery failed:', err.message);
+        // If refresh token is invalid, just clear the session
+        if (err.message?.includes('Refresh Token Not Found') || err.message?.includes('invalid refresh token')) {
+          supabase.auth.signOut();
+        }
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

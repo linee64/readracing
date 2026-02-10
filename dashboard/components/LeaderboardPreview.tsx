@@ -31,6 +31,8 @@ export default function LeaderboardPreview() {
                 let booksCount = 0;
                 let pagesCount = 0;
 
+                console.log('LeaderboardPreview: Fetched library from IDB:', library);
+
                 if (library && library.length > 0) {
                     booksCount = library.filter(book => 
                         book.totalPages > 0 && (book.currentPage || 0) >= book.totalPages
@@ -38,11 +40,13 @@ export default function LeaderboardPreview() {
                     pagesCount = library.reduce((acc, book) => acc + (book.currentPage || 0), 0);
                 }
 
+                console.log('LeaderboardPreview: Calculated pages:', pagesCount);
                 setUserData({ name: `${name} (You)`, booksCount, pagesCount });
 
                 // Forced sync of current user progress to Supabase
                 if (user) {
-                    await supabase
+                    console.log('LeaderboardPreview: Syncing to Supabase:', pagesCount);
+                    const { error: syncError } = await supabase
                         .from('profiles')
                         .upsert({ 
                             id: user.id, 
@@ -50,6 +54,12 @@ export default function LeaderboardPreview() {
                             pages_read: pagesCount,
                             updated_at: new Date().toISOString()
                         });
+                    
+                    if (syncError) {
+                        console.error('Leaderboard sync error:', syncError.message);
+                    } else {
+                        console.log('LeaderboardPreview: Sync successful');
+                    }
                 }
 
                 // 2. Get global leaderboard from Supabase

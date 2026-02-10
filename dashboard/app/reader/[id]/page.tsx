@@ -24,28 +24,37 @@ export default function ReaderPage() {
 
     const updateLibraryProgress = async (curr: number, total: number, cfi?: string) => {
         try {
+            console.log('Attempting to update progress:', { curr, total });
             const library = await get('readracing_library_v2') as Book[];
             if (library) {
                 const updatedLibrary = library.map(b => {
                     if (b.id === id) {
+                        // Use Math.max to ensure we only progress forward, but allowing updates
+                        const newPage = Math.max(b.currentPage || 0, curr);
+                        console.log(`Updating book ${b.title}: ${b.currentPage} -> ${newPage}`);
                         return { 
                             ...b, 
-                            currentPage: Math.max(b.currentPage, curr),
+                            currentPage: newPage,
                             currentPageCfi: cfi || b.currentPageCfi,
                             totalPages: total > 0 ? total : b.totalPages 
                         };
                     }
                     return b;
                 });
+                
                 await set('readracing_library_v2', updatedLibrary);
+                console.log('IndexedDB updated successfully');
 
                 // Sync to Supabase for Global Leaderboard
-                const { data: { user } } = await supabase.auth.getUser();
+                const { data: { session } } = await supabase.auth.getSession();
+                const user = session?.user;
                 if (user) {
                     const totalPagesRead = updatedLibrary.reduce((acc, book) => acc + (book.currentPage || 0), 0);
                     const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown Reader';
                     
-                    await supabase
+                    console.log('Syncing to Supabase:', { user: name, pages: totalPagesRead });
+                    
+                    const { error } = await supabase
                         .from('profiles')
                         .upsert({ 
                             id: user.id, 
@@ -53,7 +62,17 @@ export default function ReaderPage() {
                             pages_read: totalPagesRead,
                             updated_at: new Date().toISOString()
                         });
+                    
+                    if (error) {
+                        console.error('Supabase sync error:', error.message);
+                    } else {
+                        console.log('Successfully synced progress to Supabase:', totalPagesRead, 'pages');
+                    }
+                } else {
+                    console.warn('No active session found for sync');
                 }
+            } else {
+                console.error('Library not found in IndexedDB');
             }
         } catch (e) {
             console.error('Error updating progress:', e);

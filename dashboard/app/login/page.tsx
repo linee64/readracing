@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
-import CornerAccent from '../components/CornerAccent';
-import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+'use client';
 
-const Login = () => {
-    const navigate = useNavigate();
+import React, { useState } from 'react';
+import CornerAccent from '@/components/CornerAccent';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+
+export default function LoginPage() {
+    const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<string | null>(null);
 
-    const handleLogin = async (e) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
@@ -26,13 +29,13 @@ const Login = () => {
             if (data.user) {
                 if (!data.user.email_confirmed_at) {
                     await supabase.auth.signOut();
-                    navigate('/verify-email');
+                    router.push('/verify-email');
                     return;
                 }
                 // Redirect to dashboard
-                window.location.href = 'https://readracing-dash.vercel.app/dashboard';
+                router.push('/dashboard');
             }
-        } catch (err) {
+        } catch (err: any) {
             setError(err.message);
         } finally {
             setLoading(false);
@@ -40,9 +43,9 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 py-20">
+        <div className="min-h-screen flex flex-col items-center justify-center px-4 py-20 bg-brand-beige">
             <div className="w-full max-w-md mb-6">
-                <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-brand-black/60 hover:text-brand-black transition-colors group">
+                <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-brand-black/60 hover:text-brand-black transition-colors group">
                     <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                     </svg>
@@ -67,7 +70,7 @@ const Login = () => {
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="bg-transparent border-b border-brand-black/20 py-2 focus:outline-none focus:border-brand-gold transition-colors font-sans text-lg"
+                            className="bg-transparent border-b border-brand-black/20 py-2 focus:outline-none focus:border-brand-gold transition-colors font-sans text-lg text-brand-black"
                             placeholder="reader@example.com"
                         />
                     </div>
@@ -79,7 +82,7 @@ const Login = () => {
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="bg-transparent border-b border-brand-black/20 py-2 focus:outline-none focus:border-brand-gold transition-colors font-sans text-lg"
+                            className="bg-transparent border-b border-brand-black/20 py-2 focus:outline-none focus:border-brand-gold transition-colors font-sans text-lg text-brand-black"
                             placeholder="••••••••"
                         />
                     </div>
@@ -93,12 +96,10 @@ const Login = () => {
                     </button>
                 </form>
 
-                <p className="mt-8 text-center text-sm opacity-60 font-sans">
-                    Don't have an account? <Link to="/signup" className="border-b border-brand-black pb-0.5 hover:text-brand-gold transition-colors">Join ReadRacing</Link>
+                <p className="mt-8 text-center text-sm opacity-60 font-sans text-brand-black">
+                    Don't have an account? <Link href="/signup" className="border-b border-brand-black pb-0.5 hover:text-brand-gold transition-colors">Join ReadRacing</Link>
                 </p>
             </div>
         </div>
     );
-};
-
-export default Login;
+}

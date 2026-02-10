@@ -79,7 +79,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ book, isOpen, onClose, 
                                     <div className="p-4 bg-[#F5F1E8] rounded-xl border border-[#E5DCC8]">
                                         <div className="flex items-center gap-2 mb-2">
                                             <div className="w-8 h-8 rounded-full bg-[#3D2817] text-white text-[10px] flex items-center justify-center">JD</div>
-                                            <span className="font-semibold text-sm">John Doe</span>
+                                            <span className="font-semibold text-sm">Verified Reader</span>
                                             <span className="text-yellow-500 text-xs ml-auto">★★★★★</span>
                                         </div>
                                         <p className="text-sm text-[#8B7E6A]">Absolutely loved this book! A modern classic.</p>

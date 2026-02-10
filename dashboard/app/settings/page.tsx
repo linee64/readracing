@@ -17,20 +17,44 @@ export default function SettingsPage() {
         email: 'user@example.com',
         isPro: false
     });
+    const [newName, setNewName] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         const fetchUser = async () => {
             const { data: { user: supabaseUser } } = await supabase.auth.getUser();
             if (supabaseUser) {
+                const name = supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User';
                 setUser({
-                    name: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
+                    name,
                     email: supabaseUser.email || '',
-                    isPro: true // This would normally come from a profile table
+                    isPro: true
                 });
+                setNewName(name);
             }
         };
         fetchUser();
     }, []);
+
+    const handleSaveName = async () => {
+        if (!newName.trim() || newName === user.name) return;
+        
+        setIsSaving(true);
+        try {
+            const { data, error } = await supabase.auth.updateUser({
+                data: { full_name: newName }
+            });
+            
+            if (error) throw error;
+            
+            setUser(prev => ({ ...prev, name: newName }));
+            alert('Name updated successfully!');
+        } catch (error: any) {
+            alert('Error updating name: ' + error.message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const languages = ['English', 'Russian'];
     const goals = [
@@ -89,12 +113,25 @@ export default function SettingsPage() {
                 <div className="space-y-8">
                     {/* Profile Section */}
                     <section className="bg-white rounded-3xl p-8 border border-cream-200 shadow-sm">
-                        <h2 className="text-xl font-bold text-brown-900 mb-6 flex items-center gap-2">
-                            <span className="w-8 h-8 rounded-lg bg-brown-900 text-cream-50 flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12q-1.65 0-2.825-1.175T8 8t1.175-2.825T12 4t2.825 1.175T16 8t-1.175 2.825T12 12m-8 8v-2.8q0-.85.438-1.562T5.6 14.55q1.55-.775 3.15-1.162T12 13t3.25.388t3.15 1.162q.725.375 1.163 1.088T20 17.2V20z" /></svg>
-                            </span>
-                            Profile Settings
-                        </h2>
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-bold text-brown-900 flex items-center gap-2">
+                                <span className="w-8 h-8 rounded-lg bg-brown-900 text-cream-50 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12q-1.65 0-2.825-1.175T8 8t1.175-2.825T12 4t2.825 1.175T16 8t-1.175 2.825T12 12m-8 8v-2.8q0-.85.438-1.562T5.6 14.55q1.55-.775 3.15-1.162T12 13t3.25.388t3.15 1.162q.725.375 1.163 1.088T20 17.2V20z" /></svg>
+                                </span>
+                                Profile Settings
+                            </h2>
+                            <button
+                                onClick={handleSaveName}
+                                disabled={isSaving || !newName.trim() || newName === user.name}
+                                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                                    newName !== user.name && newName.trim()
+                                    ? 'bg-brown-900 text-cream-50 hover:bg-brown-800 shadow-md'
+                                    : 'bg-cream-100 text-brown-800/30 cursor-not-allowed'
+                                }`}
+                            >
+                                {isSaving ? 'Saving...' : 'Save Changes'}
+                            </button>
+                        </div>
                         
                         <div className="flex items-center gap-6 mb-8">
                             <input 
@@ -137,11 +174,14 @@ export default function SettingsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-brown-800/70 ml-1">Full Name</label>
-                                <input
-                                    type="text"
-                                    defaultValue={user.name}
-                                    className="w-full bg-cream-50/50 border border-cream-200 rounded-2xl px-5 py-3 text-brown-900 font-medium focus:outline-none focus:ring-2 focus:ring-brown-900/10 transition-all"
-                                />
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={newName}
+                                        onChange={(e) => setNewName(e.target.value)}
+                                        className="w-full bg-cream-50/50 border border-cream-200 rounded-2xl px-5 py-3 text-brown-900 font-medium focus:outline-none focus:ring-2 focus:ring-brown-900/10 transition-all"
+                                    />
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-brown-800/70 ml-1">Email Address</label>

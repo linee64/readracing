@@ -46,7 +46,7 @@ export default function LeaderboardPage() {
 
                 // Forced sync of current user progress to Supabase
                 if (user) {
-                    await supabase
+                    const { error: syncError } = await supabase
                         .from('profiles')
                         .upsert({ 
                             id: user.id, 
@@ -54,6 +54,10 @@ export default function LeaderboardPage() {
                             pages_read: pagesCount,
                             updated_at: new Date().toISOString()
                         });
+                    
+                    if (syncError) {
+                        console.error('Leaderboard page sync error:', syncError.message);
+                    }
                 }
 
                 // 2. Get global leaderboard from Supabase
