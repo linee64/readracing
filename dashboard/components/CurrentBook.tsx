@@ -82,12 +82,12 @@ export default function CurrentBook() {
     const percentage = book.totalPages > 0 ? Math.round((book.currentPage / book.totalPages) * 100) : 0;
 
     return (
-        <div className="bg-white rounded-2xl p-8 shadow-sm mt-8 border border-cream-200">
+        <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm mt-8 border border-cream-200">
             <h2 className="text-2xl font-serif font-semibold mb-6 text-brown-900 italic">Currently Reading</h2>
 
-            <div className="flex flex-col md:flex-row gap-8">
+            <div className="flex flex-col md:flex-row gap-6 md:gap-8">
                 {/* Book Cover */}
-                <div className="w-40 h-60 bg-cream-100 rounded-xl flex items-center justify-center shadow-inner border border-cream-200 flex-shrink-0 relative group overflow-hidden">
+                <div className="w-full md:w-40 h-60 md:h-60 bg-cream-100 rounded-xl flex items-center justify-center shadow-inner border border-cream-200 flex-shrink-0 relative group overflow-hidden self-center md:self-start max-w-[200px] md:max-w-none">
                     <span className="text-5xl opacity-20 group-hover:scale-110 transition-transform duration-500">📖</span>
                     {book.coverUrl && (
                         <img 
@@ -102,11 +102,11 @@ export default function CurrentBook() {
                     <div className="absolute inset-0 bg-gradient-to-t from-brown-900/10 to-transparent pointer-events-none"></div>
                 </div>
 
-                <div className="flex-1 flex flex-col justify-center">
-                    <h3 className="text-3xl font-serif font-bold text-brown-900">{book.title}</h3>
-                    <p className="text-lg text-brown-800/60 mt-2 font-medium">by {book.author}</p>
+                <div className="flex-1 flex flex-col justify-center text-center md:text-left">
+                    <h3 className="text-2xl md:text-3xl font-serif font-bold text-brown-900">{book.title}</h3>
+                    <p className="text-base md:text-lg text-brown-800/60 mt-2 font-medium">by {book.author}</p>
 
-                    <div className="mt-8">
+                    <div className="mt-6 md:mt-8">
                         <div className="flex justify-between items-end mb-2">
                             <span className="text-sm font-bold text-brown-800/70">{book.currentPage} / {book.totalPages || '?'} pages</span>
                             <span className="text-xs font-black text-brown-800/40 uppercase tracking-widest">{percentage}% Completed</span>
@@ -119,14 +119,14 @@ export default function CurrentBook() {
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-4 mt-8">
+                    <div className="flex flex-col md:flex-row flex-wrap gap-4 mt-8">
                         <button 
                             onClick={() => router.push(`/reader/${book.id}`)}
-                            className="bg-brown-900 text-cream-50 px-8 py-3.5 rounded-full font-bold shadow-lg hover:bg-brown-800 hover:scale-[1.02] active:scale-95 transition-all duration-200"
+                            className="bg-brown-900 text-cream-50 px-8 py-3.5 rounded-full font-bold shadow-lg hover:bg-brown-800 hover:scale-[1.02] active:scale-95 transition-all duration-200 w-full md:w-auto"
                         >
                             Continue Reading
                         </button>
-                        <button className="border-2 border-brown-900 text-brown-900 px-8 py-3.5 rounded-full font-bold hover:bg-cream-100 active:scale-95 transition-all duration-200">
+                        <button className="border-2 border-brown-900 text-brown-900 px-8 py-3.5 rounded-full font-bold hover:bg-cream-100 active:scale-95 transition-all duration-200 w-full md:w-auto">
                             Ask AI Assistant
                         </button>
                     </div>

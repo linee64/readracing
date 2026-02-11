@@ -124,22 +124,22 @@ export default function LeaderboardPage() {
     const others = sortedData.slice(3);
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700 pb-12">
+        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700 pb-12 px-4 md:px-0">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
-                    <h1 className="text-4xl font-serif font-black text-brown-900">Global Leaderboard</h1>
+                    <h1 className="text-3xl md:text-4xl font-serif font-black text-brown-900">Global Leaderboard</h1>
                     <p className="text-brown-800/60 mt-2 font-medium">Celebrate the most dedicated readers in the community.</p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">
                     {/* Timeframe Toggle */}
-                    <div className="flex bg-cream-200/50 p-1.5 rounded-2xl border border-cream-200">
+                    <div className="flex bg-cream-200/50 p-1.5 rounded-2xl border border-cream-200 overflow-x-auto">
                         {(['weekly', 'monthly', 'all-time'] as const).map((t) => (
                             <button
                                 key={t}
                                 onClick={() => setTimeframe(t)}
-                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 capitalize ${
+                                className={`flex-1 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 capitalize whitespace-nowrap ${
                                     timeframe === t 
                                     ? 'bg-brown-900 text-cream-50 shadow-md' 
                                     : 'text-brown-800/60 hover:text-brown-900'
@@ -154,28 +154,7 @@ export default function LeaderboardPage() {
 
             {/* Podium Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end pt-10 pb-4">
-                {/* 2nd Place */}
-                <div className="order-2 md:order-1 group">
-                    <div className="flex flex-col items-center">
-                        <div className="relative">
-                            <div className="w-24 h-24 rounded-full bg-slate-100 border-4 border-slate-300 shadow-xl overflow-hidden flex items-center justify-center text-3xl font-serif font-bold text-slate-500 group-hover:scale-110 transition-transform duration-500">
-                                {top3[1].userName.charAt(0)}
-                            </div>
-                            <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-slate-300 rounded-full flex items-center justify-center text-white font-black shadow-lg border-2 border-white">
-                                2
-                            </div>
-                        </div>
-                        <div className="mt-4 text-center">
-                            <h3 className="font-serif font-bold text-xl text-brown-900">{top3[1].userName}</h3>
-                            <p className="text-slate-500 font-black text-sm uppercase tracking-tighter">
-                                {top3[1].pagesCount.toLocaleString()} pages
-                            </p>
-                        </div>
-                        <div className="w-full h-32 bg-gradient-to-b from-slate-200/50 to-transparent mt-4 rounded-t-3xl border-x border-t border-slate-200"></div>
-                    </div>
-                </div>
-
-                {/* 1st Place */}
+                {/* 1st Place (Mobile: First) */}
                 <div className="order-1 md:order-2 group">
                     <div className="flex flex-col items-center">
                         <div className="relative">
@@ -196,9 +175,30 @@ export default function LeaderboardPage() {
                                 {top3[0].pagesCount.toLocaleString()} pages
                             </p>
                         </div>
-                        <div className="w-full h-44 bg-gradient-to-b from-brand-gold/20 to-transparent mt-4 rounded-t-3xl border-x border-t border-brand-gold/30 relative overflow-hidden">
+                        <div className="w-full h-44 bg-gradient-to-b from-brand-gold/20 to-transparent mt-4 rounded-t-3xl border-x border-t border-brand-gold/30 relative overflow-hidden hidden md:block">
                             <div className="absolute top-0 left-0 w-full h-1 bg-brand-gold"></div>
                         </div>
+                    </div>
+                </div>
+
+                {/* 2nd Place */}
+                <div className="order-2 md:order-1 group">
+                    <div className="flex flex-col items-center">
+                        <div className="relative">
+                            <div className="w-24 h-24 rounded-full bg-slate-100 border-4 border-slate-300 shadow-xl overflow-hidden flex items-center justify-center text-3xl font-serif font-bold text-slate-500 group-hover:scale-110 transition-transform duration-500">
+                                {top3[1].userName.charAt(0)}
+                            </div>
+                            <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-slate-300 rounded-full flex items-center justify-center text-white font-black shadow-lg border-2 border-white">
+                                2
+                            </div>
+                        </div>
+                        <div className="mt-4 text-center">
+                            <h3 className="font-serif font-bold text-xl text-brown-900">{top3[1].userName}</h3>
+                            <p className="text-slate-500 font-black text-sm uppercase tracking-tighter">
+                                {top3[1].pagesCount.toLocaleString()} pages
+                            </p>
+                        </div>
+                        <div className="w-full h-32 bg-gradient-to-b from-slate-200/50 to-transparent mt-4 rounded-t-3xl border-x border-t border-slate-200 hidden md:block"></div>
                     </div>
                 </div>
 
@@ -219,75 +219,77 @@ export default function LeaderboardPage() {
                                 {top3[2].pagesCount.toLocaleString()} pages
                             </p>
                         </div>
-                        <div className="w-full h-24 bg-gradient-to-b from-amber-100/40 to-transparent mt-4 rounded-t-3xl border-x border-t border-amber-200/50"></div>
+                        <div className="w-full h-24 bg-gradient-to-b from-amber-100/40 to-transparent mt-4 rounded-t-3xl border-x border-t border-amber-200/50 hidden md:block"></div>
                     </div>
                 </div>
             </div>
 
             {/* List Section */}
-            <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-cream-200 overflow-hidden relative">
+            <div className="bg-white rounded-[2.5rem] p-4 md:p-8 shadow-sm border border-cream-200 overflow-hidden relative">
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-cream-200 to-transparent opacity-30"></div>
                 
-                <table className="w-full text-left border-separate border-spacing-y-3">
-                    <thead>
-                        <tr className="text-brown-800/40 text-[10px] uppercase font-black tracking-widest">
-                            <th className="px-6 py-2">Rank</th>
-                            <th className="px-6 py-2">Reader</th>
-                            <th className="px-6 py-2 text-right">Progress</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {others.map((user) => {
-                            const isUser = user.userName.includes('(You)');
-                            return (
-                                <tr 
-                                    key={user.id} 
-                                    className={`group transition-all duration-300 hover:scale-[1.01] ${isUser ? 'bg-cream-50/80' : 'hover:bg-cream-50/50'}`}
-                                >
-                                    <td className="px-6 py-4 first:rounded-l-2xl">
-                                        <span className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${isUser ? 'bg-brown-900 text-cream-50' : 'bg-cream-100 text-brown-800'}`}>
-                                            {user.rank}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-cream-200 flex items-center justify-center font-serif font-bold text-brown-800 border-2 border-white shadow-sm">
-                                                {user.userName.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <div className={`font-serif font-bold text-base ${isUser ? 'text-brown-900' : 'text-brown-800'}`}>
-                                                    {user.userName}
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-separate border-spacing-y-3 min-w-[600px] md:min-w-0">
+                        <thead>
+                            <tr className="text-brown-800/40 text-[10px] uppercase font-black tracking-widest">
+                                <th className="px-4 md:px-6 py-2">Rank</th>
+                                <th className="px-4 md:px-6 py-2">Reader</th>
+                                <th className="px-4 md:px-6 py-2 text-right">Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {others.map((user) => {
+                                const isUser = user.userName.includes('(You)');
+                                return (
+                                    <tr 
+                                        key={user.id} 
+                                        className={`group transition-all duration-300 hover:scale-[1.01] ${isUser ? 'bg-cream-50/80' : 'hover:bg-cream-50/50'}`}
+                                    >
+                                        <td className="px-4 md:px-6 py-4 first:rounded-l-2xl">
+                                            <span className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${isUser ? 'bg-brown-900 text-cream-50' : 'bg-cream-100 text-brown-800'}`}>
+                                                {user.rank}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 md:px-6 py-4">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-full bg-cream-200 flex items-center justify-center font-serif font-bold text-brown-800 border-2 border-white shadow-sm">
+                                                    {user.userName.charAt(0)}
                                                 </div>
-                                                <div className="text-[10px] text-brown-800/40 font-black uppercase tracking-wider">
-                                                    Joined 2 months ago
+                                                <div>
+                                                    <div className={`font-serif font-bold text-base ${isUser ? 'text-brown-900' : 'text-brown-800'}`}>
+                                                        {user.userName}
+                                                    </div>
+                                                    <div className="text-[10px] text-brown-800/40 font-black uppercase tracking-wider">
+                                                        Joined 2 months ago
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-right last:rounded-r-2xl">
-                                        <div className="flex flex-col items-end">
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="text-lg font-black text-brown-900">
-                                                    {user.pagesCount.toLocaleString()}
-                                                </span>
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" className="text-brown-900/20"><path fill="currentColor" d="M13 13v8h8v-8zm6 6h-4v-4h4zm-6-7h8V4h-8zm2-6h4v4h-4zm-9 1h6v2H6v3h3v2H6v3h4v2H4V4h6v2H6z"/></svg>
+                                        </td>
+                                        <td className="px-4 md:px-6 py-4 text-right last:rounded-r-2xl">
+                                            <div className="flex flex-col items-end">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-lg font-black text-brown-900">
+                                                        {user.pagesCount.toLocaleString()}
+                                                    </span>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" className="text-brown-900/20"><path fill="currentColor" d="M13 13v8h8v-8zm6 6h-4v-4h4zm-6-7h8V4h-8zm2-6h4v4h-4zm-9 1h6v2H6v3h3v2H6v3h4v2H4V4h6v2H6z"/></svg>
+                                                </div>
+                                                <div className="text-[9px] text-brown-800/30 font-black uppercase tracking-tighter">
+                                                    Pages Read
+                                                </div>
                                             </div>
-                                            <div className="text-[9px] text-brown-800/30 font-black uppercase tracking-tighter">
-                                                Pages Read
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {/* User Personal Stats Banner */}
-            <div className="bg-brown-900 rounded-[2.5rem] p-8 text-cream-50 flex items-center justify-between shadow-2xl shadow-brown-900/20 relative overflow-hidden group">
+            <div className="bg-brown-900 rounded-[2.5rem] p-6 md:p-8 text-cream-50 flex flex-col md:flex-row items-center justify-between shadow-2xl shadow-brown-900/20 relative overflow-hidden group gap-6 md:gap-0 text-center md:text-left">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-white/10 transition-colors duration-700"></div>
-                <div className="relative z-10 flex items-center gap-8">
+                <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-8">
                     <div className="w-20 h-20 bg-brand-gold rounded-full flex items-center justify-center text-brown-900 text-3xl font-black shadow-lg border-4 border-brown-800">
                         #{sortedData.find(u => u.userName.includes('(You)'))?.rank}
                     </div>
@@ -298,7 +300,7 @@ export default function LeaderboardPage() {
                         </p>
                     </div>
                 </div>
-                <button className="relative z-10 px-8 py-4 bg-brand-gold hover:bg-brand-gold-dark text-brown-900 font-bold rounded-2xl transition-all duration-300 shadow-lg active:scale-95">
+                <button className="relative z-10 w-full md:w-auto px-8 py-4 bg-brand-gold hover:bg-brand-gold-dark text-brown-900 font-bold rounded-2xl transition-all duration-300 shadow-lg active:scale-95">
                     Share Progress
                 </button>
             </div>

@@ -70,8 +70,13 @@ const navItems = [
 
 export default function Sidebar() {
     const pathname = usePathname();
-    const { isCollapsed, setIsCollapsed } = useSidebar();
+    const { isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen } = useSidebar();
     const [user, setUser] = useState<any>(null);
+
+    // Close mobile sidebar on navigation
+    useEffect(() => {
+        setIsMobileOpen(false);
+    }, [pathname, setIsMobileOpen]);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -106,120 +111,147 @@ export default function Sidebar() {
     const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Guest';
 
     return (
-        <aside className={`fixed left-0 top-0 h-screen bg-cream-100 flex flex-col border-r border-cream-200 transition-all duration-300 z-[100] ${isCollapsed ? 'w-20' : 'w-64'}`}>
-            {/* Logo Section */}
-            <div className={`relative flex items-center gap-3 transition-all duration-300 ${isCollapsed ? 'p-4 justify-center' : 'p-8'}`}>
-                <div className="relative w-10 h-10 flex-shrink-0 bg-white rounded-xl shadow-sm border border-cream-200 p-1.5 flex items-center justify-center">
-                    <Image 
-                        src="/landing-logo.png" 
-                        alt="ReadRacing Logo" 
-                        fill
-                        className="object-contain p-1"
-                    />
-                </div>
-                {!isCollapsed && (
-                    <h1 className="text-xl font-serif font-extrabold text-brown-900 tracking-tight whitespace-nowrap">
-                        ReadRacing
-                    </h1>
-                )}
+        <>
+            {/* Mobile Overlay */}
+            {isMobileOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/50 z-[90] md:hidden backdrop-blur-sm transition-opacity"
+                    onClick={() => setIsMobileOpen(false)}
+                />
+            )}
 
-                {/* Toggle Button */}
-                <button 
-                    onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="absolute -right-3 top-1/2 -translate-y-1/2 bg-brown-900 text-cream-50 w-6 h-6 rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform z-[110]"
-                    aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                >
-                    <span className="text-xs">{isCollapsed ? '→' : '←'}</span>
-                </button>
-            </div>
-
-            {/* Navigation section */}
-            <nav className={`flex-1 space-y-1 transition-all duration-300 ${isCollapsed ? 'px-2' : 'px-4'}`}>
-                {navItems.map((item) => {
-                    const isActive = pathname.startsWith(item.href) || (item.alias && pathname.startsWith(item.alias));
-                    const isLeaderboard = item.name === 'Leaderboard';
-                    
-                    return (
-                        <Link
-                            key={item.name}
-                            href={item.href}
-                            className={`flex items-center gap-3 py-3 text-sm font-medium transition-all duration-300 ${isCollapsed ? 'px-0 justify-center' : 'px-4'} ${isActive
-                                    ? 'bg-brown-900 text-cream-50 rounded-xl shadow-md ring-2 ring-brand-gold/20'
-                                    : isLeaderboard 
-                                        ? 'text-brown-800 hover:bg-brand-gold/10 hover:text-brand-gold-dark rounded-xl border border-transparent hover:border-brand-gold/30'
-                                        : 'text-brown-800 hover:bg-cream-200 rounded-xl'
-                                } group relative`}
-                            title={isCollapsed ? item.name : ''}
-                        >
-                            <span className={`text-xl transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'} ${isLeaderboard && !isActive ? 'text-brand-gold-dark/80' : ''}`}>
-                                {item.icon}
-                            </span>
-                            {!isCollapsed && (
-                                <span className={`whitespace-nowrap overflow-hidden ${isLeaderboard && !isActive ? 'font-bold' : ''}`}>
-                                    {item.name}
-                                </span>
-                            )}
-                            {isLeaderboard && !isCollapsed && (
-                                <span className="absolute right-2 top-1/2 -translate-y-1/2 flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-gold opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-gold"></span>
-                                </span>
-                            )}
-                        </Link>
-                    );
-                })}
-            </nav>
-
-            {/* User profile card */}
-            <div className={`border-t border-cream-200 mt-auto transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-4'}`}>
-                {user ? (
-                    <div className={`bg-white/50 rounded-2xl flex flex-col gap-2 border border-cream-200 shadow-sm transition-all duration-300 ${isCollapsed ? 'p-2 items-center' : 'p-4'}`}>
-                        <div className="flex items-center gap-3 w-full">
-                            <div className="w-10 h-10 bg-brown-900 text-cream-50 rounded-full flex-shrink-0 flex items-center justify-center font-bold shadow-inner">
-                                {userName.charAt(0).toUpperCase()}
-                            </div>
-                            {!isCollapsed && (
-                                <div className="flex flex-col overflow-hidden flex-1">
-                                    <span className="font-semibold text-sm text-brown-900 truncate">{userName}</span>
-                                    <span className="bg-brand-gold/20 text-brand-gold-dark text-[10px] uppercase font-bold px-2 py-0.5 rounded-full w-fit">
-                                        Pro
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                        {!isCollapsed && (
-                            <button 
-                                onClick={handleLogout}
-                                className="mt-2 w-full py-2 px-4 bg-cream-200 hover:bg-red-50 text-brown-800 hover:text-red-600 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                                Logout
-                            </button>
-                        )}
-                        {isCollapsed && (
-                            <button 
-                                onClick={handleLogout}
-                                className="p-2 text-brown-400 hover:text-red-600 transition-colors"
-                                title="Logout"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                            </button>
-                        )}
+            <aside className={`
+                fixed left-0 top-0 h-screen bg-cream-100 flex flex-col border-r border-cream-200 transition-all duration-300 z-[100]
+                ${isCollapsed ? 'md:w-20' : 'md:w-64'}
+                w-64
+                ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+            `}>
+                {/* Logo Section */}
+                <div className={`relative flex items-center gap-3 transition-all duration-300 ${isCollapsed ? 'p-4 justify-center' : 'p-8'}`}>
+                    <div className="relative w-10 h-10 flex-shrink-0 bg-white rounded-xl shadow-sm border border-cream-200 p-1.5 flex items-center justify-center">
+                        <Image 
+                            src="/landing-logo.png" 
+                            alt="ReadRacing Logo" 
+                            fill
+                            className="object-contain p-1"
+                        />
                     </div>
-                ) : (
+                    {/* Show title if not collapsed (desktop) OR always on mobile (since mobile is always expanded width-wise) */}
+                    {(!isCollapsed || isMobileOpen) && (
+                        <h1 className={`text-xl font-serif font-extrabold text-brown-900 tracking-tight whitespace-nowrap ${isCollapsed ? 'md:hidden' : ''}`}>
+                            ReadRacing
+                        </h1>
+                    )}
+
+                    {/* Desktop Collapse Toggle */}
                     <button 
-                        onClick={handleLogin}
-                        className={`w-full bg-brown-900 text-cream-50 rounded-2xl flex items-center gap-3 border border-brown-800 shadow-sm transition-all duration-300 hover:bg-brown-800 ${isCollapsed ? 'p-2 justify-center' : 'p-4'}`}
+                        onClick={() => setIsCollapsed(!isCollapsed)}
+                        className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 bg-brown-900 text-cream-50 w-6 h-6 rounded-full items-center justify-center shadow-md hover:scale-110 transition-transform z-[110]"
+                        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                     >
-                        <div className="w-10 h-10 bg-cream-100/10 rounded-full flex-shrink-0 flex items-center justify-center font-bold">
-                            ?
-                        </div>
-                        {!isCollapsed && (
-                            <span className="font-semibold text-sm">Sign In</span>
-                        )}
+                        <span className="text-xs">{isCollapsed ? '→' : '←'}</span>
                     </button>
-                )}
-            </div>
-        </aside>
+
+                    {/* Mobile Close Button */}
+                    <button 
+                        onClick={() => setIsMobileOpen(false)}
+                        className="md:hidden absolute right-4 top-1/2 -translate-y-1/2 text-brown-900"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+
+                {/* Navigation section */}
+                <nav className={`flex-1 space-y-1 transition-all duration-300 ${isCollapsed ? 'px-2' : 'px-4'}`}>
+                    {navItems.map((item) => {
+                        const isActive = pathname.startsWith(item.href) || (item.alias && pathname.startsWith(item.alias));
+                        const isLeaderboard = item.name === 'Leaderboard';
+                        
+                        return (
+                            <Link
+                                key={item.name}
+                                href={item.href}
+                                className={`flex items-center gap-3 py-3 text-sm font-medium transition-all duration-300 
+                                    ${isCollapsed ? 'md:px-0 md:justify-center' : 'px-4'} 
+                                    px-4
+                                    ${isActive
+                                        ? 'bg-brown-900 text-cream-50 rounded-xl shadow-md ring-2 ring-brand-gold/20'
+                                        : isLeaderboard 
+                                            ? 'text-brown-800 hover:bg-brand-gold/10 hover:text-brand-gold-dark rounded-xl border border-transparent hover:border-brand-gold/30'
+                                            : 'text-brown-800 hover:bg-cream-200 rounded-xl'
+                                    } group relative`}
+                                title={isCollapsed ? item.name : ''}
+                            >
+                                <span className={`text-xl transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'} ${isLeaderboard && !isActive ? 'text-brand-gold-dark/80' : ''}`}>
+                                    {item.icon}
+                                </span>
+                                {(!isCollapsed || isMobileOpen) && (
+                                    <span className={`whitespace-nowrap overflow-hidden ${isLeaderboard && !isActive ? 'font-bold' : ''} ${isCollapsed ? 'md:hidden' : ''}`}>
+                                        {item.name}
+                                    </span>
+                                )}
+                                {isLeaderboard && (!isCollapsed || isMobileOpen) && (
+                                    <span className={`absolute right-2 top-1/2 -translate-y-1/2 flex h-2 w-2 ${isCollapsed ? 'md:hidden' : ''}`}>
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-gold opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-gold"></span>
+                                    </span>
+                                )}
+                            </Link>
+                        );
+                    })}
+                </nav>
+
+                {/* User profile card */}
+                <div className={`border-t border-cream-200 mt-auto transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-4'}`}>
+                    {user ? (
+                        <div className={`bg-white/50 rounded-2xl flex flex-col gap-2 border border-cream-200 shadow-sm transition-all duration-300 ${isCollapsed ? 'md:p-2 md:items-center' : 'p-4'} p-4`}>
+                            <div className="flex items-center gap-3 w-full">
+                                <div className="w-10 h-10 bg-brown-900 text-cream-50 rounded-full flex-shrink-0 flex items-center justify-center font-bold shadow-inner">
+                                    {userName.charAt(0).toUpperCase()}
+                                </div>
+                                {(!isCollapsed || isMobileOpen) && (
+                                    <div className={`flex flex-col overflow-hidden flex-1 ${isCollapsed ? 'md:hidden' : ''}`}>
+                                        <span className="font-semibold text-sm text-brown-900 truncate">{userName}</span>
+                                        <span className="bg-brand-gold/20 text-brand-gold-dark text-[10px] uppercase font-bold px-2 py-0.5 rounded-full w-fit">
+                                            Pro
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                            {(!isCollapsed || isMobileOpen) && (
+                                <button 
+                                    onClick={handleLogout}
+                                    className={`mt-2 w-full py-2 px-4 bg-cream-200 hover:bg-red-50 text-brown-800 hover:text-red-600 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2 ${isCollapsed ? 'md:hidden' : ''}`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                    Logout
+                                </button>
+                            )}
+                            {isCollapsed && (
+                                <button 
+                                    onClick={handleLogout}
+                                    className="hidden md:block p-2 text-brown-400 hover:text-red-600 transition-colors"
+                                    title="Logout"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                </button>
+                            )}
+                        </div>
+                    ) : (
+                        <button 
+                            onClick={handleLogin}
+                            className={`w-full bg-brown-900 text-cream-50 rounded-2xl flex items-center gap-3 border border-brown-800 shadow-sm transition-all duration-300 hover:bg-brown-800 ${isCollapsed ? 'md:p-2 md:justify-center' : 'p-4'} p-4`}
+                        >
+                            <div className="w-10 h-10 bg-cream-100/10 rounded-full flex-shrink-0 flex items-center justify-center font-bold">
+                                ?
+                            </div>
+                            {(!isCollapsed || isMobileOpen) && (
+                                <span className={`font-semibold text-sm ${isCollapsed ? 'md:hidden' : ''}`}>Sign In</span>
+                            )}
+                        </button>
+                    )}
+                </div>
+            </aside>
+        </>
     );
 }

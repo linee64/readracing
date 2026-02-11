@@ -101,21 +101,28 @@ export default function ReaderPage() {
                     flow: 'paginated',
                     manager: 'default',
                     allowScriptedContent: true,
-                    spread: 'always',
-                    minSpreadWidth: 600,
+                    spread: 'always', // Will be overridden by resize
+                    minSpreadWidth: 800, // Increased to force single page on mobile
                 });
 
                 renditionRef.current = rendition;
 
-                // Apply styles
+                // Apply styles - Responsive font size
+                const isMobile = window.innerWidth < 768;
                 rendition.themes.default({
                     'body': {
-                        'padding': '40px 60px !important',
+                        'padding': isMobile ? '20px 20px !important' : '40px 60px !important',
                         'margin': '0 !important',
-                        'font-size': '16px !important',
-                        'line-height': '1.5 !important',
+                        'font-size': isMobile ? '18px !important' : '16px !important',
+                        'line-height': '1.6 !important',
                         'color': '#2C2416 !important',
-                        'font-family': 'Georgia, serif !important'
+                        'font-family': 'Georgia, serif !important',
+                        'max-width': '100% !important',
+                        'box-sizing': 'border-box !important'
+                    },
+                    'img': {
+                        'max-width': '100% !important',
+                        'height': 'auto !important'
                     }
                 });
                 
@@ -174,7 +181,23 @@ export default function ReaderPage() {
 
                 resizeObserver = new ResizeObserver(() => {
                     if (renditionRef.current && isMounted) {
-                        try { (renditionRef.current as any).resize(); } catch (e) {}
+                        try { 
+                            (renditionRef.current as any).resize();
+                            // Re-apply responsive styles on resize
+                            const isMobileNow = window.innerWidth < 768;
+                            renditionRef.current.themes.default({
+                                'body': {
+                                    'padding': isMobileNow ? '20px 20px !important' : '40px 60px !important',
+                                    'margin': '0 !important',
+                                    'font-size': isMobileNow ? '18px !important' : '16px !important',
+                                    'line-height': '1.6 !important',
+                                    'color': '#2C2416 !important',
+                                    'font-family': 'Georgia, serif !important',
+                                    'max-width': '100% !important',
+                                    'box-sizing': 'border-box !important'
+                                }
+                            });
+                        } catch (e) {}
                     }
                 });
                 resizeObserver.observe(viewerRef.current);

@@ -126,7 +126,7 @@ export default function LeaderboardPreview() {
     const sortedData = leaderboard;
 
     return (
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-cream-200 flex flex-col h-full relative overflow-hidden group/board">
+        <div className="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-cream-200 flex flex-col h-full relative overflow-hidden group/board">
             {/* Decorative Background Element */}
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-gold/5 rounded-full blur-3xl group-hover/board:bg-brand-gold/10 transition-colors duration-500"></div>
             
@@ -182,23 +182,23 @@ export default function LeaderboardPreview() {
                                 )}
                             </div>
 
-                            <div className="flex-1">
-                                <div className={`font-serif font-bold text-base transition-colors ${isUser ? 'text-brown-900' : 'text-brown-800 group-hover:text-brown-900'}`}>
+                            <div className="flex-1 min-w-0">
+                                <div className={`font-serif font-bold text-base transition-colors truncate ${isUser ? 'text-brown-900' : 'text-brown-800 group-hover:text-brown-900'}`}>
                                     {user.userName}
                                 </div>
-                                <div className="text-[10px] text-brown-800/40 uppercase font-black tracking-widest">
+                                <div className="text-[10px] text-brown-800/40 uppercase font-black tracking-widest truncate">
                                     {user.rank === 1 ? 'Current Champion' : 'Reader'}
                                 </div>
                             </div>
 
-                            <div className="text-right">
+                            <div className="text-right flex-shrink-0">
                                 <div className="flex items-center gap-1 justify-end">
                                     <span className={`text-lg font-black ${isTop3 ? 'text-brown-900' : 'text-brown-800'}`}>
                                         {user.pagesCount.toLocaleString()}
                                     </span>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" className="text-brown-900/20"><path fill="currentColor" d="M13 13v8h8v-8zm6 6h-4v-4h4zm-6-7h8V4h-8zm2-6h4v4h-4zm-9 1h6v2H6v3h3v2H6v3h4v2H4V4h6v2H6z"/></svg>
                                 </div>
-                                <span className="text-[9px] text-brown-800/40 uppercase font-black tracking-tighter">Pages read</span>
+                                <div className="text-[9px] text-brown-800/40 uppercase font-black tracking-tighter">Pages read</div>
                             </div>
                         </div>
                     );

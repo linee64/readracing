@@ -220,12 +220,12 @@ export default function LibraryPage() {
 
     return (
         <div className="min-h-screen bg-cream-50">
-            <div className="max-w-7xl mx-auto p-8 pb-20">
+            <div className="max-w-7xl mx-auto p-4 md:p-8 pb-20">
                 <DashboardHeader username={username} />
 
-                <div className="flex justify-between items-center mb-8">
-                    <h2 className="text-3xl font-serif font-bold text-brown-900 italic">My Library</h2>
-                    <div className="flex gap-4">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 md:mb-8">
+                    <h2 className="text-2xl md:text-3xl font-serif font-bold text-brown-900 italic">My Library</h2>
+                    <div className="flex gap-4 self-start md:self-auto w-full md:w-auto">
                         <input
                             type="file"
                             accept=".epub"
@@ -236,7 +236,7 @@ export default function LibraryPage() {
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading}
-                            className="bg-brown-900 text-cream-50 px-6 py-3 rounded-full font-bold shadow-lg hover:bg-brown-800 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
+                            className="w-full md:w-auto justify-center bg-brown-900 text-cream-50 px-6 py-3 rounded-full font-bold shadow-lg hover:bg-brown-800 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
                         >
                             {isUploading ? (
                                 <span className="animate-spin">⏳</span>
@@ -249,10 +249,10 @@ export default function LibraryPage() {
                 </div>
 
                 {books.length === 0 ? (
-                    <div className="bg-white rounded-2xl p-20 text-center border-2 border-dashed border-cream-300">
-                        <div className="text-6xl mb-4 opacity-20">📚</div>
-                        <h3 className="text-xl font-serif font-semibold text-brown-900/50">Your library is empty</h3>
-                        <p className="text-brown-800/40 mt-2">Start your journey by adding your first book!</p>
+                    <div className="bg-white rounded-2xl p-8 md:p-20 text-center border-2 border-dashed border-cream-300">
+                        <div className="text-4xl md:text-6xl mb-4 opacity-20">📚</div>
+                        <h3 className="text-lg md:text-xl font-serif font-semibold text-brown-900/50">Your library is empty</h3>
+                        <p className="text-sm md:text-base text-brown-800/40 mt-2">Start your journey by adding your first book!</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

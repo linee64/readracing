@@ -2,68 +2,47 @@
 'use client';
 
 import React from 'react';
-import { Highlight } from '@/types';
-
-const mockHighlights: Highlight[] = [
-    {
-        id: '1',
-        text: "The loneliness of the city is the most intense loneliness of all, for it is shared by millions of people who all feel exactly the same way.",
-        bookTitle: "The Great Gatsby",
-        page: 45
-    },
-    {
-        id: '2',
-        text: "So we beat on, boats against the current, borne back ceaselessly into the past.",
-        bookTitle: "The Great Gatsby",
-        page: 180
-    },
-    {
-        id: '3',
-        text: "I hope she'll be a fool—that's the best thing a girl can be in this world, a beautiful little fool.",
-        bookTitle: "The Great Gatsby",
-        page: 17
-    }
-];
 
 export default function RecentHighlights() {
     return (
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-cream-200 flex flex-col h-full relative overflow-hidden">
-            {/* Background Icon Decoration */}
-            <div className="absolute -right-4 -bottom-4 text-brown-900/5 pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24"><path fill="currentColor" d="M13 19c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2zM15 5h4v14h-4zM2 19c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2zM4 5h4v14H4z"/></svg>
+        <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-cream-200 shadow-sm flex flex-col h-full">
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-serif font-bold text-brown-900">Recent Highlights</h3>
+                <button className="text-sm font-bold text-brown-800/60 hover:text-brown-900 uppercase tracking-widest transition-colors">
+                    View All
+                </button>
             </div>
 
-            <div className="flex items-center gap-3 mb-6">
-                <div className="text-brown-900">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M13 19c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2zM15 5h4v14h-4zM2 19c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2zM4 5h4v14H4z"/></svg>
-                </div>
-                <h2 className="text-2xl font-serif font-semibold text-brown-900 italic">Recent Highlights</h2>
-            </div>
-
-            <div className="space-y-6 flex-1">
-                {mockHighlights.map((highlight, index) => (
-                    <div key={highlight.id}>
-                        <div className="relative">
-                            <span className="absolute -left-2 -top-2 text-4xl text-cream-200 font-serif opacity-50">"</span>
-                            <p className="italic text-brown-900 text-lg leading-relaxed relative z-10 pl-2">
-                                {highlight.text}
-                            </p>
+            <div className="flex-1 space-y-4">
+                {[
+                    {
+                        text: "The only way to do great work is to love what you do.",
+                        book: "Steve Jobs",
+                        page: 124,
+                        color: "bg-brand-gold/20"
+                    },
+                    {
+                        text: "It does not matter how slowly you go as long as you do not stop.",
+                        book: "Confucius",
+                        page: 45,
+                        color: "bg-cream-200"
+                    }
+                ].map((highlight, i) => (
+                    <div key={i} className={`p-6 rounded-3xl ${highlight.color} group hover:scale-[1.02] transition-transform duration-300 cursor-pointer`}>
+                        <p className="font-serif text-lg text-brown-900 leading-relaxed italic mb-4">
+                            "{highlight.text}"
+                        </p>
+                        <div className="flex justify-between items-center text-xs font-black text-brown-800/40 uppercase tracking-widest">
+                            <span>{highlight.book}</span>
+                            <span>Page {highlight.page}</span>
                         </div>
-                        <div className="flex items-center gap-2 mt-3 pl-2">
-                            <span className="text-xs font-black text-brown-800/40 uppercase tracking-widest">
-                                {highlight.bookTitle} • Page {highlight.page}
-                            </span>
-                        </div>
-                        {index < mockHighlights.length - 1 && (
-                            <div className="border-t border-cream-100 mt-6"></div>
-                        )}
                     </div>
                 ))}
+                
+                <div className="p-6 rounded-3xl border-2 border-dashed border-cream-200 flex items-center justify-center text-brown-800/40 font-bold hover:bg-cream-50 hover:border-cream-300 transition-all cursor-pointer group">
+                    <span className="group-hover:scale-110 transition-transform">+ Add New Highlight</span>
+                </div>
             </div>
-
-            <button className="mt-8 text-sm font-bold text-brown-900 bg-cream-50 hover:bg-cream-100 py-3 rounded-xl transition-colors border border-cream-200">
-                View All Highlights
-            </button>
         </div>
     );
 }
