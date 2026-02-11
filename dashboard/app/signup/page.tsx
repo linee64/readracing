@@ -26,7 +26,8 @@ export default function SignUpPage() {
                 options: {
                     data: {
                         full_name: name,
-                    }
+                    },
+                    emailRedirectTo: 'https://readracing-dash.vercel.app/dashboard',
                 }
             });
 

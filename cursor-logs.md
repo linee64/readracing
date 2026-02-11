@@ -166,6 +166,9 @@
 - Обновление редиректов на лендинге:
   - Все ссылки на `localhost:3000` в компонентах `Header.jsx`, `Hero.jsx` и `CallToAction.jsx` заменены на продакшн URL `https://readracing-dash.vercel.app`.
   - Теперь кнопки "Sign In", "Sign Up" и "Start Reading" ведут на развернутую версию приложения в Vercel.
+- Исправление ошибки "Failed to fetch" при авторизации:
+  - В [dashboard/lib/supabase.ts](file:///c:/Users/алматы2/Desktop/Aidar's%20main/ReadRacing/dashboard/lib/supabase.ts) добавлены корректные ключи Supabase в качестве fallback-значений. Это исправляет ошибку, возникающую, когда переменные окружения не подгружаются на стороне клиента в Vercel.
+  - В [dashboard/app/signup/page.tsx](file:///c:/Users/алматы2/Desktop/Aidar's%20main/ReadRacing/dashboard/app/signup/page.tsx) добавлен `emailRedirectTo` для корректного возврата пользователя в приложение после подтверждения почты.
   - Все страницы авторизации (`Login`, `SignUp`, `VerifyEmail`) перенесены из проекта `landing` в проект `dashboard` (Next.js).
   - В `dashboard/app` созданы новые маршруты: `/login`, `/signup`, `/verify-email`.
   - Дизайн страниц авторизации адаптирован под Next.js и Tailwind v4, сохранены фирменные элементы (CornerAccent, цветовая палитра).
