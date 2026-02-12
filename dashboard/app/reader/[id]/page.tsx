@@ -111,9 +111,9 @@ export default function ReaderPage() {
                 const isMobile = window.innerWidth < 768;
                 rendition.themes.default({
                     'body': {
-                        'padding': isMobile ? '20px 20px !important' : '40px 60px !important',
+                        'padding': isMobile ? '20px 32px !important' : '40px 60px !important',
                         'margin': '0 !important',
-                        'font-size': isMobile ? '18px !important' : '16px !important',
+                        'font-size': isMobile ? '16px !important' : '16px !important',
                         'line-height': '1.6 !important',
                         'color': '#2C2416 !important',
                         'font-family': 'Georgia, serif !important',
@@ -187,9 +187,9 @@ export default function ReaderPage() {
                             const isMobileNow = window.innerWidth < 768;
                             renditionRef.current.themes.default({
                                 'body': {
-                                    'padding': isMobileNow ? '20px 20px !important' : '40px 60px !important',
+                                    'padding': isMobileNow ? '20px 32px !important' : '40px 60px !important',
                                     'margin': '0 !important',
-                                    'font-size': isMobileNow ? '18px !important' : '16px !important',
+                                    'font-size': isMobileNow ? '16px !important' : '16px !important',
                                     'line-height': '1.6 !important',
                                     'color': '#2C2416 !important',
                                     'font-family': 'Georgia, serif !important',

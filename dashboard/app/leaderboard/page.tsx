@@ -77,6 +77,7 @@ export default function LeaderboardPage() {
                         id: p.id,
                         userId: p.id,
                         userName: p.id === user?.id ? `${p.full_name} (You)` : p.full_name,
+                        userAvatar: p.avatar_url,
                         booksCount: 0,
                         pagesCount: p.pages_read,
                         rank: index + 1
@@ -87,6 +88,7 @@ export default function LeaderboardPage() {
                         id: p.id,
                         userId: p.id,
                         userName: p.id === user?.id ? `${p.full_name} (You)` : p.full_name,
+                        userAvatar: p.avatar_url,
                         booksCount: 0,
                         pagesCount: p.pages_read,
                         rank: 0
@@ -163,7 +165,11 @@ export default function LeaderboardPage() {
                             </div>
                             <div className="w-32 h-32 rounded-full bg-brand-gold/10 border-4 border-brand-gold shadow-2xl shadow-brand-gold/20 overflow-hidden flex items-center justify-center text-4xl font-serif font-bold text-brand-gold-dark group-hover:scale-110 transition-transform duration-500 relative">
                                 <div className="absolute inset-0 bg-gradient-to-tr from-brand-gold/20 to-transparent animate-pulse"></div>
-                                {top3[0].userName.charAt(0)}
+                                {top3[0].userAvatar ? (
+                                    <img src={top3[0].userAvatar} alt={top3[0].userName} className="w-full h-full object-cover" />
+                                ) : (
+                                    top3[0].userName.charAt(0)
+                                )}
                             </div>
                             <div className="absolute -bottom-3 -right-3 w-12 h-12 bg-brand-gold rounded-full flex items-center justify-center text-white text-xl font-black shadow-lg border-4 border-white">
                                 1
@@ -186,7 +192,11 @@ export default function LeaderboardPage() {
                     <div className="flex flex-col items-center">
                         <div className="relative">
                             <div className="w-24 h-24 rounded-full bg-slate-100 border-4 border-slate-300 shadow-xl overflow-hidden flex items-center justify-center text-3xl font-serif font-bold text-slate-500 group-hover:scale-110 transition-transform duration-500">
-                                {top3[1].userName.charAt(0)}
+                                {top3[1].userAvatar ? (
+                                    <img src={top3[1].userAvatar} alt={top3[1].userName} className="w-full h-full object-cover" />
+                                ) : (
+                                    top3[1].userName.charAt(0)
+                                )}
                             </div>
                             <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-slate-300 rounded-full flex items-center justify-center text-white font-black shadow-lg border-2 border-white">
                                 2
@@ -207,7 +217,11 @@ export default function LeaderboardPage() {
                     <div className="flex flex-col items-center">
                         <div className="relative">
                             <div className="w-20 h-20 rounded-full bg-amber-50 border-4 border-amber-600/30 shadow-lg overflow-hidden flex items-center justify-center text-2xl font-serif font-bold text-amber-700 group-hover:scale-110 transition-transform duration-500">
-                                {top3[2].userName.charAt(0)}
+                                {top3[2].userAvatar ? (
+                                    <img src={top3[2].userAvatar} alt={top3[2].userName} className="w-full h-full object-cover" />
+                                ) : (
+                                    top3[2].userName.charAt(0)
+                                )}
                             </div>
                             <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-amber-600 rounded-full flex items-center justify-center text-white font-black shadow-lg border-2 border-white text-sm">
                                 3
@@ -252,8 +266,12 @@ export default function LeaderboardPage() {
                                         </td>
                                         <td className="px-4 md:px-6 py-4">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-cream-200 flex items-center justify-center font-serif font-bold text-brown-800 border-2 border-white shadow-sm">
-                                                    {user.userName.charAt(0)}
+                                                <div className="w-10 h-10 rounded-full bg-cream-200 flex items-center justify-center font-serif font-bold text-brown-800 border-2 border-white shadow-sm overflow-hidden">
+                                                    {user.userAvatar ? (
+                                                        <img src={user.userAvatar} alt={user.userName} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        user.userName.charAt(0)
+                                                    )}
                                                 </div>
                                                 <div>
                                                     <div className={`font-serif font-bold text-base ${isUser ? 'text-brown-900' : 'text-brown-800'}`}>

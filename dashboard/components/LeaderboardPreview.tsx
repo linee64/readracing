@@ -79,6 +79,7 @@ export default function LeaderboardPreview() {
                         id: p.id,
                         userId: p.id,
                         userName: p.id === user?.id ? `${p.full_name} (You)` : p.full_name,
+                        userAvatar: p.avatar_url,
                         booksCount: 0, // We don't track this in profiles yet
                         pagesCount: p.pages_read,
                         rank: index + 1
@@ -89,6 +90,7 @@ export default function LeaderboardPreview() {
                         id: p.id,
                         userId: p.id,
                         userName: p.id === user?.id ? `${p.full_name} (You)` : p.full_name,
+                        userAvatar: p.avatar_url,
                         booksCount: 0,
                         pagesCount: p.pages_read,
                         rank: 0
@@ -173,7 +175,9 @@ export default function LeaderboardPreview() {
 
                             <div className={`w-11 h-11 rounded-full flex-shrink-0 border-2 shadow-sm overflow-hidden flex items-center justify-center font-serif font-bold text-lg
                                 ${isTop3 ? 'border-white' : 'border-cream-200 bg-cream-100 text-brown-800'}`}>
-                                {isTop3 ? (
+                                {user.userAvatar ? (
+                                    <img src={user.userAvatar} alt={user.userName} className="w-full h-full object-cover" />
+                                ) : isTop3 ? (
                                     <div className={`w-full h-full flex items-center justify-center text-white
                                         ${user.rank === 1 ? 'bg-brand-gold' : user.rank === 2 ? 'bg-slate-300' : 'bg-amber-600'}`}>
                                         {user.userName.charAt(0)}

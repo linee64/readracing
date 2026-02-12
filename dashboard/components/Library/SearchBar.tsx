@@ -44,7 +44,7 @@ const CustomDropdown = ({
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`h-[60px] px-6 bg-white border-2 rounded-[20px] text-brown-900 transition-all font-sans font-bold flex items-center justify-between gap-4 min-w-[180px] hover:border-brown-900/30 shadow-sm ${isOpen ? 'border-brown-900 ring-4 ring-brown-900/5' : 'border-cream-200'}`}
+                className={`h-[50px] md:h-[60px] px-4 md:px-6 bg-white border-2 rounded-[20px] text-brown-900 transition-all font-sans font-bold flex items-center justify-between gap-4 min-w-[140px] md:min-w-[160px] hover:border-brown-900/30 shadow-sm ${isOpen ? 'border-brown-900 ring-4 ring-brown-900/5' : 'border-cream-200'}`}
             >
                 <div className="flex items-center gap-2">
                     {icon && <span className="text-brown-800/40">{icon}</span>}
@@ -123,7 +123,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                     )}
                 </div>
 
-                <div className="flex gap-4 w-full lg:w-auto font-sans">
+                <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full lg:w-auto font-sans">
                     <CustomDropdown 
                         label="All Genres" 
                         value={filters.genre} 
@@ -151,7 +151,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
                     <button
                         onClick={onReset}
-                        className="h-[60px] px-8 bg-brown-900/5 text-brown-900 font-black hover:bg-brown-900/10 rounded-[20px] transition-all border-2 border-transparent active:scale-95 flex items-center gap-2 group"
+                        className="h-[50px] md:h-[60px] px-6 md:px-8 bg-brown-900/5 text-brown-900 font-black hover:bg-brown-900/10 rounded-[20px] transition-all border-2 border-transparent active:scale-95 flex items-center gap-2 group"
                     >
                         <svg 
                             className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" 

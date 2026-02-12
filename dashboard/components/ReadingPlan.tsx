@@ -26,7 +26,7 @@ export default function ReadingPlan() {
     };
 
     return (
-        <div className="bg-white rounded-2xl p-8 shadow-sm mt-8 border border-cream-200">
+        <div className="bg-white rounded-2xl p-4 md:p-8 shadow-sm mt-8 border border-cream-200">
             <h2 className="text-2xl font-serif font-semibold mb-6 text-brown-900 italic">Today's Reading Plan</h2>
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -45,12 +45,12 @@ export default function ReadingPlan() {
                     </p>
                 </div>
 
-                <div className="flex flex-col items-center md:items-end gap-3">
-                    <div className="flex gap-3">
+                <div className="flex flex-col items-center md:items-end gap-3 w-full md:w-auto">
+                    <div className="flex justify-between w-full md:w-auto md:gap-3">
                         {days.map((item, idx) => (
                             <div key={idx} className="flex flex-col items-center gap-2">
                                 <div
-                                    className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${item.completed
+                                    className={`w-9 h-9 md:w-12 md:h-12 rounded-full flex items-center justify-center text-xs md:text-sm font-bold transition-all duration-300 ${item.completed
                                             ? 'bg-brown-900 text-cream-50 shadow-md'
                                             : item.current
                                                 ? 'border-2 border-brown-900 text-brown-900 scale-110 shadow-sm'

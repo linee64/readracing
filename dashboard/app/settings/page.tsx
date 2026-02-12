@@ -13,24 +13,37 @@ export default function SettingsPage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     
     const [user, setUser] = useState({
+        id: '',
         name: 'User',
         email: 'user@example.com',
         isPro: false
     });
     const [newName, setNewName] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
 
     useEffect(() => {
         const fetchUser = async () => {
             const { data: { user: supabaseUser } } = await supabase.auth.getUser();
             if (supabaseUser) {
+                // Fetch profile to get avatar_url
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('avatar_url')
+                    .eq('id', supabaseUser.id)
+                    .single();
+
                 const name = supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User';
                 setUser({
+                    id: supabaseUser.id,
                     name,
                     email: supabaseUser.email || '',
                     isPro: true
                 });
                 setNewName(name);
+                if (profile?.avatar_url) {
+                    setAvatarUrl(profile.avatar_url);
+                }
             }
         };
         fetchUser();
@@ -46,6 +59,14 @@ export default function SettingsPage() {
             });
             
             if (error) throw error;
+            
+            // Also update profile name
+            if (user.id) {
+                await supabase
+                    .from('profiles')
+                    .update({ full_name: newName })
+                    .eq('id', user.id);
+            }
             
             setUser(prev => ({ ...prev, name: newName }));
             alert('Name updated successfully!');
@@ -64,20 +85,66 @@ export default function SettingsPage() {
         { value: '60', label: '60 min' },
     ];
 
-    const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
+        if (!file || !user.id) return;
+
+        setIsUploading(true);
+        try {
+            // 1. Upload to Storage
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+            const filePath = `${user.id}/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            // 2. Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(filePath);
+
+            // 3. Update Profile
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ avatar_url: publicUrl })
+                .eq('id', user.id);
+
+            if (updateError) throw updateError;
+
+            // 4. Update State
             if (avatarUrl) URL.revokeObjectURL(avatarUrl);
-            const url = URL.createObjectURL(file);
-            setAvatarUrl(url);
+            setAvatarUrl(publicUrl);
+            
+        } catch (error: any) {
+            console.error('Error uploading avatar:', error);
+            alert('Error uploading avatar: ' + error.message);
+        } finally {
+            setIsUploading(false);
         }
     };
 
-    const removeAvatar = (e: React.MouseEvent) => {
+    const removeAvatar = async (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (avatarUrl) URL.revokeObjectURL(avatarUrl);
-        setAvatarUrl(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (!user.id) return;
+
+        try {
+             const { error } = await supabase
+                .from('profiles')
+                .update({ avatar_url: null })
+                .eq('id', user.id);
+
+            if (error) throw error;
+
+            if (avatarUrl) URL.revokeObjectURL(avatarUrl);
+            setAvatarUrl(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        } catch (error: any) {
+             alert('Error removing avatar: ' + error.message);
+        }
     };
 
     const handleSave = () => {
@@ -96,7 +163,7 @@ export default function SettingsPage() {
         <div className="min-h-screen bg-cream-50">
             <div className="max-w-4xl mx-auto p-8 pb-20">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-10">
+                <div className="flex justify-between items-end mb-8">
                     <div className="flex flex-col">
                         <h1 className="text-4xl font-serif font-bold text-brown-900 tracking-tight">
                             Settings
@@ -143,10 +210,10 @@ export default function SettingsPage() {
                             />
                             <div 
                                 onClick={() => fileInputRef.current?.click()}
-                                className="w-24 h-24 bg-cream-100 rounded-2xl flex items-center justify-center text-4xl font-bold text-brown-800 border-2 border-dashed border-brown-300 cursor-pointer hover:bg-cream-200 hover:border-brown-400 transition-all relative group overflow-hidden"
+                                className="w-24 h-24 shrink-0 bg-cream-100 rounded-lg flex items-center justify-center text-4xl font-bold text-brown-800 border-2 border-dashed border-brown-300 cursor-pointer hover:bg-cream-200 hover:border-brown-400 transition-all relative group overflow-hidden"
                             >
                                 {avatarUrl ? (
-                                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover rounded-2xl" />
+                                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover rounded-lg" />
                                 ) : (
                                     user.name.charAt(0)
                                 )}
@@ -167,7 +234,6 @@ export default function SettingsPage() {
                             </div>
                             <div className="flex flex-col">
                                 <p className="text-brown-900 font-bold text-lg">{user.name}</p>
-                                <p className="text-brown-800/60 font-medium">{user.email}</p>
                             </div>
                         </div>
 
@@ -322,7 +388,7 @@ export default function SettingsPage() {
                         <div className="relative z-10">
                             <div className="flex justify-between items-start mb-6">
                                 <div>
-                                    <h2 className="text-2xl font-serif font-bold mb-2 flex items-center gap-3">
+                                    <h2 className="text-2xl font-serif font-bold mb-2 flex items-center gap-2">
                                         Subscription
                                         {user.isPro && (
                                             <span className="bg-brand-gold text-brown-900 text-[10px] uppercase font-black px-3 py-1 rounded-full tracking-wider">

@@ -8,7 +8,7 @@ export default function MainContent({ children }: { children: React.ReactNode })
     return (
         <main className={`flex-1 transition-all duration-300 min-h-screen overflow-x-hidden max-w-full ${isCollapsed ? 'md:ml-20' : 'md:ml-64'} ml-0`}>
             {/* Mobile Header Bar */}
-            <div className="md:hidden sticky top-0 z-40 bg-cream-50/80 backdrop-blur-md border-b border-cream-200 px-4 py-3 flex items-center justify-between">
+            <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-cream-50/80 backdrop-blur-md border-b border-cream-200 px-4 py-3 flex items-center justify-between">
                 <button
                     onClick={() => setIsMobileOpen(true)}
                     className="p-2 -ml-2 text-brown-900 rounded-lg hover:bg-cream-200"
@@ -19,6 +19,8 @@ export default function MainContent({ children }: { children: React.ReactNode })
                 <span className="font-serif font-bold text-brown-900">ReadRacing</span>
                 <div className="w-8"></div> {/* Spacer for centering */}
             </div>
+            {/* Spacer for fixed header */}
+            <div className="md:hidden h-[60px]"></div>
             {children}
         </main>
     );
