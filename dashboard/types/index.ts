@@ -13,6 +13,7 @@ export interface Book {
     description?: string;
     language?: string;
     pagesRead?: number;
+    lastReadAt?: number; // Timestamp of last read/interaction
 }
 
 export interface BookSearchFilters {

@@ -34,7 +34,8 @@ export default function ReaderPage() {
                             ...b, 
                             currentPage: newPage,
                             currentPageCfi: cfi || b.currentPageCfi,
-                            totalPages: total > 0 ? total : b.totalPages 
+                            totalPages: total > 0 ? total : b.totalPages,
+                            lastReadAt: Date.now()
                         };
                     }
                     return b;
@@ -48,6 +49,7 @@ export default function ReaderPage() {
                     const totalPagesRead = updatedLibrary.reduce((acc, book) => acc + (book.currentPage || 0), 0);
                     const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown Reader';
                     
+                    // Update user profile
                     await supabase
                         .from('profiles')
                         .upsert({ 
@@ -56,6 +58,18 @@ export default function ReaderPage() {
                             pages_read: totalPagesRead,
                             updated_at: new Date().toISOString()
                         });
+
+                    // Sync book progress to 'books' table
+                    await supabase
+                        .from('books')
+                        .upsert({
+                            id: id,
+                            user_id: user.id,
+                            current_page: curr,
+                            current_page_cfi: cfi,
+                            total_pages: total > 0 ? total : undefined,
+                            last_read_at: new Date().toISOString()
+                        }, { onConflict: 'id' });
                 }
             }
         } catch (e) {

@@ -15,17 +15,24 @@ export default function CurrentBook() {
             try {
                 const library = await get('readracing_library_v2') as Book[];
                 if (library && library.length > 0) {
-                    // Находим книгу с максимальным прогрессом или последнюю измененную
-                    // Для простоты возьмем первую из списка, если нет явного флага "последняя"
-                    // Но лучше взять ту, где currentPage > 0
-                    const inProgress = library.filter(b => b.currentPage > 0);
-                    if (inProgress.length > 0) {
-                        // Сортируем по ID (так как там Date.now()) чтобы найти последнюю добавленную/измененную
-                        const last = inProgress.sort((a, b) => b.id.localeCompare(a.id))[0];
-                        setBook(last);
-                    } else {
-                        setBook(library[0]);
-                    }
+                    // Sort by lastReadAt (most recent interaction) first, then by ID (creation time)
+                    const sorted = [...library].sort((a, b) => {
+                        const timeA = a.lastReadAt || 0;
+                        const timeB = b.lastReadAt || 0;
+                        if (timeA !== timeB) {
+                            return timeB - timeA;
+                        }
+                        // Fallback: If no lastReadAt, prioritize books in progress
+                        const progressA = a.currentPage > 0 ? 1 : 0;
+                        const progressB = b.currentPage > 0 ? 1 : 0;
+                        if (progressA !== progressB) {
+                            return progressB - progressA;
+                        }
+                        // Final fallback: Creation time (ID)
+                        return b.id.localeCompare(a.id);
+                    });
+                    
+                    setBook(sorted[0]);
                 }
             } catch (e) {
                 console.error('Failed to load last book:', e);

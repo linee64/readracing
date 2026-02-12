@@ -39,29 +39,90 @@ export default function LibraryPage() {
     // Load books from IndexedDB on mount
     useEffect(() => {
         const loadBooks = async () => {
-            // Try IndexedDB first
-            const savedBooks = await get('readracing_library_v2') as Book[];
-            if (savedBooks) {
-                setBooks(savedBooks);
-                repairCovers(savedBooks);
-            } else {
-                // Fallback to old localStorage and migrate
-                const oldBooks = localStorage.getItem('readracing_library');
-                if (oldBooks) {
-                    try {
-                        const parsed = JSON.parse(oldBooks);
-                        setBooks(parsed);
-                        // Save to IndexedDB for future
-                        await set('readracing_library_v2', parsed);
-                        repairCovers(parsed);
-                    } catch (e) {
-                        console.error('Failed to parse books from localStorage', e);
-                    }
+            // 1. Load local books immediately
+            const localBooks = await get('readracing_library_v2') as Book[];
+            if (localBooks) {
+                setBooks(localBooks);
+            }
+
+            // 2. Sync with Supabase
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                // Fetch books from Supabase 'books' table
+                const { data: remoteBooks, error } = await supabase
+                    .from('books')
+                    .select('*')
+                    .eq('user_id', user.id);
+
+                if (remoteBooks && !error) {
+                    // Merge remote books with local books
+                    const mergedBooks = mergeBooks(localBooks || [], remoteBooks);
+                    setBooks(mergedBooks);
+                    // Update local storage
+                    await set('readracing_library_v2', mergedBooks);
+                    
+                    // Download missing book files in background
+                    downloadMissingBooks(mergedBooks);
                 }
             }
         };
         loadBooks();
     }, []);
+
+    const mergeBooks = (local: Book[], remote: any[]): Book[] => {
+        const map = new Map<string, Book>();
+        
+        // Add local books first
+        local.forEach(b => map.set(b.id, b));
+        
+        // Merge remote books
+        remote.forEach(r => {
+            const existing = map.get(r.id);
+            const remoteBook: Book = {
+                id: r.id,
+                title: r.title,
+                author: r.author,
+                coverUrl: r.cover_url,
+                totalPages: r.total_pages,
+                currentPage: r.current_page,
+                currentPageCfi: r.current_page_cfi,
+                lastReadAt: new Date(r.last_read_at).getTime(),
+                epubUrl: r.file_url
+            };
+
+            if (!existing) {
+                map.set(r.id, remoteBook);
+            } else {
+                // Update if remote is newer
+                if ((remoteBook.lastReadAt || 0) > (existing.lastReadAt || 0)) {
+                    map.set(r.id, { ...existing, ...remoteBook });
+                }
+            }
+        });
+        
+        return Array.from(map.values());
+    };
+
+    const downloadMissingBooks = async (books: Book[]) => {
+        for (const book of books) {
+            // Check if file exists locally
+            const fileData = await get(book.id);
+            if (!fileData && book.epubUrl) {
+                try {
+                    console.log(`Downloading book: ${book.title}`);
+                    const response = await fetch(book.epubUrl);
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const arrayBuffer = await blob.arrayBuffer();
+                        await set(book.id, arrayBuffer);
+                        console.log(`Downloaded and saved: ${book.title}`);
+                    }
+                } catch (e) {
+                    console.error(`Failed to download book ${book.title}`, e);
+                }
+            }
+        }
+    };
 
     const repairCovers = async (currentBooks: Book[]) => {
         let needsUpdate = false;
@@ -135,19 +196,37 @@ export default function LibraryPage() {
             await set(bookId, arrayBuffer);
             console.log('File saved to IndexedDB');
 
-            // 2. Create basic entry first so user sees SOMETHING
+            // 2. Upload to Supabase Storage
+            const { data: { user } } = await supabase.auth.getUser();
+            let publicUrl = '';
+
+            if (user) {
+                const fileName = `${user.id}/${bookId}.epub`;
+                const { error: uploadError } = await supabase.storage
+                    .from('books')
+                    .upload(fileName, file);
+                
+                if (!uploadError) {
+                    const { data } = supabase.storage.from('books').getPublicUrl(fileName);
+                    publicUrl = data.publicUrl;
+                }
+            }
+
+            // 3. Create basic entry first so user sees SOMETHING
             const initialEntry: Book = {
                 id: bookId,
                 title: file.name.replace('.epub', ''),
                 author: 'Loading...',
                 totalPages: 0,
                 currentPage: 0,
-                coverUrl: ''
+                coverUrl: '',
+                lastReadAt: Date.now(), // Set initial timestamp
+                epubUrl: publicUrl
             };
             
             setBooks(prev => [...prev, initialEntry]);
 
-            // 3. Try to parse metadata in background
+            // 4. Try to parse metadata in background
             try {
                 const book = ePub(arrayBuffer);
                 
@@ -181,7 +260,7 @@ export default function LibraryPage() {
                     console.warn('Cover extraction failed, continuing without cover', coverErr);
                 }
 
-                // 4. Update the entry with real metadata
+                // 5. Update the entry with real metadata
                 const finalEntry: Book = {
                     ...initialEntry,
                     title: metadata.title || initialEntry.title,
@@ -195,6 +274,21 @@ export default function LibraryPage() {
                     set('readracing_library_v2', updated);
                     return updated;
                 });
+
+                // Sync metadata to Supabase DB
+                if (user && publicUrl) {
+                    await supabase.from('books').insert({
+                        id: bookId,
+                        user_id: user.id,
+                        title: finalEntry.title,
+                        author: finalEntry.author,
+                        cover_url: finalEntry.coverUrl,
+                        file_url: publicUrl,
+                        total_pages: finalEntry.totalPages,
+                        current_page: 0,
+                        last_read_at: new Date().toISOString()
+                    });
+                }
 
                 // Cleanup epubjs object
                 try { book.destroy(); } catch(e) {}
@@ -302,7 +396,8 @@ export default function LibraryPage() {
                                         e.stopPropagation();
                                         handleDeleteBook(book.id);
                                     }}
-                                    className="absolute top-4 right-4 w-8 h-8 bg-red-50 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 z-10"
+                                    className="absolute top-4 right-4 w-8 h-8 bg-red-50 text-red-500 rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-red-100 z-10 shadow-sm"
+                                    aria-label="Delete book"
                                 >
                                     ×
                                 </button>
