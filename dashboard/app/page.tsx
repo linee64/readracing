@@ -14,8 +14,7 @@ export default function Home() {
       if (session) {
         router.replace('/dashboard');
       } else {
-        // Redirect to landing page (since landing is in another folder/domain, we use window.location)
-        window.location.href = '/'; 
+        router.replace('/login');
       }
     };
     checkAuth();

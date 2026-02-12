@@ -9,9 +9,9 @@ const Header = () => {
     const location = useLocation();
     const isAuthPage = false; // We don't have auth pages in landing anymore
 
-    const dashboardUrl = "https://readracing-dash.vercel.app/dashboard";
-    const loginUrl = "https://readracing-dash.vercel.app/login";
-    const signupUrl = "https://readracing-dash.vercel.app/signup";
+    const dashboardUrl = "http://localhost:3000/dashboard";
+    const loginUrl = "http://localhost:3000/login";
+    const signupUrl = "http://localhost:3000/signup";
 
     // Body scroll lock when menu is open
     useEffect(() => {
@@ -32,18 +32,18 @@ const Header = () => {
 
     const scrollToSection = (e, id) => {
         if (e) e.preventDefault();
-        
+
         // If we're on another page, we might need to navigate first, 
         // but for now assuming we're on Home.
-        
+
         setIsMenuOpen(false);
-        
+
         // Small delay to allow menu closing animation to start/finish 
         // or at least not conflict with scroll
         setTimeout(() => {
             const element = document.getElementById(id);
             if (element) {
-                const headerOffset = 80; 
+                const headerOffset = 80;
                 const elementPosition = element.getBoundingClientRect().top;
                 const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
@@ -68,9 +68,9 @@ const Header = () => {
                     <div className="flex-1">
                         <Link to="/" onClick={(e) => scrollToSection(e, 'home')} className="flex items-center gap-3 group">
                             <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl shadow-sm border border-brand-black/5 flex items-center justify-center p-1.5 group-hover:shadow-md group-hover:-translate-y-0.5 transition-all duration-300">
-                                <img 
-                                    src="/landing-logo.png" 
-                                    alt="ReadRacing Logo" 
+                                <img
+                                    src="/landing-logo.png"
+                                    alt="ReadRacing Logo"
                                     className="w-full h-full object-contain"
                                 />
                             </div>
@@ -109,8 +109,8 @@ const Header = () => {
                                         </a>
                                     </>
                                 ) : (
-                                    <a 
-                                        href={dashboardUrl} 
+                                    <a
+                                        href={dashboardUrl}
                                         className="bg-brand-black text-brand-beige px-4 py-2 text-sm font-medium rounded-sm hover:opacity-90 transition-opacity italic"
                                     >
                                         Dashboard
@@ -118,10 +118,10 @@ const Header = () => {
                                 )}
                             </>
                         )}
-                        
+
                         {/* Mobile Menu Toggle - Higher z-index to stay above overlay */}
                         {!isAuthPage && (
-                            <button 
+                            <button
                                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                                 className="md:hidden p-2 -mr-2 text-brand-black focus:outline-none relative z-[130]"
                                 aria-label="Toggle menu"
@@ -145,7 +145,7 @@ const Header = () => {
                             <p className="text-[10px] uppercase tracking-[0.3em] text-brand-black/30 font-bold ml-1">Navigation</p>
                             <div className="flex flex-col gap-2">
                                 <Link to="/" onClick={(e) => scrollToSection(e, 'home')} className="group flex items-center justify-between py-2">
-                                    <BlurTextReact 
+                                    <BlurTextReact
                                         text="Home"
                                         tag="span"
                                         className="text-4xl font-bold text-brand-black italic font-serif group-hover:text-brand-gold transition-colors"
@@ -158,7 +158,7 @@ const Header = () => {
                                     </svg>
                                 </Link>
                                 <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="group flex items-center justify-between py-2">
-                                    <BlurTextReact 
+                                    <BlurTextReact
                                         text="Features"
                                         tag="span"
                                         className="text-4xl font-bold text-brand-black italic font-serif group-hover:text-brand-gold transition-colors"
@@ -171,7 +171,7 @@ const Header = () => {
                                     </svg>
                                 </a>
                                 <a href="#try-free" onClick={(e) => scrollToSection(e, 'try-free')} className="group flex items-center justify-between py-2">
-                                    <BlurTextReact 
+                                    <BlurTextReact
                                         text="Try Free"
                                         tag="span"
                                         className="text-4xl font-bold text-brand-black italic font-serif group-hover:text-brand-gold transition-colors"
@@ -199,8 +199,8 @@ const Header = () => {
                                         </a>
                                     </>
                                 ) : (
-                                    <a 
-                                        href={dashboardUrl} 
+                                    <a
+                                        href={dashboardUrl}
                                         className="w-full py-5 text-center font-bold text-brand-beige italic bg-brand-black rounded-xl hover:opacity-90 transition-all shadow-lg"
                                     >
                                         Dashboard

@@ -36,7 +36,7 @@ export default function LeaderboardPage() {
                 let pagesCount = 0;
 
                 if (library && library.length > 0) {
-                    booksCount = library.filter(book => 
+                    booksCount = library.filter(book =>
                         book.totalPages > 0 && (book.currentPage || 0) >= book.totalPages
                     ).length;
                     pagesCount = library.reduce((acc, book) => acc + (book.currentPage || 0), 0);
@@ -48,13 +48,13 @@ export default function LeaderboardPage() {
                 if (user) {
                     const { error: syncError } = await supabase
                         .from('profiles')
-                        .upsert({ 
-                            id: user.id, 
-                            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown Reader', 
+                        .upsert({
+                            id: user.id,
+                            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown Reader',
                             pages_read: pagesCount,
                             updated_at: new Date().toISOString()
                         });
-                    
+
                     if (syncError) {
                         console.error('Leaderboard page sync error:', syncError.message);
                     }
@@ -64,12 +64,13 @@ export default function LeaderboardPage() {
                 const { data: profiles, error } = await supabase
                     .from('profiles')
                     .select('*')
+                    .gt('pages_read', 0)
                     .order('pages_read', { ascending: false });
 
                 if (error) throw error;
 
                 let finalBoard: LeaderboardEntry[] = [];
-                
+
                 // If we have 5 or more real users, use only them
                 if (profiles && profiles.length >= 5) {
                     finalBoard = profiles.map((p, index) => ({
@@ -93,7 +94,7 @@ export default function LeaderboardPage() {
 
                     const realUserIds = new Set(realUsers.map(u => u.id));
                     const remainingBots = mockFullLeaderboard.filter(bot => !realUserIds.has(bot.id));
-                    
+
                     finalBoard = [...realUsers, ...remainingBots]
                         .sort((a, b) => b.pagesCount - a.pagesCount)
                         .map((u, i) => ({ ...u, rank: i + 1 }));
@@ -139,11 +140,10 @@ export default function LeaderboardPage() {
                             <button
                                 key={t}
                                 onClick={() => setTimeframe(t)}
-                                className={`flex-1 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 capitalize whitespace-nowrap ${
-                                    timeframe === t 
-                                    ? 'bg-brown-900 text-cream-50 shadow-md' 
-                                    : 'text-brown-800/60 hover:text-brown-900'
-                                }`}
+                                className={`flex-1 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 capitalize whitespace-nowrap ${timeframe === t
+                                        ? 'bg-brown-900 text-cream-50 shadow-md'
+                                        : 'text-brown-800/60 hover:text-brown-900'
+                                    }`}
                             >
                                 {t.replace('-', ' ')}
                             </button>
@@ -159,7 +159,7 @@ export default function LeaderboardPage() {
                     <div className="flex flex-col items-center">
                         <div className="relative">
                             <div className="absolute -top-10 left-1/2 -translate-x-1/2 text-brand-gold animate-bounce">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"><path fill="currentColor" d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14z"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"><path fill="currentColor" d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14z" /></svg>
                             </div>
                             <div className="w-32 h-32 rounded-full bg-brand-gold/10 border-4 border-brand-gold shadow-2xl shadow-brand-gold/20 overflow-hidden flex items-center justify-center text-4xl font-serif font-bold text-brand-gold-dark group-hover:scale-110 transition-transform duration-500 relative">
                                 <div className="absolute inset-0 bg-gradient-to-tr from-brand-gold/20 to-transparent animate-pulse"></div>
@@ -227,7 +227,7 @@ export default function LeaderboardPage() {
             {/* List Section */}
             <div className="bg-white rounded-[2.5rem] p-4 md:p-8 shadow-sm border border-cream-200 overflow-hidden relative">
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-cream-200 to-transparent opacity-30"></div>
-                
+
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-separate border-spacing-y-3 min-w-[600px] md:min-w-0">
                         <thead>
@@ -241,8 +241,8 @@ export default function LeaderboardPage() {
                             {others.map((user) => {
                                 const isUser = user.userName.includes('(You)');
                                 return (
-                                    <tr 
-                                        key={user.id} 
+                                    <tr
+                                        key={user.id}
                                         className={`group transition-all duration-300 hover:scale-[1.01] ${isUser ? 'bg-cream-50/80' : 'hover:bg-cream-50/50'}`}
                                     >
                                         <td className="px-4 md:px-6 py-4 first:rounded-l-2xl">
@@ -271,7 +271,7 @@ export default function LeaderboardPage() {
                                                     <span className="text-lg font-black text-brown-900">
                                                         {user.pagesCount.toLocaleString()}
                                                     </span>
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" className="text-brown-900/20"><path fill="currentColor" d="M13 13v8h8v-8zm6 6h-4v-4h4zm-6-7h8V4h-8zm2-6h4v4h-4zm-9 1h6v2H6v3h3v2H6v3h4v2H4V4h6v2H6z"/></svg>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" className="text-brown-900/20"><path fill="currentColor" d="M13 13v8h8v-8zm6 6h-4v-4h4zm-6-7h8V4h-8zm2-6h4v4h-4zm-9 1h6v2H6v3h3v2H6v3h4v2H4V4h6v2H6z" /></svg>
                                                 </div>
                                                 <div className="text-[9px] text-brown-800/30 font-black uppercase tracking-tighter">
                                                     Pages Read

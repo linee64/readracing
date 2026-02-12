@@ -7,17 +7,17 @@ import { useAuth } from '../context/AuthContext';
 
 const Hero = () => {
     const { user } = useAuth();
-    const dashboardUrl = "https://readracing-dash.vercel.app/dashboard";
-    const loginUrl = "https://readracing-dash.vercel.app/login";
-    
+    const dashboardUrl = "http://localhost:3000/dashboard";
+    const loginUrl = "http://localhost:3000/login";
+
     return (
         <section className="bg-brand-beige min-h-[85vh] md:min-h-[90vh] flex flex-col justify-center px-4 max-w-7xl mx-auto pt-4 md:pt-5 pb-8 md:pb-11 relative overflow-hidden md:overflow-visible">
             <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center relative p-2 sm:p-8 md:p-12">
                 <CornerAccent />
                 <div className="text-center md:text-left z-30 flex flex-col items-center md:items-start">
                     <h2 className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight text-brand-black mb-4 md:mb-6 leading-[1.2] md:leading-[1.1] italic min-h-[4.2em] md:min-h-auto">
-                        <TextTypeReact 
-                            text={["Turn reading into a habit.", "Finish every book you start."]} 
+                        <TextTypeReact
+                            text={["Turn reading into a habit.", "Finish every book you start."]}
                             typingSpeed={70}
                             pauseDuration={3000}
                         />
@@ -31,7 +31,7 @@ const Hero = () => {
                         />
                     </div>
                     <div className="flex flex-col items-center md:items-start gap-3 w-full sm:w-auto">
-                        <StarBorderReact 
+                        <StarBorderReact
                             as="a"
                             href={user ? dashboardUrl : loginUrl}
                             color="#e9c46a"
@@ -46,10 +46,10 @@ const Hero = () => {
                 <div className="relative mt-4 md:mt-0 order-last md:order-none flex items-center justify-center transition-transform duration-500 hover:scale-105 px-2">
                     {/* Decorative Background Elements */}
                     <div className="absolute w-[85%] md:w-[90%] aspect-square bg-brand-gold rounded-full z-0 shadow-[0_0_30px_rgba(233,196,106,0.2)] md:shadow-[0_0_40px_rgba(233,196,106,0.3)]"></div>
-                    
+
                     <div className="absolute w-[80%] md:w-[85%] aspect-square border border-white/20 rounded-full rotate-12 backdrop-blur-[1px] md:backdrop-blur-[2px] bg-white/5"></div>
                     <div className="absolute w-[80%] md:w-[85%] aspect-square border border-white/10 rounded-full -rotate-6 backdrop-blur-[1px]"></div>
-                    
+
                     <img
                         src="/landing-pic.png"
                         alt="ReadRacing App Interface"
