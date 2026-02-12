@@ -7,8 +7,8 @@ import { useAuth } from '../context/AuthContext';
 
 const Hero = () => {
     const { user } = useAuth();
-    const dashboardUrl = "http://localhost:3000/dashboard";
-    const loginUrl = "http://localhost:3000/login";
+    const dashboardUrl = "http://readracing-dash.vercel.app/dashboard";
+    const loginUrl = "http://readracing-dash.vercel.app/login";
 
     return (
         <section className="bg-brand-beige min-h-[85vh] md:min-h-[90vh] flex flex-col justify-center px-4 max-w-7xl mx-auto pt-4 md:pt-5 pb-8 md:pb-11 relative overflow-hidden md:overflow-visible">

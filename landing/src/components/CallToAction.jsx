@@ -6,8 +6,8 @@ import { useAuth } from '../context/AuthContext';
 
 const CallToAction = () => {
     const { user } = useAuth();
-    const dashboardUrl = "http://localhost:3000/dashboard";
-    const signupUrl = "http://localhost:3000/signup";
+    const dashboardUrl = "http://readracing-dash.vercel.app/dashboard";
+    const signupUrl = "http://readracing-dash.vercel.app/signup";
 
     return (
         <section id="try-free" className="py-16 md:py-32 px-4 bg-brand-black text-brand-beige overflow-hidden">
