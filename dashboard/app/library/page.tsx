@@ -63,11 +63,53 @@ export default function LibraryPage() {
                     
                     // Download missing book files in background
                     downloadMissingBooks(mergedBooks);
+                    
+                    // Upload local-only books to Supabase (Sync Up)
+                    uploadMissingBooks(localBooks || [], remoteBooks || [], user.id);
                 }
             }
         };
         loadBooks();
     }, []);
+
+    const uploadMissingBooks = async (local: Book[], remote: any[], userId: string) => {
+        const remoteIds = new Set(remote.map(r => r.id));
+        const missingInRemote = local.filter(b => !remoteIds.has(b.id));
+
+        for (const book of missingInRemote) {
+            try {
+                console.log(`Syncing up book: ${book.title}`);
+                const fileData = await get(book.id);
+                if (fileData) {
+                    const fileName = `${userId}/${book.id}.epub`;
+                    const { error: uploadError } = await supabase.storage
+                        .from('books')
+                        .upload(fileName, fileData, { upsert: true });
+
+                    if (!uploadError) {
+                        const { data } = supabase.storage.from('books').getPublicUrl(fileName);
+                        const publicUrl = data.publicUrl;
+
+                        await supabase.from('books').insert({
+                            id: book.id,
+                            user_id: userId,
+                            title: book.title,
+                            author: book.author,
+                            cover_url: book.coverUrl,
+                            file_url: publicUrl,
+                            total_pages: book.totalPages,
+                            current_page: book.currentPage,
+                            current_page_cfi: book.currentPageCfi,
+                            last_read_at: new Date(book.lastReadAt || Date.now()).toISOString()
+                        });
+                        console.log(`Synced up: ${book.title}`);
+                    }
+                }
+            } catch (e) {
+                console.error(`Failed to sync up book ${book.title}`, e);
+            }
+        }
+    };
 
     const mergeBooks = (local: Book[], remote: any[]): Book[] => {
         const map = new Map<string, Book>();
