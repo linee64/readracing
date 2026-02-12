@@ -12,6 +12,7 @@ export default function LibraryPage() {
     const router = useRouter();
     const [books, setBooks] = useState<Book[]>([]);
     const [isUploading, setIsUploading] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
     const [username, setUsername] = useState<string>('Reader');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -36,15 +37,14 @@ export default function LibraryPage() {
         return () => subscription.unsubscribe();
     }, []);
 
-    // Load books from IndexedDB on mount
-    useEffect(() => {
-        const loadBooks = async () => {
-            // 1. Load local books immediately
-            const localBooks = await get('readracing_library_v2') as Book[];
-            if (localBooks) {
-                setBooks(localBooks);
-            }
-
+    // Sync library function
+    const syncLibrary = async (silent = false) => {
+        if (isSyncing) return;
+        setIsSyncing(true);
+        try {
+            // 1. Load local books
+            const localBooks = await get('readracing_library_v2') as Book[] || [];
+            
             // 2. Sync with Supabase
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
@@ -56,18 +56,42 @@ export default function LibraryPage() {
 
                 if (remoteBooks && !error) {
                     // Merge remote books with local books
-                    const mergedBooks = mergeBooks(localBooks || [], remoteBooks);
+                    const mergedBooks = mergeBooks(localBooks, remoteBooks);
                     setBooks(mergedBooks);
                     // Update local storage
                     await set('readracing_library_v2', mergedBooks);
                     
                     // Download missing book files in background
-                    downloadMissingBooks(mergedBooks);
+                    await downloadMissingBooks(mergedBooks);
                     
                     // Upload local-only books to Supabase (Sync Up)
-                    uploadMissingBooks(localBooks || [], remoteBooks || [], user.id);
+                    await uploadMissingBooks(localBooks, remoteBooks, user.id);
+                    
+                    if (!silent) alert('Library synced successfully!');
+                } else if (!silent && error) {
+                    throw error;
                 }
+            } else if (!silent) {
+                alert('Please log in to sync books');
             }
+        } catch (e: any) {
+            console.error('Sync failed:', e);
+            if (!silent) alert(`Sync failed: ${e.message || e}`);
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    // Load books from IndexedDB on mount
+    useEffect(() => {
+        const loadBooks = async () => {
+            // Load local books immediately
+            const localBooks = await get('readracing_library_v2') as Book[];
+            if (localBooks) {
+                setBooks(localBooks);
+            }
+            // Trigger silent sync
+            await syncLibrary(true);
         };
         loadBooks();
     }, []);
@@ -220,6 +244,12 @@ export default function LibraryPage() {
         await saveBooks(updatedBooks);
         if (id.startsWith('epub-')) {
             await del(id);
+            // Also delete from Supabase if online
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                await supabase.from('books').delete().eq('id', id);
+                await supabase.storage.from('books').remove([`${user.id}/${id}.epub`]);
+            }
         }
     };
 
@@ -362,6 +392,20 @@ export default function LibraryPage() {
                 <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 md:mb-8">
                     <h2 className="text-2xl md:text-3xl font-serif font-bold text-brown-900 italic">My Library</h2>
                     <div className="flex gap-4 self-start md:self-auto w-full md:w-auto">
+                        <button
+                            onClick={() => syncLibrary(false)}
+                            disabled={isSyncing}
+                            className="bg-cream-200 text-brown-900 px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-cream-300 transition-colors disabled:opacity-50"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isSyncing ? "animate-spin" : ""}>
+                                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                                <path d="M3 3v5h5" />
+                                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                                <path d="M16 16h5v5" />
+                            </svg>
+                            {isSyncing ? 'Syncing...' : 'Sync'}
+                        </button>
+
                         <input
                             type="file"
                             accept=".epub"
@@ -398,50 +442,36 @@ export default function LibraryPage() {
                                 onClick={() => router.push(`/reader/${book.id}`)}
                                 className="bg-white rounded-2xl p-6 shadow-sm border border-cream-200 hover:shadow-md transition-shadow group relative flex flex-col cursor-pointer"
                             >
-                                <div className="aspect-[2/3] bg-cream-100 rounded-xl mb-4 flex items-center justify-center shadow-inner border border-cream-200 overflow-hidden relative">
-                                    <span className="absolute text-4xl opacity-20 group-hover:scale-110 transition-transform duration-500">📖</span>
-                                    {book.coverUrl && (
-                                        <img
-                                            src={book.coverUrl}
-                                            alt={book.title}
-                                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                            crossOrigin="anonymous"
-                                            onError={(e) => {
-                                                (e.target as HTMLImageElement).style.display = 'none';
-                                            }}
-                                        />
-                                    )}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-brown-900/10 to-transparent pointer-events-none"></div>
-                                </div>
-                                <h3 className="text-lg font-serif font-bold text-brown-900 truncate">{book.title}</h3>
-                                <p className="text-sm text-brown-800/60 font-medium truncate mb-4">by {book.author}</p>
-
-                                <div className="mt-auto">
-                                    <div className="w-full bg-cream-100 rounded-full h-2 border border-cream-200 overflow-hidden">
-                                        <div
-                                            className="bg-brown-900 h-full rounded-full transition-all duration-500"
-                                            style={{ width: `${book.totalPages > 0 ? (book.currentPage / book.totalPages) * 100 : 0}%` }}
-                                        ></div>
+                                <div className="flex gap-4">
+                                    <div className="w-20 h-28 bg-cream-100 rounded-lg flex-shrink-0 overflow-hidden shadow-sm">
+                                        {book.coverUrl ? (
+                                            <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-2xl">📖</div>
+                                        )}
                                     </div>
-                                    <div className="flex justify-between mt-2 text-[10px] font-black text-brown-800/40 uppercase tracking-widest">
-                                        <span>{book.currentPage} / {book.totalPages || '?'} pages</span>
-                                        <span>{book.totalPages > 0 ? Math.round((book.currentPage / book.totalPages) * 100) : 0}%</span>
-                                    </div>
-
-                                    <div className="mt-4 w-full bg-brown-900 text-cream-50 py-2 rounded-xl font-bold text-center block hover:bg-brown-800 transition-colors">
-                                        Read Book
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-bold text-brown-900 truncate mb-1">{book.title}</h3>
+                                        <p className="text-sm text-brown-600 truncate mb-2">{book.author}</p>
+                                        <div className="text-xs text-brown-400">
+                                            {Math.round((book.currentPage / (book.totalPages || 1)) * 100)}% complete
+                                        </div>
                                     </div>
                                 </div>
-
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        handleDeleteBook(book.id);
+                                        if (confirm('Are you sure you want to delete this book?')) {
+                                            handleDeleteBook(book.id);
+                                        }
                                     }}
-                                    className="absolute top-4 right-4 w-8 h-8 bg-red-50 text-red-500 rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-red-100 z-10 shadow-sm"
-                                    aria-label="Delete book"
+                                    className="absolute top-2 right-2 p-2 text-brown-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                 >
-                                    ×
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M3 6h18" />
+                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                    </svg>
                                 </button>
                             </div>
                         ))}
