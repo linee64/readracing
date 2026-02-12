@@ -4,12 +4,12 @@ import { useSidebar } from "@/context/SidebarContext";
 
 export default function MainContent({ children }: { children: React.ReactNode }) {
     const { isCollapsed, setIsMobileOpen } = useSidebar();
-    
+
     return (
-        <main className={`flex-1 transition-all duration-300 min-h-screen ${isCollapsed ? 'md:ml-20' : 'md:ml-64'} ml-0`}>
+        <main className={`flex-1 transition-all duration-300 min-h-screen overflow-x-hidden max-w-full ${isCollapsed ? 'md:ml-20' : 'md:ml-64'} ml-0`}>
             {/* Mobile Header Bar */}
             <div className="md:hidden sticky top-0 z-40 bg-cream-50/80 backdrop-blur-md border-b border-cream-200 px-4 py-3 flex items-center justify-between">
-                <button 
+                <button
                     onClick={() => setIsMobileOpen(true)}
                     className="p-2 -ml-2 text-brown-900 rounded-lg hover:bg-cream-200"
                     aria-label="Open sidebar"

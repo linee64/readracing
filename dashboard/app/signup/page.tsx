@@ -27,7 +27,7 @@ export default function SignUpPage() {
                     data: {
                         full_name: name,
                     },
-                    emailRedirectTo: 'https://readracing-dash.vercel.app/dashboard',
+                    emailRedirectTo: 'https://readracing.vercel.app/',
                 }
             });
 
@@ -101,7 +101,7 @@ export default function SignUpPage() {
                         />
                     </div>
 
-                    <button 
+                    <button
                         type="submit"
                         disabled={loading}
                         className="bg-brand-gold text-brand-black py-4 font-bold mt-4 hover:bg-brand-gold-dark transition-colors font-sans disabled:opacity-50 disabled:cursor-not-allowed"

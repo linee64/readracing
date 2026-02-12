@@ -64,7 +64,7 @@ export default function RootLayout({
               {children}
             </main>
           ) : (
-            <div className="flex">
+            <div className="flex overflow-x-hidden max-w-full">
               <Sidebar />
               <MainContent>{children}</MainContent>
             </div>
