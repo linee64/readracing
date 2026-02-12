@@ -2,11 +2,14 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useLanguage } from '@/context/LanguageContext';
+import { Language } from '@/lib/translations';
 
 export default function SettingsPage() {
+    const { language, setLanguage, t } = useLanguage();
     const [notifications, setNotifications] = useState(true);
     const [readingGoal, setReadingGoal] = useState('30');
-    const [language, setLanguage] = useState('English');
+    // const [language, setLanguage] = useState('English'); // Removed local state
     const [isLangOpen, setIsLangOpen] = useState(false);
     const [isGoalOpen, setIsGoalOpen] = useState(false);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -79,10 +82,10 @@ export default function SettingsPage() {
 
     const languages = ['English', 'Russian'];
     const goals = [
-        { value: '15', label: '15 min' },
-        { value: '30', label: '30 min' },
-        { value: '45', label: '45 min' },
-        { value: '60', label: '60 min' },
+        { value: '15', label: `15 ${t.settings.min}` },
+        { value: '30', label: `30 ${t.settings.min}` },
+        { value: '45', label: `45 ${t.settings.min}` },
+        { value: '60', label: `60 ${t.settings.min}` },
     ];
 
     const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,7 +155,7 @@ export default function SettingsPage() {
         alert('Settings saved successfully!');
     };
 
-    const currentDate = new Date().toLocaleDateString('en-US', {
+    const currentDate = new Date().toLocaleDateString(language === 'Russian' ? 'ru-RU' : 'en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -166,10 +169,10 @@ export default function SettingsPage() {
                 <div className="flex justify-between items-end mb-8">
                     <div className="flex flex-col">
                         <h1 className="text-4xl font-serif font-bold text-brown-900 tracking-tight">
-                            Settings
+                            {t.settings.title}
                         </h1>
                         <p className="text-lg text-brown-800/70 mt-2 font-medium">
-                            Manage your account and app preferences
+                            {t.settings.subtitle}
                         </p>
                     </div>
                     <div className="text-sm font-medium text-brown-800/60 bg-white px-4 py-2 rounded-full shadow-sm border border-cream-200">
@@ -185,7 +188,7 @@ export default function SettingsPage() {
                                 <span className="w-8 h-8 rounded-lg bg-brown-900 text-cream-50 flex items-center justify-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12q-1.65 0-2.825-1.175T8 8t1.175-2.825T12 4t2.825 1.175T16 8t-1.175 2.825T12 12m-8 8v-2.8q0-.85.438-1.562T5.6 14.55q1.55-.775 3.15-1.162T12 13t3.25.388t3.15 1.162q.725.375 1.163 1.088T20 17.2V20z" /></svg>
                                 </span>
-                                Profile Settings
+                                {t.settings.profile_section}
                             </h2>
                             <button
                                 onClick={handleSaveName}
@@ -196,7 +199,7 @@ export default function SettingsPage() {
                                     : 'bg-cream-100 text-brown-800/30 cursor-not-allowed'
                                 }`}
                             >
-                                {isSaving ? 'Saving...' : 'Save Changes'}
+                                {isSaving ? t.settings.saving : t.settings.save_changes}
                             </button>
                         </div>
                         
@@ -239,7 +242,7 @@ export default function SettingsPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-brown-800/70 ml-1">Full Name</label>
+                                <label className="text-sm font-bold text-brown-800/70 ml-1">{t.settings.display_name}</label>
                                 <div className="relative">
                                     <input
                                         type="text"
@@ -250,7 +253,7 @@ export default function SettingsPage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-brown-800/70 ml-1">Email Address</label>
+                                <label className="text-sm font-bold text-brown-800/70 ml-1">{t.settings.email_address}</label>
                                 <div className="relative group">
                                     <input
                                         type="email"
@@ -259,7 +262,7 @@ export default function SettingsPage() {
                                         className="w-full bg-cream-50/30 border border-cream-200 rounded-2xl px-5 py-3 text-brown-800/40 font-medium cursor-not-allowed select-none"
                                     />
                                     <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <span className="text-[10px] font-black text-brown-800/30 uppercase tracking-widest">Read Only</span>
+                                        <span className="text-[10px] font-black text-brown-800/30 uppercase tracking-widest">{t.settings.read_only}</span>
                                     </div>
                                 </div>
                             </div>
@@ -272,13 +275,13 @@ export default function SettingsPage() {
                             <span className="w-8 h-8 rounded-lg bg-brown-900 text-cream-50 flex items-center justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M3 17q-.425 0-.712-.288T2 16t.288-.712T3 15t.713.288T4 16t-.287.713T3 17m0-4q-.425 0-.712-.288T2 12t.288-.712T3 11t.713.288T4 12t-.287.713T3 13m0-4q-.425 0-.712-.288T2 8t.288-.712T3 7t.713.288T4 8t-.287.713T3 9m4 8q-.425 0-.712-.288T6 16t.288-.712T7 15h14q.425 0 .713.288T22 16t-.288.713T21 17zm0-4q-.425 0-.712-.288T6 12t.288-.712T7 11h14q.425 0 .713.288T22 12t-.288.713T21 13zm0-4q-.425 0-.712-.288T6 8t.288-.712T7 7h14q.425 0 .713.288T22 8t-.288.713T21 9z" /></svg>
                             </span>
-                            Reading Preferences
+                            {t.settings.app_preferences}
                         </h2>
                         <div className="space-y-6">
                             <div className="flex items-center justify-between p-4 bg-cream-50 rounded-2xl border border-cream-100">
                                 <div>
-                                    <h3 className="font-bold text-brown-900 text-lg">Daily Reading Goal</h3>
-                                    <p className="text-sm text-brown-800/60 font-medium">Minutes per day you want to read</p>
+                                    <h3 className="font-bold text-brown-900 text-lg">{t.settings.reading_goal}</h3>
+                                    <p className="text-sm text-brown-800/60 font-medium">{t.settings.reading_goal_desc}</p>
                                 </div>
                                 <div className="relative">
                                     <button
@@ -329,8 +332,8 @@ export default function SettingsPage() {
                             </div>
                             <div className="flex items-center justify-between p-4 bg-cream-50 rounded-2xl border border-cream-100">
                                 <div>
-                                    <h3 className="font-bold text-brown-900 text-lg">App Language</h3>
-                                    <p className="text-sm text-brown-800/60 font-medium">Preferred language for the interface</p>
+                                    <h3 className="font-bold text-brown-900 text-lg">{t.settings.app_language}</h3>
+                                    <p className="text-sm text-brown-800/60 font-medium">{t.settings.language_desc}</p>
                                 </div>
                                 <div className="relative">
                                     <button
@@ -357,7 +360,7 @@ export default function SettingsPage() {
                                                     <button
                                                         key={lang}
                                                         onClick={() => {
-                                                            setLanguage(lang);
+                                                            setLanguage(lang as Language);
                                                             setIsLangOpen(false);
                                                         }}
                                                         className={`w-full text-left px-5 py-3 text-sm font-bold transition-colors flex items-center justify-between ${

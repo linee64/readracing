@@ -5,8 +5,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { get } from 'idb-keyval';
 import { formatDistanceToNow } from 'date-fns';
+import { useLanguage } from '@/context/LanguageContext';
+import { ru, enUS } from 'date-fns/locale';
 
 export default function LeaderboardPage() {
+    const { t, language } = useLanguage();
     const [timeframe, setTimeframe] = useState<'weekly' | 'monthly' | 'all-time'>('weekly');
     const [userData, setUserData] = useState({ name: 'You', booksCount: 0, pagesCount: 0 });
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -98,23 +101,23 @@ export default function LeaderboardPage() {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-serif font-black text-brown-900">Global Leaderboard</h1>
-                    <p className="text-brown-800/60 mt-2 font-medium">Celebrate the most dedicated readers in the community.</p>
+                    <h1 className="text-3xl md:text-4xl font-serif font-black text-brown-900">{t.leaderboard.title}</h1>
+                    <p className="text-brown-800/60 mt-2 font-medium">{t.leaderboard.subtitle}</p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">
                     {/* Timeframe Toggle */}
                     <div className="flex bg-cream-200/50 p-1.5 rounded-2xl border border-cream-200 overflow-x-auto">
-                        {(['weekly', 'monthly', 'all-time'] as const).map((t) => (
+                        {(['weekly', 'monthly', 'all-time'] as const).map((tf) => (
                             <button
-                                key={t}
-                                onClick={() => setTimeframe(t)}
-                                className={`flex-1 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 capitalize whitespace-nowrap ${timeframe === t
+                                key={tf}
+                                onClick={() => setTimeframe(tf)}
+                                className={`flex-1 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 capitalize whitespace-nowrap ${timeframe === tf
                                         ? 'bg-brown-900 text-cream-50 shadow-md'
                                         : 'text-brown-800/60 hover:text-brown-900'
                                     }`}
                             >
-                                {t.replace('-', ' ')}
+                                {t.leaderboard.timeframes[tf.replace('-', '_') as keyof typeof t.leaderboard.timeframes]}
                             </button>
                         ))}
                     </div>
@@ -147,7 +150,7 @@ export default function LeaderboardPage() {
                         <div className="mt-6 text-center">
                             <h3 className="font-serif font-bold text-2xl text-brown-900">{top3[0].userName}</h3>
                             <p className="text-brand-gold-dark font-black text-base uppercase tracking-widest">
-                                {top3[0].pagesCount.toLocaleString()} pages
+                                {top3[0].pagesCount.toLocaleString()} {t.leaderboard.pages_read}
                             </p>
                         </div>
                         <div className="w-full h-44 bg-gradient-to-b from-brand-gold/20 to-transparent mt-4 rounded-t-3xl border-x border-t border-brand-gold/30 relative overflow-hidden hidden md:block">
@@ -176,7 +179,7 @@ export default function LeaderboardPage() {
                         <div className="mt-4 text-center">
                             <h3 className="font-serif font-bold text-xl text-brown-900">{top3[1].userName}</h3>
                             <p className="text-slate-500 font-black text-sm uppercase tracking-tighter">
-                                {top3[1].pagesCount.toLocaleString()} pages
+                                {top3[1].pagesCount.toLocaleString()} {t.leaderboard.pages_read}
                             </p>
                         </div>
                         <div className="w-full h-32 bg-gradient-to-b from-slate-200/50 to-transparent mt-4 rounded-t-3xl border-x border-t border-slate-200 hidden md:block"></div>
@@ -203,7 +206,7 @@ export default function LeaderboardPage() {
                         <div className="mt-4 text-center">
                             <h3 className="font-serif font-bold text-lg text-brown-900">{top3[2].userName}</h3>
                             <p className="text-amber-700/60 font-black text-xs uppercase tracking-tighter">
-                                {top3[2].pagesCount.toLocaleString()} pages
+                                {top3[2].pagesCount.toLocaleString()} {t.leaderboard.pages_read}
                             </p>
                         </div>
                         <div className="w-full h-24 bg-gradient-to-b from-amber-100/40 to-transparent mt-4 rounded-t-3xl border-x border-t border-amber-200/50 hidden md:block"></div>
@@ -221,9 +224,9 @@ export default function LeaderboardPage() {
                     <table className="w-full text-left border-separate border-spacing-y-3 min-w-[600px] md:min-w-0">
                         <thead>
                             <tr className="text-brown-800/40 text-[10px] uppercase font-black tracking-widest">
-                                <th className="px-4 md:px-6 py-2">Rank</th>
-                                <th className="px-4 md:px-6 py-2">Reader</th>
-                                <th className="px-4 md:px-6 py-2 text-right">Progress</th>
+                                <th className="px-4 md:px-6 py-2">{t.leaderboard.rank}</th>
+                                <th className="px-4 md:px-6 py-2">{t.leaderboard.reader}</th>
+                                <th className="px-4 md:px-6 py-2 text-right">{t.leaderboard.progress}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -253,7 +256,7 @@ export default function LeaderboardPage() {
                                                         {user.userName}
                                                     </div>
                                                     <div className="text-[10px] text-brown-800/40 font-black uppercase tracking-wider">
-                                                        {user.joinedAt ? `Joined ${formatDistanceToNow(new Date(user.joinedAt), { addSuffix: true })}` : 'Joined recently'}
+                                                        {user.joinedAt ? `${t.leaderboard.joined} ${formatDistanceToNow(new Date(user.joinedAt), { addSuffix: true, locale: language === 'Russian' ? ru : enUS })}` : t.leaderboard.joined_recently}
                                                     </div>
                                                 </div>
                                             </div>
@@ -267,7 +270,7 @@ export default function LeaderboardPage() {
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" className="text-brown-900/20"><path fill="currentColor" d="M13 13v8h8v-8zm6 6h-4v-4h4zm-6-7h8V4h-8zm2-6h4v4h-4zm-9 1h6v2H6v3h3v2H6v3h4v2H4V4h6v2H6z" /></svg>
                                                 </div>
                                                 <div className="text-[9px] text-brown-800/30 font-black uppercase tracking-tighter">
-                                                    Pages Read
+                                                    {t.leaderboard.pages_read}
                                                 </div>
                                             </div>
                                         </td>
@@ -287,13 +290,13 @@ export default function LeaderboardPage() {
                         #{sortedData.find(u => u.userName.includes('(You)'))?.rank}
                     </div>
                     <div>
-                        <h2 className="text-2xl font-serif font-bold">You're doing great, {userData.name.split(' ')[0]}!</h2>
+                        <h2 className="text-2xl font-serif font-bold">{t.leaderboard.doing_great} {userData.name.split(' ')[0]}!</h2>
                         {(() => {
                             const userIndex = sortedData.findIndex(u => u.userName.includes('(You)'));
                             if (userIndex === 0) {
                                 return (
                                     <p className="text-cream-50/60 font-medium">
-                                        You're leading the pack! Keep reading to maintain your lead.
+                                        {t.leaderboard.leading_pack}
                                     </p>
                                 );
                             } else if (userIndex > 0) {
@@ -301,13 +304,13 @@ export default function LeaderboardPage() {
                                 const pagesToOvertake = targetUser.pagesCount - sortedData[userIndex].pagesCount + 1;
                                 return (
                                     <p className="text-cream-50/60 font-medium">
-                                        Only {pagesToOvertake.toLocaleString()} pages away from overtaking {targetUser.userName}.
+                                        <span className="text-brand-gold font-bold">{pagesToOvertake.toLocaleString()}</span> {t.leaderboard.pages_away} {targetUser.userName}.
                                     </p>
                                 );
                             } else {
                                 return (
                                     <p className="text-cream-50/60 font-medium">
-                                        Keep reading to climb the leaderboard!
+                                        {t.leaderboard.keep_reading}
                                     </p>
                                 );
                             }
@@ -315,7 +318,7 @@ export default function LeaderboardPage() {
                     </div>
                 </div>
                 <button className="relative z-10 w-full md:w-auto px-8 py-4 bg-brand-gold hover:bg-brand-gold-dark text-brown-900 font-bold rounded-2xl transition-all duration-300 shadow-lg active:scale-95">
-                    Share Progress
+                    {t.leaderboard.share_progress}
                 </button>
             </div>
         </div>
