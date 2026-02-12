@@ -7,13 +7,6 @@ import { supabase } from '@/lib/supabase';
 import { get } from 'idb-keyval';
 import Link from 'next/link';
 
-const mockLeaderboard: LeaderboardEntry[] = [
-    { id: '1', userId: '101', userName: 'Sarah Jenkins', booksCount: 24, pagesCount: 12450, rank: 1 },
-    { id: '2', userId: '102', userName: 'Michael Ross', booksCount: 21, pagesCount: 10200, rank: 2 },
-    { id: '3', userId: '103', userName: 'Emma Wilson', booksCount: 19, pagesCount: 9800, rank: 3 },
-    { id: '4', userId: '104', userName: 'David Chen', booksCount: 15, pagesCount: 7500, rank: 4 },
-];
-
 export default function LeaderboardPreview() {
     const [userData, setUserData] = useState({ name: 'You', booksCount: 0, pagesCount: 0 });
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -66,50 +59,26 @@ export default function LeaderboardPreview() {
                 const { data: profiles, error } = await supabase
                     .from('profiles')
                     .select('*')
-                    .gt('pages_read', 0)
-                    .order('pages_read', { ascending: false });
+                    .order('pages_read', { ascending: false })
+                    .limit(10);
 
                 if (error) throw error;
 
-                let finalBoard: LeaderboardEntry[] = [];
-
-                // If we have 5 or more real users, use only them
-                if (profiles && profiles.length >= 5) {
-                    finalBoard = profiles.map((p, index) => ({
-                        id: p.id,
-                        userId: p.id,
-                        userName: p.id === user?.id ? `${p.full_name} (You)` : p.full_name,
-                        userAvatar: p.avatar_url,
-                        booksCount: 0, // We don't track this in profiles yet
-                        pagesCount: p.pages_read,
-                        rank: index + 1
-                    }));
-                } else {
-                    // Otherwise mix with bots
-                    const realUsers = (profiles || []).map(p => ({
-                        id: p.id,
-                        userId: p.id,
-                        userName: p.id === user?.id ? `${p.full_name} (You)` : p.full_name,
-                        userAvatar: p.avatar_url,
-                        booksCount: 0,
-                        pagesCount: p.pages_read,
-                        rank: 0
-                    }));
-
-                    // Filter out bots that might have same name as real users (optional but good)
-                    const realUserIds = new Set(realUsers.map(u => u.id));
-                    const remainingBots = mockLeaderboard.filter(bot => !realUserIds.has(bot.id));
-
-                    finalBoard = [...realUsers, ...remainingBots]
-                        .sort((a, b) => b.pagesCount - a.pagesCount)
-                        .map((u, i) => ({ ...u, rank: i + 1 }));
-                }
+                const finalBoard: LeaderboardEntry[] = (profiles || []).map((p, index) => ({
+                    id: p.id,
+                    userId: p.id,
+                    userName: p.id === user?.id ? `${p.full_name} (You)` : p.full_name,
+                    userAvatar: p.avatar_url,
+                    booksCount: 0, // We don't track this in profiles yet
+                    pagesCount: p.pages_read,
+                    rank: index + 1,
+                    joinedAt: p.created_at || p.updated_at
+                }));
 
                 setLeaderboard(finalBoard.slice(0, 5));
             } catch (e) {
                 console.error('Failed to fetch leaderboard:', e);
-                // Fallback to mock data on error
-                setLeaderboard(mockLeaderboard);
+                setLeaderboard([]);
             } finally {
                 setIsLoading(false);
             }

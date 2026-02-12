@@ -4,18 +4,7 @@ import { LeaderboardEntry, Book } from '@/types';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { get } from 'idb-keyval';
-
-const mockFullLeaderboard: LeaderboardEntry[] = [
-    { id: '1', userId: '101', userName: 'Sarah Jenkins', booksCount: 24, pagesCount: 12450, rank: 1 },
-    { id: '2', userId: '102', userName: 'Michael Ross', booksCount: 21, pagesCount: 10200, rank: 2 },
-    { id: '3', userId: '103', userName: 'Emma Wilson', booksCount: 19, pagesCount: 9800, rank: 3 },
-    { id: '4', userId: '104', userName: 'David Chen', booksCount: 15, pagesCount: 7500, rank: 4 },
-    { id: '6', userId: '106', userName: 'Jessica Lee', booksCount: 7, pagesCount: 3800, rank: 6 },
-    { id: '7', userId: '107', userName: 'Ryan Thompson', booksCount: 6, pagesCount: 3100, rank: 7 },
-    { id: '8', userId: '108', userName: 'Sophia Garcia', booksCount: 5, pagesCount: 2900, rank: 8 },
-    { id: '9', userId: '109', userName: 'Liam Wright', booksCount: 4, pagesCount: 2100, rank: 9 },
-    { id: '10', userId: '110', userName: 'Olivia Brown', booksCount: 3, pagesCount: 1500, rank: 10 },
-];
+import { formatDistanceToNow } from 'date-fns';
 
 export default function LeaderboardPage() {
     const [timeframe, setTimeframe] = useState<'weekly' | 'monthly' | 'all-time'>('weekly');
@@ -64,48 +53,26 @@ export default function LeaderboardPage() {
                 const { data: profiles, error } = await supabase
                     .from('profiles')
                     .select('*')
-                    .gt('pages_read', 0)
-                    .order('pages_read', { ascending: false });
+                    .order('pages_read', { ascending: false })
+                    .limit(10);
 
                 if (error) throw error;
 
-                let finalBoard: LeaderboardEntry[] = [];
-
-                // If we have 5 or more real users, use only them
-                if (profiles && profiles.length >= 5) {
-                    finalBoard = profiles.map((p, index) => ({
-                        id: p.id,
-                        userId: p.id,
-                        userName: p.id === user?.id ? `${p.full_name} (You)` : p.full_name,
-                        userAvatar: p.avatar_url,
-                        booksCount: 0,
-                        pagesCount: p.pages_read,
-                        rank: index + 1
-                    }));
-                } else {
-                    // Otherwise mix with bots
-                    const realUsers = (profiles || []).map(p => ({
-                        id: p.id,
-                        userId: p.id,
-                        userName: p.id === user?.id ? `${p.full_name} (You)` : p.full_name,
-                        userAvatar: p.avatar_url,
-                        booksCount: 0,
-                        pagesCount: p.pages_read,
-                        rank: 0
-                    }));
-
-                    const realUserIds = new Set(realUsers.map(u => u.id));
-                    const remainingBots = mockFullLeaderboard.filter(bot => !realUserIds.has(bot.id));
-
-                    finalBoard = [...realUsers, ...remainingBots]
-                        .sort((a, b) => b.pagesCount - a.pagesCount)
-                        .map((u, i) => ({ ...u, rank: i + 1 }));
-                }
+                const finalBoard: LeaderboardEntry[] = (profiles || []).map((p, index) => ({
+                    id: p.id,
+                    userId: p.id,
+                    userName: p.id === user?.id ? `${p.full_name} (You)` : p.full_name,
+                    userAvatar: p.avatar_url,
+                    booksCount: 0,
+                    pagesCount: p.pages_read,
+                    rank: index + 1,
+                    joinedAt: p.created_at || p.updated_at
+                }));
 
                 setLeaderboard(finalBoard);
             } catch (e) {
                 console.error('Failed to fetch leaderboard:', e);
-                setLeaderboard(mockFullLeaderboard);
+                setLeaderboard([]);
             } finally {
                 setIsLoading(false);
             }
@@ -155,8 +122,10 @@ export default function LeaderboardPage() {
             </div>
 
             {/* Podium Section */}
+            {top3.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end pt-10 pb-4">
                 {/* 1st Place (Mobile: First) */}
+                {top3[0] && (
                 <div className="order-1 md:order-2 group">
                     <div className="flex flex-col items-center">
                         <div className="relative">
@@ -186,8 +155,10 @@ export default function LeaderboardPage() {
                         </div>
                     </div>
                 </div>
+                )}
 
                 {/* 2nd Place */}
+                {top3[1] && (
                 <div className="order-2 md:order-1 group">
                     <div className="flex flex-col items-center">
                         <div className="relative">
@@ -211,8 +182,10 @@ export default function LeaderboardPage() {
                         <div className="w-full h-32 bg-gradient-to-b from-slate-200/50 to-transparent mt-4 rounded-t-3xl border-x border-t border-slate-200 hidden md:block"></div>
                     </div>
                 </div>
+                )}
 
                 {/* 3rd Place */}
+                {top3[2] && (
                 <div className="order-3 group">
                     <div className="flex flex-col items-center">
                         <div className="relative">
@@ -236,7 +209,9 @@ export default function LeaderboardPage() {
                         <div className="w-full h-24 bg-gradient-to-b from-amber-100/40 to-transparent mt-4 rounded-t-3xl border-x border-t border-amber-200/50 hidden md:block"></div>
                     </div>
                 </div>
+                )}
             </div>
+            )}
 
             {/* List Section */}
             <div className="bg-white rounded-[2.5rem] p-4 md:p-8 shadow-sm border border-cream-200 overflow-hidden relative">
@@ -278,7 +253,7 @@ export default function LeaderboardPage() {
                                                         {user.userName}
                                                     </div>
                                                     <div className="text-[10px] text-brown-800/40 font-black uppercase tracking-wider">
-                                                        Joined 2 months ago
+                                                        {user.joinedAt ? `Joined ${formatDistanceToNow(new Date(user.joinedAt), { addSuffix: true })}` : 'Joined recently'}
                                                     </div>
                                                 </div>
                                             </div>
@@ -313,9 +288,30 @@ export default function LeaderboardPage() {
                     </div>
                     <div>
                         <h2 className="text-2xl font-serif font-bold">You're doing great, {userData.name.split(' ')[0]}!</h2>
-                        <p className="text-cream-50/60 font-medium">
-                            Only {(sortedData[3].pagesCount - sortedData[4].pagesCount + 100).toLocaleString()} pages away from overtaking {sortedData[3].userName}.
-                        </p>
+                        {(() => {
+                            const userIndex = sortedData.findIndex(u => u.userName.includes('(You)'));
+                            if (userIndex === 0) {
+                                return (
+                                    <p className="text-cream-50/60 font-medium">
+                                        You're leading the pack! Keep reading to maintain your lead.
+                                    </p>
+                                );
+                            } else if (userIndex > 0) {
+                                const targetUser = sortedData[userIndex - 1];
+                                const pagesToOvertake = targetUser.pagesCount - sortedData[userIndex].pagesCount + 1;
+                                return (
+                                    <p className="text-cream-50/60 font-medium">
+                                        Only {pagesToOvertake.toLocaleString()} pages away from overtaking {targetUser.userName}.
+                                    </p>
+                                );
+                            } else {
+                                return (
+                                    <p className="text-cream-50/60 font-medium">
+                                        Keep reading to climb the leaderboard!
+                                    </p>
+                                );
+                            }
+                        })()}
                     </div>
                 </div>
                 <button className="relative z-10 w-full md:w-auto px-8 py-4 bg-brand-gold hover:bg-brand-gold-dark text-brown-900 font-bold rounded-2xl transition-all duration-300 shadow-lg active:scale-95">

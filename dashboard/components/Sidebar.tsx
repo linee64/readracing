@@ -162,7 +162,7 @@ export default function Sidebar() {
                 </div>
 
                 {/* Navigation section */}
-                <nav className={`flex-1 space-y-1 transition-all duration-300 ${isCollapsed ? 'px-2' : 'px-4'}`}>
+                <nav className={`flex-1 space-y-1 transition-all duration-300 overflow-y-auto custom-scrollbar ${isCollapsed ? 'px-2' : 'px-4'}`}>
                     {navItems.map((item) => {
                         const isActive = pathname.startsWith(item.href) || (item.alias && pathname.startsWith(item.alias));
                         const isLeaderboard = item.name === 'Leaderboard';

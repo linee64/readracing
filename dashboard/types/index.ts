@@ -52,4 +52,5 @@ export interface LeaderboardEntry {
     booksCount: number;
     pagesCount: number;
     rank: number;
+    joinedAt?: string;
 }
