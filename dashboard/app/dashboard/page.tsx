@@ -8,9 +8,11 @@ import ReadingPlan from '@/components/ReadingPlan';
 import RecentHighlights from '@/components/RecentHighlights';
 import LeaderboardPreview from '@/components/LeaderboardPreview';
 import { supabase } from '@/lib/supabase';
+import { useReadingPlan } from '@/hooks/useReadingPlan';
 
 export default function DashboardPage() {
     const [username, setUsername] = useState<string>('Reader');
+    const { weeklyGoal, getWeeklyProgress, logSession, resetProgress } = useReadingPlan();
 
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -38,7 +40,12 @@ export default function DashboardPage() {
                 <DashboardHeader username={username} />
                 <MetricsCards />
                 <CurrentBook />
-                <ReadingPlan />
+                <ReadingPlan 
+                    weeklyGoal={weeklyGoal}
+                    dailyProgress={getWeeklyProgress()}
+                    onMarkDone={(pages) => logSession(pages)}
+                    onReset={resetProgress}
+                />
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
                     <RecentHighlights />
