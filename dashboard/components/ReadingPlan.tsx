@@ -1,32 +1,63 @@
 
 "use client";
 import React, { useState } from 'react';
+import { DailyProgress } from '@/hooks/useReadingPlan';
 
-type Day = { 
-  day: string; 
-  completed?: boolean; 
-  current?: boolean; 
-}; 
+interface ReadingPlanProps {
+    weeklyGoal: number;
+    dailyProgress: DailyProgress[];
+    onMarkDone: (pages: number) => void;
+    onReset?: () => void;
+}
 
-export default function ReadingPlan() {
-    const [days, setDays] = useState<Day[]>([
-        { day: 'M', completed: true },
-        { day: 'T', completed: true },
-        { day: 'W', completed: true },
-        { day: 'T', current: true },
-        { day: 'F' },
-        { day: 'S' },
-        { day: 'S' },
-    ]);
+export default function ReadingPlan({ weeklyGoal, dailyProgress = [], onMarkDone, onReset }: ReadingPlanProps) {
+    const [isMarking, setIsMarking] = useState(false);
+    const [isResetting, setIsResetting] = useState(false);
+    
+    // Calculate pages left
+    const safeDailyProgress = Array.isArray(dailyProgress) ? dailyProgress : [];
+    const pagesReadThisWeek = safeDailyProgress.reduce((sum, d) => sum + d.pagesRead, 0);
+    const pagesLeft = Math.max(0, weeklyGoal - pagesReadThisWeek);
+    
+    // Calculate today's target
+    // If we have 3 days left (including today), split remaining pages
+    const todayIndex = safeDailyProgress.findIndex(d => d.isToday);
+    const daysLeft = 7 - (todayIndex >= 0 ? todayIndex : 0);
+    const dailyTarget = daysLeft > 0 ? Math.ceil(pagesLeft / daysLeft) : 0;
+    
+    // If today is done (read >= target), show "Done" or "Bonus"
+    const todayProgress = safeDailyProgress.find(d => d.isToday);
+    const isTodayDone = ((todayProgress?.pagesRead || 0) >= dailyTarget && dailyTarget > 0) || pagesLeft === 0;
 
     const handleMarkAsDone = () => {
-        setDays(prev => prev.map(d => 
-            d.current ? { ...d, completed: true } : d
-        ));
+        if (isTodayDone) return;
+        setIsMarking(true);
+        // Default to target, or 25 if target is 0/weird
+        const amount = dailyTarget > 0 ? dailyTarget : 25;
+        onMarkDone(amount);
+        setTimeout(() => setIsMarking(false), 1000);
+    };
+
+    const handleReset = async () => {
+        if (onReset && confirm('Are you sure you want to reset all reading progress? This cannot be undone.')) {
+            setIsResetting(true);
+            await onReset();
+            setIsResetting(false);
+        }
     };
 
     return (
-        <div className="bg-white rounded-2xl p-4 md:p-8 shadow-sm mt-8 border border-cream-200">
+        <div className="bg-white rounded-2xl p-4 md:p-8 shadow-sm mt-8 border border-cream-200 relative group">
+            {onReset && (
+                <button
+                    onClick={handleReset}
+                    disabled={isResetting}
+                    className="absolute top-4 right-4 text-xs text-brown-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                    title="Reset Progress (Debug)"
+                >
+                    {isResetting ? 'Resetting...' : 'Reset History'}
+                </button>
+            )}
             <h2 className="text-2xl font-serif font-semibold mb-6 text-brown-900 italic">Today's Reading Plan</h2>
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -41,33 +72,44 @@ export default function ReadingPlan() {
                         </div>
                     </div>
                     <p className="text-brown-800/80 font-medium text-lg leading-relaxed">
-                        Read <span className="text-brown-900 font-extrabold underline decoration-cream-200 decoration-4 underline-offset-4">25 pages</span> to stay on track for your weekly goal.
+                        {pagesLeft > 0 ? (
+                            <>
+                                Read <span className="text-brown-900 font-extrabold underline decoration-cream-200 decoration-4 underline-offset-4">{dailyTarget} pages</span> to stay on track for your weekly goal.
+                            </>
+                        ) : (
+                            <span className="text-green-700 font-bold">You've reached your weekly goal! 🎉 Any extra reading is a bonus.</span>
+                        )}
                     </p>
                 </div>
 
                 <div className="flex flex-col items-center md:items-end gap-3 w-full md:w-auto">
                     <div className="flex justify-between w-full md:w-auto md:gap-3">
-                        {days.map((item, idx) => (
+                        {safeDailyProgress.map((item, idx) => (
                             <div key={idx} className="flex flex-col items-center gap-2">
                                 <div
                                     className={`w-9 h-9 md:w-12 md:h-12 rounded-full flex items-center justify-center text-xs md:text-sm font-bold transition-all duration-300 ${item.completed
                                             ? 'bg-brown-900 text-cream-50 shadow-md'
-                                            : item.current
+                                            : item.isToday
                                                 ? 'border-2 border-brown-900 text-brown-900 scale-110 shadow-sm'
                                                 : 'bg-cream-100 text-brown-800/30'
                                         }`}
                                 >
-                                    {item.completed ? '✓' : item.day}
+                                    {item.completed ? '✓' : item.dayName}
                                 </div>
-                                <span className="text-[10px] font-black text-brown-800/40 uppercase tracking-tighter">{item.day}</span>
+                                <span className="text-[10px] font-black text-brown-800/40 uppercase tracking-tighter">{item.dayName}</span>
                             </div>
                         ))}
                     </div>
                     <button 
                         onClick={handleMarkAsDone}
-                        className="bg-brown-900 text-cream-50 px-10 py-3.5 rounded-xl font-bold hover:bg-brown-800 hover:shadow-xl active:scale-95 transition-all duration-200 mt-2 w-full md:w-auto"
+                        disabled={isMarking || isTodayDone}
+                        className={`px-10 py-3.5 rounded-xl font-bold transition-all duration-200 mt-2 w-full md:w-auto ${
+                            isTodayDone 
+                                ? 'bg-green-100 text-green-800 cursor-default border border-green-200' 
+                                : 'bg-brown-900 text-cream-50 hover:bg-brown-800 hover:shadow-xl active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed'
+                        }`}
                     >
-                        Mark as Done
+                        {isMarking ? 'Saving...' : isTodayDone ? 'Completed for Today' : 'Mark as Done'}
                     </button>
                 </div>
             </div>

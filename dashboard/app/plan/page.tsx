@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -5,9 +6,11 @@ import ReadingPlan from '@/components/ReadingPlan';
 import DashboardHeader from '@/components/DashboardHeader';
 import MonthlyCalendar from '@/components/MonthlyCalendar';
 import { supabase } from '@/lib/supabase';
+import { useReadingPlan } from '@/hooks/useReadingPlan';
 
 export default function PlanPage() {
     const [username, setUsername] = useState<string>('Reader');
+    const { weeklyGoal, sessions, getWeeklyProgress, getWeeklyStats, logSession, resetProgress } = useReadingPlan();
 
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -29,6 +32,9 @@ export default function PlanPage() {
         return () => subscription.unsubscribe();
     }, []);
 
+    const dailyProgress = getWeeklyProgress();
+    const stats = getWeeklyStats();
+
     return (
         <div className="min-h-screen bg-cream-50 animate-in fade-in duration-700">
             <div className="max-w-7xl mx-auto p-4 md:p-8 pb-20">
@@ -48,16 +54,21 @@ export default function PlanPage() {
                                 </div>
                                 <div className="pr-4">
                                     <p className="text-[10px] text-brown-800/40 font-black uppercase tracking-widest leading-none">Weekly Goal</p>
-                                    <p className="text-sm font-black text-brown-900 mt-1">150 Pages</p>
+                                    <p className="text-sm font-black text-brown-900 mt-1">{weeklyGoal} Pages</p>
                                 </div>
                             </div>
                         </div>
-                        <ReadingPlan />
+                        <ReadingPlan 
+                            weeklyGoal={weeklyGoal} 
+                            dailyProgress={dailyProgress} 
+                            onMarkDone={logSession}
+                            onReset={resetProgress}
+                        />
                     </section>
 
                     {/* Monthly Calendar Section */}
                     <section className="overflow-x-auto">
-                        <MonthlyCalendar />
+                        <MonthlyCalendar sessions={sessions} />
                     </section>
 
                     {/* Weekly Breakdown */}
@@ -66,9 +77,9 @@ export default function PlanPage() {
                             <h3 className="text-2xl font-serif font-bold text-brown-900 mb-6">Weekly Overview</h3>
                             <div className="space-y-6">
                                 {[
-                                    { label: 'Completion Rate', value: '85%', color: 'bg-brand-gold' },
-                                    { label: 'Reading Speed', value: '45 pgs/hr', color: 'bg-brown-900' },
-                                    { label: 'Focus Score', value: '92/100', color: 'bg-brand-gold-dark' }
+                                    { label: 'Completion Rate', value: `${stats.completionRate}%`, color: 'bg-brand-gold' },
+                                    { label: 'Reading Speed', value: `${stats.readingSpeed} pgs/hr`, color: 'bg-brown-900' },
+                                    { label: 'Focus Score', value: `${stats.focusScore}/100`, color: 'bg-brand-gold-dark' }
                                 ].map((metric, i) => (
                                     <div key={i} className="space-y-2">
                                         <div className="flex justify-between text-sm font-black text-brown-800/60 uppercase tracking-widest">

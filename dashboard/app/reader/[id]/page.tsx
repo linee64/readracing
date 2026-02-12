@@ -22,9 +22,47 @@ export default function ReaderPage() {
     const [leftPage, setLeftPage] = useState(0);
     const [rightPage, setRightPage] = useState(0);
 
+    const lastLoggedPageRef = useRef(0);
+    const lastLogTimeRef = useRef(Date.now());
+
     const updateLibraryProgress = async (curr: number, total: number, cfi?: string) => {
         try {
             console.log('Attempting to update progress:', { curr, total });
+            
+            // Log reading session if progress made
+            const delta = curr - lastLoggedPageRef.current;
+            const now = Date.now();
+            const timeDiff = (now - lastLogTimeRef.current) / 1000; // seconds
+
+            if (delta > 0) {
+                // Only log if it seems like reasonable reading (or at least positive progress)
+                // We'll log it to Supabase 'reading_sessions'
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session?.user) {
+                    await supabase.from('reading_sessions').insert({
+                        user_id: session.user.id,
+                        book_id: id as string,
+                        pages_read: delta,
+                        duration_seconds: Math.round(timeDiff)
+                    });
+                }
+                lastLoggedPageRef.current = curr;
+                lastLogTimeRef.current = now;
+            } else if (delta < 0) {
+                // If went back, just update ref so we don't double count when they go forward again
+                // But wait, if they go back to read again, should we count it?
+                // Standard logic: Max page reached? Or actual pages turned?
+                // "Pages Read" usually means unique pages or total volume.
+                // Let's stick to: if curr > lastLoggedPageRef, we log the diff.
+                // If they go back, lastLoggedPageRef stays high? No, that would prevent counting re-reading.
+                // But if I update lastLoggedPageRef to lower value, then going forward counts again.
+                // Let's assume we track "Max Page Reached" for the book progress, but "Pages Read" for activity.
+                // If I read page 10, go to 5, then read 6, 7, 8... I am reading pages.
+                // So updating ref on negative delta allows counting re-reads.
+                lastLoggedPageRef.current = curr;
+                lastLogTimeRef.current = now;
+            }
+
             const library = await get('readracing_library_v2') as Book[];
             if (library) {
                 const updatedLibrary = library.map(b => {
@@ -125,9 +163,9 @@ export default function ReaderPage() {
                 const isMobile = window.innerWidth < 768;
                 rendition.themes.default({
                     'body': {
-                        'padding': isMobile ? '20px 32px !important' : '40px 60px !important',
+                        'padding': isMobile ? '20px 42px !important' : '40px 60px !important',
                         'margin': '0 !important',
-                        'font-size': isMobile ? '16px !important' : '16px !important',
+                        'font-size': isMobile ? '14px !important' : '16px !important',
                         'line-height': '1.6 !important',
                         'color': '#2C2416 !important',
                         'font-family': 'Georgia, serif !important',
@@ -144,7 +182,10 @@ export default function ReaderPage() {
                 const currentBook = library?.find(b => b.id === id);
                 
                 if (currentBook) {
-                    if (currentBook.currentPage) setCurrentPage(currentBook.currentPage);
+                    if (currentBook.currentPage) {
+                        setCurrentPage(currentBook.currentPage);
+                        lastLoggedPageRef.current = currentBook.currentPage;
+                    }
                     if (currentBook.totalPages) setTotalPages(currentBook.totalPages);
                 }
 
@@ -201,9 +242,9 @@ export default function ReaderPage() {
                             const isMobileNow = window.innerWidth < 768;
                             renditionRef.current.themes.default({
                                 'body': {
-                                    'padding': isMobileNow ? '20px 32px !important' : '40px 60px !important',
+                                    'padding': isMobileNow ? '20px 42px !important' : '40px 60px !important',
                                     'margin': '0 !important',
-                                    'font-size': isMobileNow ? '16px !important' : '16px !important',
+                                    'font-size': isMobileNow ? '14px !important' : '16px !important',
                                     'line-height': '1.6 !important',
                                     'color': '#2C2416 !important',
                                     'font-family': 'Georgia, serif !important',
