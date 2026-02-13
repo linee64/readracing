@@ -8,7 +8,7 @@ interface AddBookButtonProps {
   onClick: () => void;
 }
 
-export function AddBookButton({ onClick }: AddBookButtonProps) {
+export default function AddBookButton({ onClick }: AddBookButtonProps) {
   const { t } = useLanguage();
 
   return (

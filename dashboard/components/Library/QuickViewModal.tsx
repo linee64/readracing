@@ -84,7 +84,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ book, isOpen, onClose, 
                             {activeTab === 'Details' && (
                                 <div className="grid grid-cols-2 gap-y-4 text-sm">
                                     <span className="text-[#8B7E6A]">{t.library.modals.genre}</span>
-                                    <span className="font-semibold">{getGenreLabel(book.genre)}</span>
+                                    <span className="font-semibold">{getGenreLabel(book.genre || 'Classic')}</span>
                                     <span className="text-[#8B7E6A]">{t.library.modals.total_pages}</span>
                                     <span className="font-semibold">{book.totalPages}</span>
                                     <span className="text-[#8B7E6A]">{t.library.modals.language}</span>
