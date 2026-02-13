@@ -2,6 +2,7 @@
 "use client";
 import React, { useState } from 'react';
 import { DailyProgress } from '@/hooks/useReadingPlan';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ReadingPlanProps {
     weeklyGoal: number;
@@ -11,6 +12,7 @@ interface ReadingPlanProps {
 }
 
 export default function ReadingPlan({ weeklyGoal, dailyProgress = [], onMarkDone, onReset }: ReadingPlanProps) {
+    const { t } = useLanguage();
     const [isMarking, setIsMarking] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
     
@@ -58,7 +60,7 @@ export default function ReadingPlan({ weeklyGoal, dailyProgress = [], onMarkDone
                     {isResetting ? 'Resetting...' : 'Reset History'}
                 </button>
             )}
-            <h2 className="text-2xl font-serif font-semibold mb-6 text-brown-900 italic">Today's Reading Plan</h2>
+            <h2 className="text-2xl font-serif font-semibold mb-6 text-brown-900 italic">{t.dashboard.todays_plan}</h2>
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="space-y-4">
@@ -67,17 +69,17 @@ export default function ReadingPlan({ weeklyGoal, dailyProgress = [], onMarkDone
                             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M12 20c4.4 0 8-3.6 8-8s-3.6-8-8-8-8 3.6-8 8 3.6 8 8 8zm0-18c5.5 0 10 4.5 10 10s-4.5 10-10 10S2 17.5 2 12 6.5 2 12 2zM12.5 7V12l4.5 2.7-.8 1.2L11 13V7h1.5z"/></svg>
                         </span>
                         <div>
-                            <p className="text-brown-900 font-bold">Best time: 8:00 PM - 9:00 PM</p>
-                            <p className="text-xs text-brown-800/60 font-medium">Synchronized with your peak focus hours</p>
+                            <p className="text-brown-900 font-bold">{t.dashboard.best_time}</p>
+                            <p className="text-xs text-brown-800/60 font-medium">{t.dashboard.peak_focus}</p>
                         </div>
                     </div>
                     <p className="text-brown-800/80 font-medium text-lg leading-relaxed">
                         {pagesLeft > 0 ? (
                             <>
-                                Read <span className="text-brown-900 font-extrabold underline decoration-cream-200 decoration-4 underline-offset-4">{dailyTarget} pages</span> to stay on track for your weekly goal.
+                                {t.dashboard.read} <span className="text-brown-900 font-extrabold underline decoration-cream-200 decoration-4 underline-offset-4">{dailyTarget} {t.dashboard.pages}</span> {t.dashboard.pages_to_track}
                             </>
                         ) : (
-                            <span className="text-green-700 font-bold">You've reached your weekly goal! 🎉 Any extra reading is a bonus.</span>
+                            <span className="text-green-700 font-bold">{t.dashboard.goal_reached}</span>
                         )}
                     </p>
                 </div>
@@ -109,7 +111,7 @@ export default function ReadingPlan({ weeklyGoal, dailyProgress = [], onMarkDone
                                 : 'bg-brown-900 text-cream-50 hover:bg-brown-800 hover:shadow-xl active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed'
                         }`}
                     >
-                        {isMarking ? 'Saving...' : isTodayDone ? 'Completed for Today' : 'Mark as Done'}
+                        {isMarking ? t.dashboard.saving : isTodayDone ? t.dashboard.completed_today : t.dashboard.mark_done}
                     </button>
                 </div>
             </div>

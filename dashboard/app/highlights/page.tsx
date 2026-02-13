@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardHeader from '@/components/DashboardHeader';
 import { supabase } from '@/lib/supabase';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface Highlight {
     id: string;
@@ -15,6 +16,7 @@ interface Highlight {
 }
 
 export default function HighlightsPage() {
+    const { t } = useLanguage();
     const router = useRouter();
     const [highlights, setHighlights] = useState<Highlight[]>([]);
     const [loading, setLoading] = useState(true);
@@ -43,7 +45,7 @@ export default function HighlightsPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Delete this highlight?')) return;
+        if (!confirm(t.highlights.delete_confirm)) return;
         
         const { error } = await supabase.from('highlights').delete().eq('id', id);
         if (!error) {
@@ -64,7 +66,7 @@ export default function HighlightsPage() {
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8l8 8l1.41-1.41L7.83 13H20z"/></svg>
                         </button>
-                        <h1 className="text-3xl font-serif font-bold text-brown-900">Your Highlights</h1>
+                        <h1 className="text-3xl font-serif font-bold text-brown-900">{t.highlights.title}</h1>
                     </div>
 
                     {loading ? (
@@ -73,12 +75,12 @@ export default function HighlightsPage() {
                         </div>
                     ) : highlights.length === 0 ? (
                         <div className="text-center py-20 text-brown-800/40">
-                            <p className="text-xl font-serif italic mb-4">No highlights yet</p>
+                            <p className="text-xl font-serif italic mb-4">{t.highlights.no_highlights}</p>
                             <button 
                                 onClick={() => router.push('/dashboard')}
                                 className="text-sm font-bold text-brown-900 underline"
                             >
-                                Go back to add some
+                                {t.highlights.go_back}
                             </button>
                         </div>
                     ) : (
@@ -88,7 +90,7 @@ export default function HighlightsPage() {
                                     <button 
                                         onClick={() => handleDelete(highlight.id)}
                                         className="absolute top-6 right-6 text-brown-800/20 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                                        title="Delete highlight"
+                                        title={t.highlights.delete_title}
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                                     </button>
@@ -97,7 +99,7 @@ export default function HighlightsPage() {
                                     </p>
                                     <div className="flex justify-between items-center text-xs font-black text-brown-800/40 uppercase tracking-widest border-t border-brown-900/5 pt-4">
                                         <span>{highlight.book_title}</span>
-                                        <span>Page {highlight.page_number}</span>
+                                        <span>{t.highlights.page} {highlight.page_number}</span>
                                     </div>
                                 </div>
                             ))}

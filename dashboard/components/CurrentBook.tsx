@@ -4,8 +4,10 @@ import { Book } from '@/types';
 import { useEffect, useState } from 'react';
 import { get } from 'idb-keyval';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function CurrentBook() {
+    const { t } = useLanguage();
     const [book, setBook] = useState<Book | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
@@ -57,9 +59,9 @@ export default function CurrentBook() {
                     📚
                 </div>
                 
-                <h2 className="text-3xl font-serif font-bold mb-3 text-brown-900">Start Your Reading Journey</h2>
+                <h2 className="text-3xl font-serif font-bold mb-3 text-brown-900">{t.dashboard.start_journey}</h2>
                 <p className="text-brown-800/60 mb-8 max-w-md text-lg leading-relaxed">
-                    You haven't started any books yet. Choose a book from your library or discover something new!
+                    {t.dashboard.no_books_msg}
                 </p>
                 
                 <div className="flex gap-4">
@@ -67,20 +69,20 @@ export default function CurrentBook() {
                         onClick={() => router.push('/library')}
                         className="bg-brown-900 text-cream-50 px-10 py-4 rounded-full font-bold shadow-lg hover:bg-brown-800 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center gap-2"
                     >
-                        <span>📂</span> My Library
+                        <span>📂</span> {t.dashboard.my_library}
                     </button>
                     <button 
                         onClick={() => router.push('/books')}
                         className="bg-white border-2 border-brown-900 text-brown-900 px-10 py-4 rounded-full font-bold hover:bg-cream-100 hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center gap-2"
                     >
-                        <span>✨</span> Discover Books
+                        <span>✨</span> {t.dashboard.discover_books}
                     </button>
                 </div>
 
                 <div className="mt-10 flex items-center gap-6 text-sm text-brown-800/40 font-medium uppercase tracking-widest">
-                    <span className="flex items-center gap-2">✓ AI-Powered</span>
-                    <span className="flex items-center gap-2">✓ Personalized</span>
-                    <span className="flex items-center gap-2">✓ Progress Tracking</span>
+                    <span className="flex items-center gap-2">✓ {t.dashboard.ai_powered}</span>
+                    <span className="flex items-center gap-2">✓ {t.dashboard.personalized}</span>
+                    <span className="flex items-center gap-2">✓ {t.dashboard.progress_tracking}</span>
                 </div>
             </div>
         );
@@ -90,7 +92,7 @@ export default function CurrentBook() {
 
     return (
         <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm mt-8 border border-cream-200">
-            <h2 className="text-2xl font-serif font-semibold mb-6 text-brown-900 italic">Currently Reading</h2>
+            <h2 className="text-2xl font-serif font-semibold mb-6 text-brown-900 italic">{t.dashboard.currently_reading}</h2>
 
             <div className="flex flex-col md:flex-row gap-6 md:gap-8">
                 {/* Book Cover */}
@@ -111,12 +113,12 @@ export default function CurrentBook() {
 
                 <div className="flex-1 flex flex-col justify-center text-center md:text-left">
                     <h3 className="text-2xl md:text-3xl font-serif font-bold text-brown-900">{book.title}</h3>
-                    <p className="text-base md:text-lg text-brown-800/60 mt-2 font-medium">by {book.author}</p>
+                    <p className="text-base md:text-lg text-brown-800/60 mt-2 font-medium">{t.dashboard.by} {book.author}</p>
 
                     <div className="mt-6 md:mt-8">
                         <div className="flex justify-between items-end mb-2">
-                            <span className="text-sm font-bold text-brown-800/70">{book.currentPage} / {book.totalPages || '?'} pages</span>
-                            <span className="text-xs font-black text-brown-800/40 uppercase tracking-widest">{percentage}% Completed</span>
+                            <span className="text-sm font-bold text-brown-800/70">{book.currentPage} / {book.totalPages || '?'} {t.dashboard.pages}</span>
+                            <span className="text-xs font-black text-brown-800/40 uppercase tracking-widest">{percentage}% {t.dashboard.completed}</span>
                         </div>
                         <div className="w-full bg-cream-100 rounded-full h-3 border border-cream-200 overflow-hidden">
                             <div
@@ -131,10 +133,10 @@ export default function CurrentBook() {
                             onClick={() => router.push(`/reader/${book.id}`)}
                             className="bg-brown-900 text-cream-50 px-8 py-3.5 rounded-full font-bold shadow-lg hover:bg-brown-800 hover:scale-[1.02] active:scale-95 transition-all duration-200 w-full md:w-auto"
                         >
-                            Continue Reading
+                            {t.dashboard.continue_reading}
                         </button>
                         <button className="border-2 border-brown-900 text-brown-900 px-8 py-3.5 rounded-full font-bold hover:bg-cream-100 active:scale-95 transition-all duration-200 w-full md:w-auto">
-                            Ask AI Assistant
+                            {t.dashboard.ask_ai}
                         </button>
                     </div>
                 </div>

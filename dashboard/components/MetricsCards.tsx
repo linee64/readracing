@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { get } from 'idb-keyval';
 import { Book } from '@/types';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface MetricCardProps {
     icon: string | React.ReactNode;
@@ -39,6 +40,7 @@ function MetricCard({ icon, number, subtitle, hasProgressBar, progress }: Metric
 }
 
 export default function MetricsCards() {
+    const { t } = useLanguage();
     const [stats, setStats] = useState({ pagesCurrent: 0, pagesTotal: 0, booksCount: 0, streak: 0 });
 
     useEffect(() => {
@@ -84,8 +86,8 @@ export default function MetricsCards() {
                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="m12 12.9l-2.13 2.09c-.56.56-.87 1.29-.87 2.07C9 18.68 10.35 20 12 20s3-1.32 3-2.94c0-.78-.31-1.52-.87-2.07z"/><path fill="currentColor" d="m16 6l-.44.55C14.38 8.02 12 7.19 12 5.3V2S4 6 4 13c0 2.92 1.56 5.47 3.89 6.86c-.56-.79-.89-1.76-.89-2.8c0-1.32.52-2.56 1.47-3.5L12 10.1l3.53 3.47c.95.93 1.47 2.17 1.47 3.5c0 1.02-.31 1.96-.85 2.75c1.89-1.15 3.29-3.06 3.71-5.3c.66-3.55-1.07-6.9-3.86-8.52"/></svg>
                     </span>
                 }
-                number={`${stats.streak} days`}
-                subtitle="Keep it going!"
+                number={`${stats.streak} ${t.dashboard.days_streak}`}
+                subtitle={t.dashboard.keep_going}
             />
 
             <MetricCard
@@ -94,8 +96,8 @@ export default function MetricsCards() {
                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M14 2a8 8 0 0 0-8 8a8 8 0 0 0 8 8a8 8 0 0 0 8-8a8 8 0 0 0-8-8M4.93 5.82A8.01 8.01 0 0 0 2 12a8 8 0 0 0 8 8c.64 0 1.27-.08 1.88-.23c-1.76-.39-3.38-1.27-4.71-2.48A6 6 0 0 1 4 12c0-.3.03-.59.07-.89C4.03 10.74 4 10.37 4 10c0-1.44.32-2.87.93-4.18m13.16.26L19.5 7.5L13 14l-3.79-3.79l1.42-1.42L13 11.17"/></svg>
                     </div>
                 }
-                number={`${stats.booksCount} books`}
-                subtitle="This year"
+                number={`${stats.booksCount} ${t.dashboard.books_read}`}
+                subtitle={t.dashboard.this_year}
             />
 
             <MetricCard
@@ -106,8 +108,8 @@ export default function MetricsCards() {
                         </span>
                     </div>
                 }
-                number={<span>{stats.pagesCurrent} pages</span>}
-                subtitle="Daily Goal: 60"
+                number={<span>{stats.pagesCurrent} {t.dashboard.pages_read}</span>}
+                subtitle={`${t.dashboard.daily_goal} 60`}
                 hasProgressBar
                 progress={progressPercent}
             />

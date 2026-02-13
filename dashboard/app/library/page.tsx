@@ -7,8 +7,10 @@ import { Book } from '@/types';
 import { supabase } from '@/lib/supabase';
 import ePub from 'epubjs';
 import { set, get, del } from 'idb-keyval';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function LibraryPage() {
+    const { t } = useLanguage();
     const router = useRouter();
     const [books, setBooks] = useState<Book[]>([]);
     const [isUploading, setIsUploading] = useState(false);
@@ -67,16 +69,16 @@ export default function LibraryPage() {
                     // Upload local-only books to Supabase (Sync Up)
                     await uploadMissingBooks(localBooks, remoteBooks, user.id);
                     
-                    if (!silent) alert('Library synced successfully!');
+                    if (!silent) alert(t.my_books.sync_success);
                 } else if (!silent && error) {
                     throw error;
                 }
             } else if (!silent) {
-                alert('Please log in to sync books');
+                alert(t.my_books.login_required);
             }
         } catch (e: any) {
             console.error('Sync failed:', e);
-            if (!silent) alert(`Sync failed: ${e.message || e}`);
+            if (!silent) alert(`${t.my_books.sync_failed} ${e.message || e}`);
         } finally {
             setIsSyncing(false);
         }
@@ -288,7 +290,7 @@ export default function LibraryPage() {
             const initialEntry: Book = {
                 id: bookId,
                 title: file.name.replace('.epub', ''),
-                author: 'Loading...',
+                author: t.my_books.loading_author,
                 totalPages: 0,
                 currentPage: 0,
                 coverUrl: '',
@@ -336,7 +338,7 @@ export default function LibraryPage() {
                 const finalEntry: Book = {
                     ...initialEntry,
                     title: metadata.title || initialEntry.title,
-                    author: metadata.creator || 'Unknown Author',
+                    author: metadata.creator || t.my_books.unknown_author,
                     coverUrl: coverUrl
                 };
 
@@ -377,7 +379,7 @@ export default function LibraryPage() {
 
         } catch (error) {
             console.error('Critical upload error:', error);
-            alert('Failed to upload file. Please try again.');
+            alert(t.my_books.upload_failed);
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -390,7 +392,7 @@ export default function LibraryPage() {
                 <DashboardHeader username={username} />
 
                 <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 md:mb-8">
-                    <h2 className="text-2xl md:text-3xl font-serif font-bold text-brown-900 italic">My Library</h2>
+                    <h2 className="text-2xl md:text-3xl font-serif font-bold text-brown-900 italic">{t.my_books.title}</h2>
                     <div className="flex gap-4 self-start md:self-auto w-full md:w-auto">
                         <button
                             onClick={() => syncLibrary(false)}
@@ -403,7 +405,7 @@ export default function LibraryPage() {
                                 <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
                                 <path d="M16 16h5v5" />
                             </svg>
-                            {isSyncing ? 'Syncing...' : 'Sync'}
+                            {isSyncing ? t.my_books.syncing : t.my_books.sync}
                         </button>
 
                         <input
@@ -423,7 +425,7 @@ export default function LibraryPage() {
                             ) : (
                                 <span>📁</span>
                             )}
-                            {isUploading ? 'Uploading...' : 'Upload EPUB'}
+                            {isUploading ? t.my_books.uploading : t.my_books.upload_epub}
                         </button>
                     </div>
                 </div>
@@ -431,8 +433,8 @@ export default function LibraryPage() {
                 {books.length === 0 ? (
                     <div className="bg-white rounded-2xl p-8 md:p-20 text-center border-2 border-dashed border-cream-300">
                         <div className="text-4xl md:text-6xl mb-4 opacity-20">📚</div>
-                        <h3 className="text-lg md:text-xl font-serif font-semibold text-brown-900/50">Your library is empty</h3>
-                        <p className="text-sm md:text-base text-brown-800/40 mt-2">Start your journey by adding your first book!</p>
+                        <h3 className="text-lg md:text-xl font-serif font-semibold text-brown-900/50">{t.my_books.empty_title}</h3>
+                        <p className="text-sm md:text-base text-brown-800/40 mt-2">{t.my_books.empty_desc}</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -454,14 +456,14 @@ export default function LibraryPage() {
                                         <h3 className="font-bold text-brown-900 truncate mb-1">{book.title}</h3>
                                         <p className="text-sm text-brown-600 truncate mb-2">{book.author}</p>
                                         <div className="text-xs text-brown-400">
-                                            {Math.round((book.currentPage / (book.totalPages || 1)) * 100)}% complete
+                                            {Math.round((book.currentPage / (book.totalPages || 1)) * 100)}% {t.my_books.complete}
                                         </div>
                                     </div>
                                 </div>
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        if (confirm('Are you sure you want to delete this book?')) {
+                                        if (confirm(t.my_books.confirm_delete)) {
                                             handleDeleteBook(book.id);
                                         }
                                     }}

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Book } from '../../types';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface QuickViewModalProps {
     book: Book | null;
@@ -11,9 +12,15 @@ interface QuickViewModalProps {
 }
 
 const QuickViewModal: React.FC<QuickViewModalProps> = ({ book, isOpen, onClose, onAdd }) => {
+    const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState<'Description' | 'Details'>('Description');
 
     if (!isOpen || !book) return null;
+
+    const getGenreLabel = (genre: string) => {
+        const key = genre.toLowerCase().replace(' ', '_').replace('-', '_');
+        return t.library.genres[key as keyof typeof t.library.genres] || genre;
+    };
 
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
@@ -42,7 +49,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ book, isOpen, onClose, 
                         <div className="flex justify-between items-start mb-6">
                             <div>
                                 <h2 className="text-3xl font-serif font-bold text-[#2C2416] mb-2">{book.title}</h2>
-                                <p className="text-xl text-[#8B7E6A] font-sans italic">by {book.author}</p>
+                                <p className="text-xl text-[#8B7E6A] font-sans italic">{t.library.card.by} {book.author}</p>
                             </div>
                             <button
                                 onClick={onClose}
@@ -62,7 +69,7 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ book, isOpen, onClose, 
                                     className={`pb-4 text-sm font-semibold transition-all relative ${activeTab === tab ? 'text-[#3D2817]' : 'text-[#8B7E6A]'
                                         }`}
                                 >
-                                    {tab}
+                                    {tab === 'Description' ? t.library.modals.tabs.description : t.library.modals.tabs.details}
                                     {activeTab === tab && (
                                         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#3D2817]" />
                                     )}
@@ -72,19 +79,19 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ book, isOpen, onClose, 
 
                         <div className="flex-1 text-[#2C2416] leading-relaxed mb-8 font-sans">
                             {activeTab === 'Description' && (
-                                <p>{book.description || 'No description available.'}</p>
+                                <p>{book.description || t.library.modals.no_description}</p>
                             )}
                             {activeTab === 'Details' && (
                                 <div className="grid grid-cols-2 gap-y-4 text-sm">
-                                    <span className="text-[#8B7E6A]">Genre</span>
-                                    <span className="font-semibold">{book.genre}</span>
-                                    <span className="text-[#8B7E6A]">Pages</span>
+                                    <span className="text-[#8B7E6A]">{t.library.modals.genre}</span>
+                                    <span className="font-semibold">{getGenreLabel(book.genre)}</span>
+                                    <span className="text-[#8B7E6A]">{t.library.modals.total_pages}</span>
                                     <span className="font-semibold">{book.totalPages}</span>
-                                    <span className="text-[#8B7E6A]">Language</span>
+                                    <span className="text-[#8B7E6A]">{t.library.modals.language}</span>
                                     <span className="font-semibold">{book.language || 'N/A'}</span>
-                                    <span className="text-[#8B7E6A]">Rating</span>
+                                    <span className="text-[#8B7E6A]">{t.library.modals.rating}</span>
                                     <span className="font-semibold flex items-center gap-1">
-                                        <span className="text-yellow-500">★</span> {book.rating || 'N/A'}
+                                        <span className="text-yellow-500">★</span> {book.rating || t.library.card.rating_na}
                                     </span>
                                 </div>
                             )}
@@ -95,13 +102,13 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ book, isOpen, onClose, 
                                 onClick={() => { onAdd(book.id); onClose(); }}
                                 className="flex-1 bg-[#3D2817] text-white h-14 rounded-full font-bold shadow-lg hover:bg-[#4D3827] transition-all"
                             >
-                                Add to My Books
+                                {t.library.card.add_to_my_books}
                             </button>
                             <button
                                 onClick={onClose}
                                 className="px-8 border border-[#E5DCC8] text-[#8B7E6A] font-bold rounded-full hover:bg-[#F5F1E8] transition-all"
                             >
-                                Close
+                                {t.library.modals.close}
                             </button>
                         </div>
                     </div>

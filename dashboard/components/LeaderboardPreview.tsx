@@ -6,8 +6,10 @@ import { LeaderboardEntry, Book } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { get } from 'idb-keyval';
 import Link from 'next/link';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function LeaderboardPreview() {
+    const { t } = useLanguage();
     const [userData, setUserData] = useState({ name: 'You', booksCount: 0, pagesCount: 0 });
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -104,8 +106,8 @@ export default function LeaderboardPreview() {
 
             <div className="flex items-center justify-between mb-8 relative z-10">
                 <div>
-                    <h2 className="text-2xl font-serif font-bold text-brown-900 leading-tight">Top Readers</h2>
-                    <p className="text-xs text-brown-800/50 font-medium uppercase tracking-wider mt-1">Global Standings • This Week</p>
+                    <h2 className="text-2xl font-serif font-bold text-brown-900 leading-tight">{t.dashboard.top_readers}</h2>
+                    <p className="text-xs text-brown-800/50 font-medium uppercase tracking-wider mt-1">{t.dashboard.global_standings}</p>
                 </div>
             </div>
 
@@ -161,7 +163,7 @@ export default function LeaderboardPreview() {
                                     {user.userName}
                                 </div>
                                 <div className="text-[10px] text-brown-800/40 uppercase font-black tracking-widest truncate">
-                                    {user.rank === 1 ? 'Current Champion' : 'Reader'}
+                                    {user.rank === 1 ? t.dashboard.current_champion : t.dashboard.reader}
                                 </div>
                             </div>
 
@@ -172,7 +174,7 @@ export default function LeaderboardPreview() {
                                     </span>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" className="text-brown-900/20"><path fill="currentColor" d="M13 13v8h8v-8zm6 6h-4v-4h4zm-6-7h8V4h-8zm2-6h4v4h-4zm-9 1h6v2H6v3h3v2H6v3h4v2H4V4h6v2H6z" /></svg>
                                 </div>
-                                <div className="text-[9px] text-brown-800/40 uppercase font-black tracking-tighter">Pages read</div>
+                                <div className="text-[9px] text-brown-800/40 uppercase font-black tracking-tighter">{t.dashboard.pages_read_stat}</div>
                             </div>
                         </div>
                     );
@@ -183,7 +185,7 @@ export default function LeaderboardPreview() {
                 href="/leaderboard"
                 className="mt-8 py-4 px-6 bg-cream-50 hover:bg-white border border-cream-200 rounded-2xl text-sm font-bold text-brown-900 shadow-sm transition-all duration-300 flex items-center justify-center gap-3 group/btn hover:border-brand-gold/30 hover:shadow-md active:scale-95"
             >
-                <span className="relative z-10">View Full Global Board</span>
+                <span className="relative z-10">{t.dashboard.view_full_board}</span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" className="group-hover/btn:translate-x-1 transition-transform duration-300 text-brand-gold-dark"><path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 12h14m-7-7l7 7l-7 7" /></svg>
             </Link>
         </div>

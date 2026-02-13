@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Book } from '@/types';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface Highlight {
     id: string;
@@ -22,6 +23,7 @@ const COLORS = [
 ];
 
 export default function RecentHighlights() {
+    const { t } = useLanguage();
     const router = useRouter();
     const [highlights, setHighlights] = useState<Highlight[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -113,12 +115,12 @@ export default function RecentHighlights() {
     return (
         <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-cream-200 shadow-sm flex flex-col h-full relative">
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-serif font-bold text-brown-900">Recent Highlights</h3>
+                <h3 className="text-2xl font-serif font-bold text-brown-900">{t.dashboard.recent_highlights}</h3>
                 <button 
                     onClick={() => router.push('/highlights')}
                     className="text-sm font-bold text-brown-800/60 hover:text-brown-900 uppercase tracking-widest transition-colors"
                 >
-                    View All
+                    {t.dashboard.view_all}
                 </button>
             </div>
 
@@ -136,13 +138,13 @@ export default function RecentHighlights() {
                             </p>
                             <div className="flex justify-between items-center text-xs font-black text-brown-800/40 uppercase tracking-widest">
                                 <span>{highlight.book_title}</span>
-                                <span>Page {highlight.page_number}</span>
+                                <span>{t.dashboard.page_label} {highlight.page_number}</span>
                             </div>
                         </div>
                     ))
                 ) : (
                     <div className="text-center py-8 text-brown-800/40 italic">
-                        No highlights yet. Add your first one!
+                        {t.dashboard.no_highlights}
                     </div>
                 )}
                 
@@ -150,7 +152,7 @@ export default function RecentHighlights() {
                     onClick={() => setIsModalOpen(true)}
                     className="p-6 rounded-3xl border-2 border-dashed border-cream-200 flex items-center justify-center text-brown-800/40 font-bold hover:bg-cream-50 hover:border-cream-300 transition-all cursor-pointer group"
                 >
-                    <span className="group-hover:scale-110 transition-transform">+ Add New Highlight</span>
+                    <span className="group-hover:scale-110 transition-transform">+ {t.dashboard.add_highlight}</span>
                 </div>
             </div>
 
@@ -159,20 +161,20 @@ export default function RecentHighlights() {
                 <div className="absolute inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-[2.5rem]" onClick={() => setIsModalOpen(false)}></div>
                     <div className="bg-white w-full max-w-md p-6 rounded-3xl shadow-2xl border border-cream-200 relative z-10 animate-in fade-in zoom-in duration-200">
-                        <h3 className="text-xl font-serif font-bold text-brown-900 mb-4">Add Highlight</h3>
+                        <h3 className="text-xl font-serif font-bold text-brown-900 mb-4">{t.dashboard.add_highlight_title}</h3>
                         <form onSubmit={handleAddHighlight} className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-brown-800/60 uppercase tracking-widest mb-1">Quote</label>
+                                <label className="block text-xs font-bold text-brown-800/60 uppercase tracking-widest mb-1">{t.dashboard.quote}</label>
                                 <textarea 
                                     value={quote}
                                     onChange={(e) => setQuote(e.target.value)}
                                     className="w-full p-3 bg-cream-50 rounded-xl border border-cream-200 focus:outline-none focus:border-brown-900 min-h-[100px]"
-                                    placeholder="Enter the quote..."
+                                    placeholder={t.dashboard.enter_quote}
                                     required
                                 />
                             </div>
                             <div className="relative">
-                                <label className="block text-xs font-bold text-brown-800/60 uppercase tracking-widest mb-1">Book Title</label>
+                                <label className="block text-xs font-bold text-brown-800/60 uppercase tracking-widest mb-1">{t.dashboard.book_title}</label>
                                 {userBooks.length > 0 ? (
                                     <>
                                         <div 
@@ -180,7 +182,7 @@ export default function RecentHighlights() {
                                             className="w-full p-3 bg-cream-50 rounded-xl border border-cream-200 cursor-pointer flex justify-between items-center hover:bg-cream-100 transition-colors group"
                                         >
                                             <span className={`font-medium ${!bookTitle ? 'text-brown-800/40' : 'text-brown-900'}`}>
-                                                {bookTitle || 'Select a book...'}
+                                                {bookTitle || t.dashboard.select_book}
                                             </span>
                                             <svg 
                                                 xmlns="http://www.w3.org/2000/svg" 
@@ -220,20 +222,20 @@ export default function RecentHighlights() {
                                         value={bookTitle}
                                         onChange={(e) => setBookTitle(e.target.value)}
                                         className="w-full p-3 bg-cream-50 rounded-xl border border-cream-200 focus:outline-none focus:border-brown-900"
-                                        placeholder="e.g. Steve Jobs"
+                                        placeholder={t.dashboard.book_placeholder}
                                         required
                                     />
                                 )}
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-brown-800/60 uppercase tracking-widest mb-1">Page Number</label>
+                                <label className="block text-xs font-bold text-brown-800/60 uppercase tracking-widest mb-1">{t.dashboard.page_number}</label>
                                 <input 
                                     type="number"
                                     min="0"
                                     value={pageNumber}
                                     onChange={(e) => setPageNumber(e.target.value)}
                                     className="w-full p-3 bg-cream-50 rounded-xl border border-cream-200 focus:outline-none focus:border-brown-900"
-                                    placeholder="e.g. 124"
+                                    placeholder={t.dashboard.page_placeholder}
                                 />
                             </div>
                             <div className="flex gap-3 mt-6">
@@ -242,14 +244,14 @@ export default function RecentHighlights() {
                                     onClick={() => setIsModalOpen(false)}
                                     className="flex-1 py-3 font-bold text-brown-800/60 hover:bg-cream-100 rounded-xl transition-colors"
                                 >
-                                    Cancel
+                                    {t.dashboard.cancel}
                                 </button>
                                 <button 
                                     type="submit"
                                     disabled={isSubmitting}
                                     className="flex-1 py-3 font-bold text-cream-50 bg-brown-900 hover:bg-brown-800 rounded-xl shadow-lg transition-all disabled:opacity-70"
                                 >
-                                    {isSubmitting ? 'Saving...' : 'Save'}
+                                    {isSubmitting ? t.dashboard.saving : t.dashboard.save}
                                 </button>
                             </div>
                         </form>

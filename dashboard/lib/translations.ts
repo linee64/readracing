@@ -13,6 +13,76 @@ export const translations = {
             logout: 'Logout',
             pro: 'Pro'
         },
+        dashboard: {
+            welcome_back: 'Welcome back,',
+            continue_journey: "Let's continue your reading journey",
+            days_streak: 'days',
+            keep_going: 'Keep it going!',
+            books_read: 'books',
+            this_year: 'This year',
+            pages_read: 'pages',
+            daily_goal: 'Daily Goal:',
+            start_journey: 'Start Your Reading Journey',
+            no_books_msg: "You haven't started any books yet. Choose a book from your library or discover something new!",
+            my_library: 'My Library',
+            discover_books: 'Discover Books',
+            ai_powered: 'AI-Powered',
+            personalized: 'Personalized',
+            progress_tracking: 'Progress Tracking',
+            currently_reading: 'Currently Reading',
+            by: 'by',
+            pages: 'pages',
+            completed: 'Completed',
+            continue_reading: 'Continue Reading',
+            ask_ai: 'Ask AI Assistant',
+            todays_plan: "Today's Reading Plan",
+            best_time: 'Best time: 8:00 PM - 9:00 PM',
+            peak_focus: 'Synchronized with your peak focus hours',
+            read: 'Read',
+            pages_to_track: 'pages to stay on track for your weekly goal.',
+            goal_reached: "You've reached your weekly goal! 🎉 Any extra reading is a bonus.",
+            mark_done: 'Mark as Done',
+            completed_today: 'Completed for Today',
+            saving: 'Saving...',
+            recent_highlights: 'Recent Highlights',
+            view_all: 'View All',
+            no_highlights: 'No highlights yet. Add your first one!',
+            add_highlight: 'Add New Highlight',
+            add_highlight_title: 'Add Highlight',
+            quote: 'Quote',
+            enter_quote: 'Enter the quote...',
+            book_title: 'Book Title',
+            select_book: 'Select a book...',
+            book_placeholder: 'e.g. Steve Jobs',
+            page_number: 'Page Number',
+            page_label: 'Page',
+            page_placeholder: 'e.g. 124',
+            cancel: 'Cancel',
+            save: 'Save',
+            top_readers: 'Top Readers',
+            global_standings: 'Global Standings • This Week',
+            current_champion: 'Current Champion',
+            reader: 'Reader',
+            pages_read_stat: 'Pages Read',
+            view_full_board: 'View Full Leaderboard'
+        },
+        my_books: {
+            title: 'My Library',
+            sync: 'Sync',
+            syncing: 'Syncing...',
+            upload_epub: 'Upload EPUB',
+            uploading: 'Uploading...',
+            empty_title: 'Your library is empty',
+            empty_desc: 'Start your journey by adding your first book!',
+            complete: 'complete',
+            confirm_delete: 'Are you sure you want to delete this book?',
+            sync_success: 'Library synced successfully!',
+            login_required: 'Please log in to sync books',
+            sync_failed: 'Sync failed:',
+            upload_failed: 'Failed to upload file. Please try again.',
+            loading_author: 'Loading...',
+            unknown_author: 'Unknown Author'
+        },
         settings: {
             title: 'Settings',
             subtitle: 'Manage your preferences and account',
@@ -62,6 +132,14 @@ export const translations = {
                 all_time: 'All Time'
             }
         },
+        highlights: {
+            title: 'Your Highlights',
+            no_highlights: 'No highlights yet',
+            go_back: 'Go back to add some',
+            delete_confirm: 'Delete this highlight?',
+            delete_title: 'Delete highlight',
+            page: 'Page'
+        },
         library: {
             search_placeholder: 'Search books by title, author, genre...',
             all_genres: 'All Genres',
@@ -69,8 +147,73 @@ export const translations = {
             reset: 'Reset',
             popular: 'Popular:',
             continue_reading: 'Continue Reading',
-            ask_ai: 'Ask AI Assistant'
-        }
+            ask_ai: 'Ask AI Assistant',
+            explore_title: 'Explore Your Next Great Read',
+            explore_desc: 'Discover a world of stories, knowledge, and inspiration. Your next favorite book is just a search away.',
+            previous: 'Previous',
+            next: 'Next',
+            found: 'Found:',
+            book: 'book',
+            books: 'books',
+            undo: 'Undo',
+            toast: {
+                already_in_library: 'Book already in library',
+                downloading: 'Downloading book...',
+                local_not_found: '❌ Local file not found in public/books/',
+                download_success: '✓ Downloaded and added to My Books!',
+                save_error: '❌ Error saving file',
+                download_failed: '❌ Download failed. Try again later.',
+                added: 'Added to My Books!',
+                created: '✓ Book created and added to library',
+                add_failed: '❌ Failed to add book'
+            },
+            genres: {
+                all: 'All',
+                classic: 'Classic',
+                fantasy: 'Fantasy',
+                detectives: 'Detectives',
+                romance: 'Romance',
+                modern_prose: 'Modern Prose',
+                sci_fi: 'Sci-Fi',
+                mystery: 'Mystery'
+            },
+            languages: {
+                all: 'All',
+                russian: 'Russian',
+                english: 'English'
+            },
+            card: {
+                preview: 'Preview',
+                by: 'by',
+                pages: 'pages',
+                added: '✓ Added',
+                add_to_my_books: 'Add to My Books',
+                rating_na: 'N/A'
+            },
+            modals: {
+                add_new_book: 'Add New Book',
+                book_title: 'Book Title',
+                author: 'Author',
+                total_pages: 'Total Pages',
+                genre: 'Genre',
+                description: 'Description',
+                cancel: 'Cancel',
+                add_book: 'Add Book',
+                close: 'Close',
+                no_description: 'No description available.',
+                language: 'Language',
+                rating: 'Rating',
+                tabs: {
+                    description: 'Description',
+                    details: 'Details'
+                }
+            },
+            empty: {
+                title: 'Books not found',
+                desc: 'Try changing your search query or add a book manually.',
+                add_manual: 'Add book manually'
+            }
+        },
     },
     Russian: {
         sidebar: {
@@ -84,6 +227,76 @@ export const translations = {
             sign_in: 'Войти',
             logout: 'Выйти',
             pro: 'PRO'
+        },
+        dashboard: {
+            welcome_back: 'С возвращением,',
+            continue_journey: "Продолжим ваше путешествие в мир книг",
+            days_streak: 'дней',
+            keep_going: 'Так держать!',
+            books_read: 'книг',
+            this_year: 'В этом году',
+            pages_read: 'страниц',
+            daily_goal: 'Дневная цель:',
+            start_journey: 'Начните свое путешествие',
+            no_books_msg: "Вы еще не начали читать ни одной книги. Выберите книгу из библиотеки или найдите что-то новое!",
+            my_library: 'Моя библиотека',
+            discover_books: 'Найти книги',
+            ai_powered: 'AI-подбор',
+            personalized: 'Персонализация',
+            progress_tracking: 'Трекинг прогресса',
+            currently_reading: 'Сейчас читаю',
+            by: 'автор',
+            pages: 'страниц',
+            completed: 'Прочитано',
+            continue_reading: 'Читать далее',
+            ask_ai: 'Спросить AI',
+            todays_plan: "План чтения на сегодня",
+            best_time: 'Лучшее время: 20:00 - 21:00',
+            peak_focus: 'Синхронизировано с вашим временем концентрации',
+            read: 'Прочитайте',
+            pages_to_track: 'страниц, чтобы выполнить недельную цель.',
+            goal_reached: "Вы достигли недельной цели! 🎉 Дополнительное чтение - это бонус.",
+            mark_done: 'Отметить как выполненное',
+            completed_today: 'Выполнено на сегодня',
+            saving: 'Сохранение...',
+            recent_highlights: 'Недавние заметки',
+            view_all: 'Все',
+            no_highlights: 'Пока нет заметок. Добавьте первую!',
+            add_highlight: 'Добавить заметку',
+            add_highlight_title: 'Добавить заметку',
+            quote: 'Цитата',
+            enter_quote: 'Введите цитату...',
+            book_title: 'Название книги',
+            select_book: 'Выберите книгу...',
+            book_placeholder: 'например, Стив Джобс',
+            page_number: 'Номер страницы',
+            page_label: 'Стр.',
+            page_placeholder: 'например, 124',
+            cancel: 'Отмена',
+            save: 'Сохранить',
+            top_readers: 'Топ читателей',
+            global_standings: 'Общий рейтинг • Эта неделя',
+            current_champion: 'Текущий чемпион',
+            reader: 'Читатель',
+            pages_read_stat: 'Прочитано страниц',
+            view_full_board: 'Посмотреть весь рейтинг'
+        },
+        my_books: {
+            title: 'Моя библиотека',
+            sync: 'Синхронизация',
+            syncing: 'Синхронизация...',
+            upload_epub: 'Загрузить EPUB',
+            uploading: 'Загрузка...',
+            empty_title: 'Ваша библиотека пуста',
+            empty_desc: 'Начните свое путешествие, добавив первую книгу!',
+            complete: 'прочитано',
+            confirm_delete: 'Вы уверены, что хотите удалить эту книгу?',
+            sync_success: 'Библиотека успешно синхронизирована!',
+            login_required: 'Пожалуйста, войдите, чтобы синхронизировать книги',
+            sync_failed: 'Ошибка синхронизации:',
+            upload_failed: 'Не удалось загрузить файл. Попробуйте еще раз.',
+            loading_author: 'Загрузка...',
+            unknown_author: 'Неизвестный автор'
         },
         settings: {
             title: 'Настройки',
@@ -134,6 +347,14 @@ export const translations = {
                 all_time: 'Все время'
             }
         },
+        highlights: {
+            title: 'Ваши заметки',
+            no_highlights: 'Пока нет заметок',
+            go_back: 'Вернуться и добавить',
+            delete_confirm: 'Удалить эту заметку?',
+            delete_title: 'Удалить заметку',
+            page: 'Страница'
+        },
         library: {
             search_placeholder: 'Поиск книг по названию, автору, жанру...',
             all_genres: 'Все жанры',
@@ -141,7 +362,72 @@ export const translations = {
             reset: 'Сброс',
             popular: 'Популярное:',
             continue_reading: 'Читать далее',
-            ask_ai: 'Спросить AI'
+            ask_ai: 'Спросить AI',
+            explore_title: 'Откройте для себя следующую книгу',
+            explore_desc: 'Откройте мир историй, знаний и вдохновения. Ваша следующая любимая книга находится всего в одном поиске.',
+            previous: 'Назад',
+            next: 'Вперед',
+            found: 'Найдено:',
+            book: 'книга',
+            books: 'книг',
+            undo: 'Отменить',
+            toast: {
+                already_in_library: 'Книга уже в библиотеке',
+                downloading: 'Загрузка книги...',
+                local_not_found: '❌ Локальный файл не найден в public/books/',
+                download_success: '✓ Загружено и добавлено в Мои книги!',
+                save_error: '❌ Ошибка сохранения файла',
+                download_failed: '❌ Ошибка загрузки. Попробуйте позже.',
+                added: 'Добавлено в Мои книги!',
+                created: '✓ Книга создана и добавлена в библиотеку',
+                add_failed: '❌ Не удалось добавить книгу'
+            },
+            genres: {
+                all: 'Все',
+                classic: 'Классика',
+                fantasy: 'Фэнтези',
+                detectives: 'Детективы',
+                romance: 'Романтика',
+                modern_prose: 'Современная проза',
+                sci_fi: 'Научная фантастика',
+                mystery: 'Мистика'
+            },
+            languages: {
+                all: 'Все',
+                russian: 'Русский',
+                english: 'Английский'
+            },
+            card: {
+                preview: 'Предпросмотр',
+                by: 'автор:',
+                pages: 'стр.',
+                added: '✓ Добавлено',
+                add_to_my_books: 'Добавить в мои книги',
+                rating_na: 'Нет оценки'
+            },
+            modals: {
+                add_new_book: 'Добавить книгу',
+                book_title: 'Название книги',
+                author: 'Автор',
+                total_pages: 'Всего страниц',
+                genre: 'Жанр',
+                description: 'Описание',
+                cancel: 'Отмена',
+                add_book: 'Добавить',
+                close: 'Закрыть',
+                no_description: 'Описание отсутствует.',
+                language: 'Язык',
+                rating: 'Рейтинг',
+                tabs: {
+                    description: 'Описание',
+                    details: 'Детали'
+                }
+            },
+            empty: {
+                title: 'Книги не найдены',
+                desc: 'Попробуйте изменить запрос или добавьте книгу вручную.',
+                add_manual: 'Добавить вручную'
+            }
         }
     }
 };

@@ -10,8 +10,10 @@ import AddBookButton from '../../components/Library/AddBookButton';
 import AddBookModal from '../../components/Library/AddBookModal';
 import QuickViewModal from '../../components/Library/QuickViewModal';
 import { Book } from '../../types';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function BooksPage() {
+    const { t } = useLanguage();
     const {
         searchQuery,
         filters,
@@ -38,13 +40,13 @@ export default function BooksPage() {
             const currentLibrary = await get('readracing_library_v2') as Book[] || [];
             
             if (currentLibrary.some(b => b.id === bookId)) {
-                setToast({ message: 'Book already in library', visible: true });
+                setToast({ message: t.library.toast.already_in_library, visible: true });
                 return;
             }
 
             // If the book has an epubUrl, download it and save to IndexedDB
             if (bookToAdd.epubUrl) {
-                setToast({ message: 'Downloading book...', visible: true });
+                setToast({ message: t.library.toast.downloading, visible: true });
                 
                 let arrayBuffer: ArrayBuffer | null = null;
                 const isLocal = bookToAdd.epubUrl.startsWith('/');
@@ -57,7 +59,7 @@ export default function BooksPage() {
                             arrayBuffer = await response.arrayBuffer();
                         } else {
                             console.error(`Local book file not found at ${bookToAdd.epubUrl}. Please add it to public/books/`);
-                            setToast({ message: '❌ Local file not found in public/books/', visible: true });
+                            setToast({ message: t.library.toast.local_not_found, visible: true });
                             return;
                         }
                     } else {
@@ -113,20 +115,20 @@ export default function BooksPage() {
                         };
                         
                         await set('readracing_library_v2', [...currentLibrary, bookWithEpub]);
-                        setToast({ message: '✓ Downloaded and added to My Books!', visible: true });
+                        setToast({ message: t.library.toast.download_success, visible: true });
                     } catch (err) {
                         console.error('Failed to save EPUB to IDB:', err);
-                        setToast({ message: '❌ Error saving file', visible: true });
+                        setToast({ message: t.library.toast.save_error, visible: true });
                         return;
                     }
                 } else {
-                    setToast({ message: '❌ Download failed. Try again later.', visible: true });
+                    setToast({ message: t.library.toast.download_failed, visible: true });
                     return;
                 }
             } else {
                 // Regular mock book without EPUB (shouldn't happen with our new list)
                 await set('readracing_library_v2', [...currentLibrary, bookToAdd]);
-                setToast({ message: 'Added to My Books!', visible: true });
+                setToast({ message: t.library.toast.added, visible: true });
             }
             
             setTimeout(() => setToast(null), 3000);
@@ -154,10 +156,10 @@ export default function BooksPage() {
             };
 
             await set('readracing_library_v2', [...currentLibrary, newBook]);
-            showToast('✓ Book created and added to library');
+            showToast(t.library.toast.created);
         } catch (err) {
             console.error('Failed to add manual book:', err);
-            showToast('❌ Failed to add book');
+            showToast(t.library.toast.add_failed);
         }
     };
 
@@ -167,10 +169,10 @@ export default function BooksPage() {
             <div className="max-w-7xl mx-auto px-4 md:px-8 pt-8 md:pt-16 pb-10">
                 <header className="mb-8 md:mb-12">
                     <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif font-black text-brown-900 mb-4 leading-tight tracking-tight">
-                        Explore Your Next Great Read
+                        {t.library.explore_title}
                     </h1>
                     <p className="text-brown-800/60 text-lg md:text-2xl font-medium font-sans max-w-2xl">
-                        Discover a world of stories, knowledge, and inspiration. Your next favorite book is just a search away.
+                        {t.library.explore_desc}
                     </p>
                 </header>
 
@@ -207,7 +209,7 @@ export default function BooksPage() {
                                             disabled={currentPage === 1}
                                             className="h-12 px-6 rounded-xl bg-white border-2 border-cream-200 text-brown-900 font-bold disabled:opacity-30 hover:border-brown-900/20 transition-all active:scale-95 flex-1 md:flex-none"
                                         >
-                                            Previous
+                                            {t.library.previous}
                                         </button>
                                         
                                         <button
@@ -215,7 +217,7 @@ export default function BooksPage() {
                                             disabled={currentPage === Math.ceil(totalResults / 8)}
                                             className="h-12 px-6 rounded-xl bg-white border-2 border-cream-200 text-brown-900 font-bold disabled:opacity-30 hover:border-brown-900/20 transition-all active:scale-95 flex-1 md:flex-none md:hidden"
                                         >
-                                            Next
+                                            {t.library.next}
                                         </button>
                                     </div>
 
@@ -239,7 +241,7 @@ export default function BooksPage() {
                                         disabled={currentPage === Math.ceil(totalResults / 8)}
                                         className="hidden md:block h-12 px-6 rounded-xl bg-white border-2 border-cream-200 text-brown-900 font-bold disabled:opacity-30 hover:border-brown-900/20 transition-all active:scale-95"
                                     >
-                                        Next
+                                        {t.library.next}
                                     </button>
                                 </div>
                             )}
@@ -272,7 +274,7 @@ export default function BooksPage() {
                         onClick={() => setToast(null)}
                         className="text-white/80 hover:text-white text-sm font-bold ml-4 border-l border-white/20 pl-4"
                     >
-                        Undo
+                        {t.library.undo}
                     </button>
                 </div>
             )}
