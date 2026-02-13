@@ -3,16 +3,19 @@
 
 import React, { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, getDay } from 'date-fns';
+import { ru, enUS } from 'date-fns/locale';
 import { ReadingSession } from '@/hooks/useReadingPlan';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface MonthlyCalendarProps {
     sessions: ReadingSession[];
 }
 
-const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
 export default function MonthlyCalendar({ sessions }: MonthlyCalendarProps) {
+    const { t, language } = useLanguage();
     const [currentMonth, setCurrentMonth] = useState(new Date());
+
+    const locale = language === 'Russian' ? ru : enUS;
 
     const daysInMonth = eachDayOfInterval({
         start: startOfMonth(currentMonth),
@@ -61,9 +64,9 @@ export default function MonthlyCalendar({ sessions }: MonthlyCalendarProps) {
                     <div className="max-w-sm mx-auto lg:mx-0">
                         <div className="flex items-center justify-between mb-8">
                             <div>
-                                <h3 className="text-2xl font-serif font-black text-brown-900">Monthly Plan</h3>
+                                <h3 className="text-2xl font-serif font-black text-brown-900">{t.reading_plan.monthly_plan}</h3>
                                 <p className="text-[10px] text-brown-800/40 font-black uppercase tracking-[0.2em] mt-1.5">
-                                    {format(currentMonth, 'MMMM yyyy')}
+                                    {format(currentMonth, 'MMMM yyyy', { locale })}
                                 </p>
                             </div>
                             <div className="flex gap-1.5">
@@ -83,7 +86,7 @@ export default function MonthlyCalendar({ sessions }: MonthlyCalendarProps) {
                         </div>
 
                         <div className="grid grid-cols-7 gap-y-4 mb-4">
-                            {DAYS_OF_WEEK.map(day => (
+                            {t.reading_plan.days_of_week.map(day => (
                                 <div key={day} className="text-center text-[10px] font-black text-brown-800/20 uppercase tracking-widest">
                                     {day}
                                 </div>
@@ -127,11 +130,11 @@ export default function MonthlyCalendar({ sessions }: MonthlyCalendarProps) {
                 {/* Right Side: Stats (Simplified or Removed if redundant) */}
                 {/* Keeping the structure but maybe simplifying content since we have stats elsewhere */}
                 <div className="hidden lg:flex flex-col justify-center pl-16 w-64">
-                    <h4 className="font-serif font-bold text-brown-900 mb-6">This Month</h4>
+                    <h4 className="font-serif font-bold text-brown-900 mb-6">{t.reading_plan.this_month}</h4>
                     <div className="space-y-6">
                          {/* Placeholder for monthly summary */}
                          <div className="p-4 bg-cream-50 rounded-2xl border border-cream-100">
-                            <p className="text-xs text-brown-800/60 font-bold uppercase tracking-wider mb-1">Total Pages</p>
+                            <p className="text-xs text-brown-800/60 font-bold uppercase tracking-wider mb-1">{t.reading_plan.total_pages}</p>
                             <p className="text-2xl font-black text-brown-900">
                                 {sessions
                                     .filter(s => isSameMonth(new Date(s.created_at), currentMonth))

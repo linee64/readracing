@@ -41,7 +41,7 @@ export default function ReadingPlan({ weeklyGoal, dailyProgress = [], onMarkDone
     };
 
     const handleReset = async () => {
-        if (onReset && confirm('Are you sure you want to reset all reading progress? This cannot be undone.')) {
+        if (onReset && confirm(t.reading_plan.reset_confirm)) {
             setIsResetting(true);
             await onReset();
             setIsResetting(false);
@@ -55,9 +55,9 @@ export default function ReadingPlan({ weeklyGoal, dailyProgress = [], onMarkDone
                     onClick={handleReset}
                     disabled={isResetting}
                     className="absolute top-4 right-4 text-xs text-brown-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50"
-                    title="Reset Progress (Debug)"
+                    title={t.reading_plan.reset_history}
                 >
-                    {isResetting ? 'Resetting...' : 'Reset History'}
+                    {isResetting ? t.reading_plan.resetting : t.reading_plan.reset_history}
                 </button>
             )}
             <h2 className="text-2xl font-serif font-semibold mb-6 text-brown-900 italic">{t.dashboard.todays_plan}</h2>

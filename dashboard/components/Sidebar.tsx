@@ -184,7 +184,7 @@ export default function Sidebar() {
                                     } group relative`}
                                 title={isCollapsed ? t.sidebar[item.name as keyof typeof t.sidebar] : ''}
                             >
-                                <span className={`text-xl transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'} ${isLeaderboard && !isActive ? 'text-brand-gold-dark/80' : ''}`}>
+                                <span className={`w-8 h-8 flex items-center justify-center flex-shrink-0 text-xl transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'} ${isLeaderboard && !isActive ? 'text-brand-gold-dark/80' : ''}`}>
                                     {item.icon}
                                 </span>
                                 {(!isCollapsed || isMobileOpen) && (
