@@ -46,6 +46,16 @@ export default function ReaderPage() {
         highlightColor: 'yellow' as HighlightColor
     });
     const [isMobile, setIsMobile] = useState(false);
+    
+    // Context Menu State
+    const [selectionMenu, setSelectionMenu] = useState<{
+        x: number;
+        y: number;
+        cfiRange: string;
+        text: string;
+    } | null>(null);
+    const [showExplanation, setShowExplanation] = useState(false);
+    const [explanationText, setExplanationText] = useState('');
 
     const lastLoggedPageRef = useRef(0);
     const lastLogTimeRef = useRef(Date.now());
@@ -57,7 +67,7 @@ export default function ReaderPage() {
     const applyTheme = (rendition: Rendition) => {
         const { theme, fontFamily, fontSize } = settings;
         const isDark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-        const mobile = window.innerWidth < 768;
+        const mobile = window.innerWidth < 1024;
         
         // Base styles
         const styles = {
@@ -90,7 +100,7 @@ export default function ReaderPage() {
     }, [settings]);
 
     useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        const handleResize = () => setIsMobile(window.innerWidth < 1024);
         handleResize();
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
@@ -238,16 +248,34 @@ export default function ReaderPage() {
                 });
 
                 rendition.on('selected', (cfiRange: string, contents: any) => {
-                    const colorKey = settingsRef.current.highlightColor;
-                    const color = HIGHLIGHT_COLORS[colorKey] || HIGHLIGHT_COLORS.yellow;
-                    
-                    addHighlightAnnotation(cfiRange, color);
+                    const selection = contents.window.getSelection();
+                    if (!selection || selection.rangeCount === 0) return;
 
-                    const newHighlight = { cfiRange, color, created_at: Date.now() };
-                    highlightsRef.current = [...highlightsRef.current, newHighlight];
-                    set(`highlights_${id}`, highlightsRef.current);
+                    const range = selection.getRangeAt(0);
+                    const rect = range.getBoundingClientRect();
+                    const iframe = viewerRef.current?.querySelector('iframe');
                     
-                    contents.window.getSelection().removeAllRanges();
+                    if (iframe) {
+                        const iframeRect = iframe.getBoundingClientRect();
+                        // Position menu above selection
+                        const x = iframeRect.left + rect.left + (rect.width / 2);
+                        const y = iframeRect.top + rect.top;
+
+                        setSelectionMenu({
+                            x,
+                            y,
+                            cfiRange,
+                            text: selection.toString()
+                        });
+                    }
+                });
+
+                rendition.on('click', () => {
+                    setSelectionMenu(null);
+                });
+                
+                rendition.on('relocated', () => {
+                    setSelectionMenu(null);
                 });
 
                 // Apply initial styles
@@ -255,7 +283,7 @@ export default function ReaderPage() {
                 // but for now relying on default settings
                 // The useEffect([settings]) will trigger shortly after and re-apply correctly.
                 // However, let's try to apply defaults right away to avoid flash.
-                const mobile = window.innerWidth < 768;
+                const mobile = window.innerWidth < 1024;
                 rendition.themes.default({
                     'body': {
                         'padding': mobile ? '20px 20px !important' : '30px 30px !important',
@@ -380,49 +408,188 @@ export default function ReaderPage() {
     const prevPage = () => renditionRef.current?.prev();
     const nextPage = () => renditionRef.current?.next();
 
+    const handleHighlight = (colorKey: HighlightColor) => {
+        if (!selectionMenu || !renditionRef.current) return;
+        
+        const color = HIGHLIGHT_COLORS[colorKey];
+        const { cfiRange } = selectionMenu;
+
+        // Add annotation
+        renditionRef.current.annotations.add('highlight', cfiRange, {}, (e: any) => {
+            renditionRef.current?.annotations.remove(cfiRange, 'highlight');
+            highlightsRef.current = highlightsRef.current.filter(h => h.cfiRange !== cfiRange);
+            set(`highlights_${id}`, highlightsRef.current);
+        }, 'hl', { fill: color, 'fill-opacity': '0.3', 'mix-blend-mode': 'multiply' });
+
+        // Save to state/storage
+        const newHighlight = { cfiRange, color, created_at: Date.now() };
+        highlightsRef.current = [...highlightsRef.current, newHighlight];
+        set(`highlights_${id}`, highlightsRef.current);
+
+        // Clear selection and menu
+        // We need to access the iframe window to clear selection
+        // But we don't have direct access to 'contents' here easily unless we stored it
+        // OR we can just rely on user clicking elsewhere, but better to clear it.
+        // Actually, let's just close the menu. The selection might persist visually 
+        // until user clicks, which is fine, or we can try to clear it if we had the window reference.
+        // For now, just close menu.
+        setSelectionMenu(null);
+        
+        // Try to clear selection if possible via epubjs internal (not always exposed easily)
+        // renditionRef.current.getContents()[0].window.getSelection().removeAllRanges();
+        // But getContents might be empty or array.
+        const contents = renditionRef.current.getContents();
+        if (contents && contents.length > 0) {
+            contents[0].window.getSelection().removeAllRanges();
+        }
+    };
+
+    const handleExplainAI = () => {
+        if (!selectionMenu) return;
+        setExplanationText(selectionMenu.text);
+        setShowExplanation(true);
+        setSelectionMenu(null);
+    };
+
     const isDark = settings.theme === 'dark' || (settings.theme === 'auto' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
     return (
-        <div className={`h-screen flex flex-row overflow-hidden ${isDark ? 'bg-[#1a1a1a]' : 'bg-cream-50'}`}>
-            <div className={`flex flex-col flex-1 h-full transition-all duration-300 relative`}>
-                <div className={`${isDark ? 'bg-[#1a1a1a] border-[#333]' : 'bg-white border-cream-200'} border-b px-6 py-1 flex justify-between items-center shadow-sm z-10`}>
+        <div className={`h-[100dvh] w-full max-w-[100vw] flex flex-row overflow-hidden ${isDark ? 'bg-[#1a1a1a]' : 'bg-cream-50'}`}>
+            {/* Context Menu */}
+            {selectionMenu && (
+                <div 
+                    className={`fixed z-50 flex flex-col min-w-[180px] rounded-xl shadow-2xl transform -translate-x-1/2 -translate-y-full mb-3 overflow-hidden
+                        ${isDark ? 'bg-[#2a2a2a] border border-[#444] text-gray-200' : 'bg-[#F9F5F1] border border-[#E8E1D5] text-[#4A3B32]'}`}
+                    style={{ 
+                        left: selectionMenu.x, 
+                        top: selectionMenu.y - 10,
+                        animation: 'fadeIn 0.2s ease-out'
+                    }}
+                >
+                    {/* Menu Items List */}
+                    <div className="flex flex-col py-1">
+                        <button
+                            onClick={handleExplainAI}
+                            className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left group
+                                ${isDark ? 'hover:bg-[#333]' : 'hover:bg-[#EFE6D5]'}`}
+                        >
+                            <div className={`p-1.5 rounded-md ${isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-[#E8E1D5] text-[#8C7B6C] group-hover:text-[#4A3B32]'}`}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 3v4"/><path d="M3 5h4"/><path d="M3 9h4"/></svg>
+                            </div>
+                            Explain AI
+                        </button>
+                        
+                        <div className={`h-px mx-4 my-1 ${isDark ? 'bg-[#444]' : 'bg-[#E8E1D5]'}`} />
+                        
+                        <div className="px-4 py-2">
+                            <span className={`text-[10px] font-bold uppercase tracking-wider mb-2 block ${isDark ? 'text-gray-500' : 'text-[#8C7B6C]'}`}>
+                                Highlight
+                            </span>
+                            <div className="flex items-center gap-2 justify-between">
+                                {(['blue', 'green', 'yellow', 'gray'] as HighlightColor[]).map((color) => (
+                                    <button
+                                        key={color}
+                                        onClick={() => handleHighlight(color)}
+                                        className={`w-6 h-6 rounded-full border transition-transform hover:scale-110 relative group
+                                            ${isDark ? 'border-transparent' : 'border-[#E8E1D5]'}`}
+                                        style={{ 
+                                            backgroundColor: HIGHLIGHT_COLORS[color],
+                                            cursor: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%234A3B32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>') 0 20, pointer`
+                                        }}
+                                        title={`Highlight ${color}`}
+                                    >
+                                        <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-20 bg-black transition-opacity" />
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Explanation Modal */}
+            {showExplanation && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className={`w-full max-w-md rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 relative
+                        ${isDark ? 'bg-[#1a1a1a] text-gray-100 border border-[#333]' : 'bg-[#F9F5F1] text-[#4A3B32] border border-[#E8E1D5]'}`}>
+                        <button 
+                            onClick={() => setShowExplanation(false)}
+                            className={`absolute top-4 right-4 p-2 rounded-full transition-colors ${isDark ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-[#EFE6D5] text-[#8C7B6C]'}`}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                        </button>
+                        
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className={`p-3 rounded-xl ${isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-[#E8E1D5] text-[#8C7B6C]'}`}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                            </div>
+                            <h3 className="text-lg font-bold font-serif">AI Explanation</h3>
+                        </div>
+
+                        <div className={`p-4 rounded-xl mb-4 text-sm italic border ${isDark ? 'bg-[#222] border-[#333] text-gray-400' : 'bg-white/50 border-[#E8E1D5] text-[#5C4D44]'}`}>
+                            "{explanationText}"
+                        </div>
+
+                        <div className="space-y-3">
+                            <p className="text-sm leading-relaxed opacity-80">
+                                This is a placeholder for the AI explanation feature. In a production environment, this would call an AI endpoint to analyze the selected text.
+                            </p>
+                            <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-[#333]' : 'bg-[#E8E1D5]'}`}>
+                                <div className={`h-full w-2/3 animate-pulse ${isDark ? 'bg-purple-500' : 'bg-[#8C7B6C]'}`}></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className={`flex flex-col flex-1 h-full min-w-0 transition-all duration-300 relative overflow-hidden`}>
+                <div className={`${isDark ? 'bg-[#1a1a1a] border-[#333]' : 'bg-white border-cream-200'} border-b px-4 py-2 flex justify-between items-center shadow-sm z-10 shrink-0 w-full max-w-full overflow-hidden`}>
                     <button 
                         onClick={() => router.push('/library')}
                         className={`${isDark ? 'text-gray-300 hover:text-white' : 'text-brown-900'} font-bold flex items-center gap-1 hover:opacity-70 transition-opacity text-xs`}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                         Library
                     </button>
-                    <h1 className={`font-serif font-bold truncate max-w-md text-center flex-1 text-sm ${isDark ? 'text-gray-200' : 'text-brown-900'}`}>{title || 'Loading...'}</h1>
-                    <div className="w-24"></div>
+                    <h1 className={`font-serif font-bold truncate max-w-[50%] text-center flex-1 text-sm ${isDark ? 'text-gray-200' : 'text-brown-900'}`}>{title || 'Loading...'}</h1>
+                    
+                    {/* Settings Button in Header */}
+                    <button 
+                        onClick={() => setShowSettings(!showSettings)}
+                        className={`p-2 rounded-full transition-colors
+                            ${isDark ? 'text-gray-400 hover:bg-[#333] hover:text-white' : 'text-brown-900/60 hover:bg-cream-100 hover:text-brown-900'}`}
+                        title="Reader Settings"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    </button>
                 </div>
 
-                <div className="flex-1 relative p-4 md:p-8 flex justify-center items-center overflow-hidden">
+                <div className="flex-1 relative p-2 md:p-8 flex justify-center items-center overflow-hidden w-full max-w-[100vw]">
                     <div 
                         ref={viewerRef} 
-                        className={`w-full max-w-2xl shadow-2xl rounded-lg border h-full max-h-[80vh] overflow-hidden transition-colors duration-300
+                        className={`w-full max-w-2xl shadow-2xl rounded-lg border h-full max-h-[85vh] overflow-hidden transition-colors duration-300
                             ${isDark ? 'bg-[#1a1a1a] border-[#333]' : 'bg-white border-cream-200'}`}
                     >
-                        {(!isLoaded || !isPaginated) && (
+                        {!isLoaded && (
                             <div className={`absolute inset-0 flex flex-col items-center justify-center z-50 ${isDark ? 'bg-[#1a1a1a]' : 'bg-white'}`}>
                                 <div className={`animate-pulse font-serif italic text-xl mb-4 ${isDark ? 'text-gray-400' : 'text-brown-900/40'}`}>
-                                    {!isPaginated ? 'Preparing pages...' : 'Opening book...'}
+                                    Opening book...
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <div className="absolute inset-y-0 left-0 w-10 md:w-12 flex items-center justify-center">
-                        <button onClick={prevPage} className={`w-8 h-8 rounded-full shadow-lg border flex items-center justify-center text-lg transition-all hover:scale-110
+                    <div className="absolute inset-y-0 left-0 w-10 md:w-12 flex items-center justify-center z-10 pointer-events-none">
+                        <button onClick={prevPage} className={`pointer-events-auto w-8 h-8 rounded-full shadow-lg border flex items-center justify-center text-lg transition-all hover:scale-110 active:scale-95
                             ${isDark ? 'bg-[#333] border-[#444] text-gray-200 hover:bg-[#444]' : 'bg-white/80 backdrop-blur-sm border-cream-200 hover:bg-white text-brown-900'}`}>‹</button>
                     </div>
-                    <div className="absolute inset-y-0 right-0 w-10 md:w-12 flex items-center justify-center">
-                        <button onClick={nextPage} className={`w-8 h-8 rounded-full shadow-lg border flex items-center justify-center text-lg transition-all hover:scale-110
+                    <div className="absolute inset-y-0 right-0 w-10 md:w-12 flex items-center justify-center z-10 pointer-events-none">
+                        <button onClick={nextPage} className={`pointer-events-auto w-8 h-8 rounded-full shadow-lg border flex items-center justify-center text-lg transition-all hover:scale-110 active:scale-95
                             ${isDark ? 'bg-[#333] border-[#444] text-gray-200 hover:bg-[#444]' : 'bg-white/80 backdrop-blur-sm border-cream-200 hover:bg-white text-brown-900'}`}>›</button>
                     </div>
                 </div>
 
-                <div className={`${isDark ? 'bg-[#1a1a1a] border-[#333]' : 'bg-white border-cream-200'} border-t py-1 px-4 flex flex-col items-center gap-0 relative`}>
+                <div className={`${isDark ? 'bg-[#1a1a1a] border-[#333]' : 'bg-white border-cream-200'} border-t py-2 px-4 flex flex-col items-center gap-0 relative shrink-0 w-full max-w-full overflow-hidden`}>
                     <div className={`flex justify-center w-full max-w-4xl px-8 text-[11px] font-serif font-bold ${isDark ? 'text-gray-400' : 'text-brown-900/60'}`}>
                         <div className="text-center">{currentPage > 0 ? currentPage : ''}</div>
                     </div>
@@ -431,16 +598,6 @@ export default function ReaderPage() {
                             Progress: {Math.round((currentPage / totalPages) * 100)}%
                         </div>
                     )}
-                    
-                    {/* Settings Toggle Button */}
-                    <button 
-                        onClick={() => setShowSettings(!showSettings)}
-                        className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full transition-colors
-                            ${isDark ? 'text-gray-400 hover:bg-[#333] hover:text-white' : 'text-brown-900/60 hover:bg-cream-100 hover:text-brown-900'}`}
-                        title="Reader Settings"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                    </button>
                 </div>
             </div>
 
