@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { get } from 'idb-keyval';
 import { Book } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -13,6 +14,12 @@ interface Highlight {
     page_number: number;
     color: string;
     created_at: string;
+}
+
+interface LocalHighlight {
+    cfiRange: string;
+    color: string;
+    created_at: number;
 }
 const COLORS = [
     'bg-brand-gold/20',
@@ -31,6 +38,12 @@ export default function RecentHighlights() {
     const [userBooks, setUserBooks] = useState<Book[]>([]);
 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    // Import state
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [localHighlightsBooks, setLocalHighlightsBooks] = useState<{book: Book, count: number}[]>([]);
+    const [isScanning, setIsScanning] = useState(false);
+    const [importingBookId, setImportingBookId] = useState<string | null>(null);
 
     // Form state
     const [quote, setQuote] = useState('');
@@ -57,6 +70,185 @@ export default function RecentHighlights() {
             console.error('Error fetching books:', error);
         }
     };
+
+    const scanForLocalHighlights = async () => {
+        setIsScanning(true);
+        setLocalHighlightsBooks([]);
+        try {
+            const library = await get('readracing_library_v2') as Book[];
+            if (!library) {
+                setIsScanning(false);
+                return;
+            }
+
+            const booksWithHighlights = [];
+            for (const book of library) {
+                const localHighlights = await get(`highlights_${book.id}`) as LocalHighlight[];
+                if (localHighlights && localHighlights.length > 0) {
+                    booksWithHighlights.push({
+                        book,
+                        count: localHighlights.length
+                    });
+                }
+            }
+            setLocalHighlightsBooks(booksWithHighlights);
+        } catch (error) {
+            console.error('Error scanning local highlights:', error);
+        } finally {
+            setIsScanning(false);
+        }
+    };
+
+    const handleImportHighlights = async (book: Book) => {
+        setImportingBookId(book.id);
+        console.log(`Starting import for book: ${book.title} (${book.id})`);
+        
+        try {
+            const { data, error: authError } = await supabase.auth.getUser();
+            if (authError || !data?.user) {
+                console.error('Auth error or no user:', authError);
+                throw new Error('User not authenticated');
+            }
+            const user = data.user;
+
+            // 1. Get local highlights
+            const localHighlights = await get(`highlights_${book.id}`) as LocalHighlight[];
+            if (!localHighlights || localHighlights.length === 0) {
+                console.log('No local highlights found for this book.');
+                return;
+            }
+            console.log(`Found ${localHighlights.length} local highlights.`);
+
+            // 2. Get existing remote highlights to avoid duplicates
+            if (!book.id) {
+                console.error('Book ID is missing');
+                alert('Invalid book ID');
+                return;
+            }
+
+            const { data: remoteHighlights, error: remoteError } = await supabase
+                .from('highlights')
+                .select('cfi_range')
+                .eq('user_id', user.id)
+                .eq('book_id', book.id);
+            
+            if (remoteError) {
+                console.error('Error fetching remote highlights:', JSON.stringify(remoteError, null, 2));
+                // Continue anyway with empty set to allow import if fetch fails
+            }
+            
+            const existingCfiRanges = new Set(remoteHighlights?.map(h => h.cfi_range) || []);
+            console.log(`Found ${existingCfiRanges.size} existing remote highlights.`);
+
+            // 3. Filter and prepare new highlights
+            const newHighlights = [];
+            const colorMap: Record<string, string> = {
+                '#93c5fd': 'bg-blue-100/50',
+                '#86efac': 'bg-green-100/50',
+                '#fde047': 'bg-brand-gold/20',
+                '#d1d5db': 'bg-cream-200'
+            };
+
+            // 4. Load book data
+            const bookData = await get(book.id);
+            if (!bookData) {
+                console.error('Book data (ArrayBuffer) not found in IndexedDB.');
+                alert('Book file not found locally. Please re-download the book.');
+                return;
+            }
+            console.log('Book data loaded from IndexedDB, size:', (bookData as ArrayBuffer).byteLength);
+
+            // 5. Initialize ePub
+            // Use try-catch for dynamic import
+            let ePub;
+            try {
+                const epubModule = await import('epubjs');
+                ePub = epubModule.default || epubModule;
+            } catch (importError) {
+                console.error('Failed to import epubjs:', importError);
+                throw new Error('Failed to load ePub reader engine.');
+            }
+
+            // Create book instance
+            // ePub constructor can take ArrayBuffer directly
+            const epubBook = ePub(bookData as ArrayBuffer);
+            
+            console.log('Waiting for book to be ready...');
+            await epubBook.ready;
+            console.log('Book is ready. Processing highlights...');
+
+            // Process highlights
+            let successCount = 0;
+            let failCount = 0;
+
+            for (const hl of localHighlights) {
+                if (existingCfiRanges.has(hl.cfiRange)) continue;
+
+                try {
+                    // getRange returns a Range object
+                    const range = await epubBook.getRange(hl.cfiRange);
+                    if (range) {
+                        const text = range.toString();
+                        if (text) {
+                            const dashboardColor = colorMap[hl.color] || 'bg-brand-gold/20';
+                            
+                            newHighlights.push({
+                                user_id: user.id,
+                                quote: text,
+                                book_title: book.title,
+                                page_number: 0, 
+                                color: dashboardColor,
+                                cfi_range: hl.cfiRange,
+                                book_id: book.id,
+                                created_at: new Date(hl.created_at).toISOString()
+                            });
+                            successCount++;
+                        } else {
+                            console.warn(`Empty text for CFI: ${hl.cfiRange}`);
+                            failCount++;
+                        }
+                    } else {
+                        console.warn(`Could not get range for CFI: ${hl.cfiRange}`);
+                        failCount++;
+                    }
+                } catch (e) {
+                    console.warn(`Error resolving CFI ${hl.cfiRange}:`, e);
+                    failCount++;
+                }
+            }
+            
+            console.log(`Processed highlights: ${successCount} success, ${failCount} failed.`);
+
+            if (newHighlights.length > 0) {
+                console.log(`Inserting ${newHighlights.length} highlights to Supabase...`);
+                const { error: insertError } = await supabase.from('highlights').insert(newHighlights);
+                if (insertError) {
+                    console.error('Supabase insert error:', insertError);
+                    throw insertError;
+                }
+                
+                fetchHighlights(); // Refresh list
+                alert(`Successfully imported ${newHighlights.length} highlights.`);
+            } else {
+                if (localHighlights.length > 0 && existingCfiRanges.size >= localHighlights.length) {
+                    alert('All local highlights are already imported.');
+                } else {
+                    alert(`No new highlights found to import. (${failCount} failed to resolve)`);
+                }
+            }
+            
+            setIsImportModalOpen(false);
+
+        } catch (error: any) {
+            console.error('Error importing highlights (full object):', error);
+            console.error('Error message:', error?.message);
+            console.error('Error stack:', error?.stack);
+            alert(`Failed to import highlights: ${error?.message || 'Unknown error'}`);
+        } finally {
+            setImportingBookId(null);
+        }
+    };
+
 
     const fetchHighlights = async () => {
         try {
@@ -124,6 +316,23 @@ export default function RecentHighlights() {
                 </button>
             </div>
 
+            <div className="flex justify-end mb-4">
+                <button 
+                    onClick={() => {
+                        setIsImportModalOpen(true);
+                        scanForLocalHighlights();
+                    }}
+                    className="text-xs font-bold text-brown-800/60 hover:text-brown-900 uppercase tracking-widest transition-colors flex items-center gap-1"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Import from Book
+                </button>
+            </div>
+
             <div className="flex-1 space-y-4">
                 {loading ? (
                     <div className="animate-pulse space-y-4">
@@ -138,7 +347,6 @@ export default function RecentHighlights() {
                             </p>
                             <div className="flex justify-between items-center text-xs font-black text-brown-800/40 uppercase tracking-widest">
                                 <span>{highlight.book_title}</span>
-                                <span>{t.dashboard.page_label} {highlight.page_number}</span>
                             </div>
                         </div>
                     ))
@@ -155,6 +363,64 @@ export default function RecentHighlights() {
                     <span className="group-hover:scale-110 transition-transform">+ {t.dashboard.add_highlight}</span>
                 </div>
             </div>
+
+            {/* Import Modal */}
+            {isImportModalOpen && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-[2.5rem]" onClick={() => setIsImportModalOpen(false)}></div>
+                    <div className="bg-white w-full max-w-md p-6 rounded-3xl shadow-2xl border border-cream-200 relative z-10 animate-in fade-in zoom-in duration-200">
+                        <h3 className="text-xl font-serif font-bold text-brown-900 mb-4">Import Highlights</h3>
+                        
+                        {isScanning ? (
+                            <div className="flex flex-col items-center justify-center py-8">
+                                <div className="w-8 h-8 border-4 border-brown-900 border-t-transparent rounded-full animate-spin mb-4"></div>
+                                <p className="text-brown-800/60 font-bold">Scanning local books...</p>
+                            </div>
+                        ) : localHighlightsBooks.length > 0 ? (
+                            <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                <p className="text-sm text-brown-800/60 mb-4">Select a book to import locally saved highlights from:</p>
+                                {localHighlightsBooks.map(({book, count}) => (
+                                    <div 
+                                        key={book.id}
+                                        onClick={() => handleImportHighlights(book)}
+                                        className="p-4 bg-cream-50 hover:bg-cream-100 rounded-xl cursor-pointer transition-colors border border-cream-200 flex justify-between items-center group"
+                                    >
+                                        <div className="flex-1 min-w-0 mr-4">
+                                            <div className="font-bold text-brown-900 truncate">{book.title}</div>
+                                            <div className="text-xs text-brown-800/60">{count} local highlights</div>
+                                        </div>
+                                        {importingBookId === book.id ? (
+                                            <div className="w-5 h-5 border-2 border-brown-900 border-t-transparent rounded-full animate-spin"></div>
+                                        ) : (
+                                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-brown-900 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                                </svg>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-8 text-brown-800/40 italic">
+                                No local highlights found.
+                            </div>
+                        )}
+
+                        <div className="mt-6">
+                            <button 
+                                type="button"
+                                onClick={() => setIsImportModalOpen(false)}
+                                className="w-full py-3 font-bold text-brown-800/60 hover:bg-cream-100 rounded-xl transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modal */}
             {isModalOpen && (
@@ -226,17 +492,6 @@ export default function RecentHighlights() {
                                         required
                                     />
                                 )}
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-brown-800/60 uppercase tracking-widest mb-1">{t.dashboard.page_number}</label>
-                                <input 
-                                    type="number"
-                                    min="0"
-                                    value={pageNumber}
-                                    onChange={(e) => setPageNumber(e.target.value)}
-                                    className="w-full p-3 bg-cream-50 rounded-xl border border-cream-200 focus:outline-none focus:border-brown-900"
-                                    placeholder={t.dashboard.page_placeholder}
-                                />
                             </div>
                             <div className="flex gap-3 mt-6">
                                 <button 

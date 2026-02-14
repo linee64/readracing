@@ -83,21 +83,29 @@ export default function ReaderPage() {
         // Base styles
         const styles = {
             'body': {
-                'padding': mobile ? '20px 20px !important' : '40px 160px !important', // Измените 160px на желаемое значение отступов
-                'margin': '0 !important',
+                'padding': mobile ? '20px 20px !important' : '40px 10% !important',
+                'margin': '0 auto !important',
                 'font-size': `${mobile ? Math.max(12, fontSize - 2) : fontSize}px !important`,
                 'line-height': '1.6 !important',
                 'font-family': `${fontFamily} !important`,
                 'color': isDark ? '#e5e5e5 !important' : '#2C2416 !important',
                 'background-color': isDark ? '#1a1a1a !important' : '#ffffff !important',
-                'max-width': mobile ? '100% !important' : '800px !important',
-                'margin-left': mobile ? '0 !important' : 'auto !important',
-                'margin-right': mobile ? '0 !important' : 'auto !important',
+                'max-width': mobile ? '100% !important' : '1000px !important',
                 'box-sizing': 'border-box !important'
             },
             'img': {
                 'max-width': '100% !important',
                 'height': 'auto !important'
+            },
+            'a': {
+                'color': 'inherit !important',
+                'text-decoration': 'none !important',
+                '-webkit-text-fill-color': 'inherit !important'
+            },
+            'a:hover': {
+                'color': 'inherit !important',
+                'text-decoration': 'none !important',
+                '-webkit-text-fill-color': 'inherit !important'
             }
         };
 
@@ -332,18 +340,28 @@ export default function ReaderPage() {
                 const mobile = window.innerWidth < 1024;
                 rendition.themes.default({
                     'body': {
-                        'padding': mobile ? '20px 20px !important' : '40px 160px !important',
-                        'margin': '0 !important',
+                        'padding': mobile ? '20px 20px !important' : '40px 10% !important',
+                        'margin': '0 auto !important',
                         'font-size': mobile ? '14px !important' : '16px !important',
                         'line-height': '1.45 !important',
                         'color': '#2C2416 !important',
                         'font-family': 'Georgia, serif !important',
-                        'max-width': '100% !important',
+                        'max-width': mobile ? '100% !important' : '1000px !important',
                         'box-sizing': 'border-box !important'
                     },
                     'img': {
                         'max-width': '100% !important',
                         'height': 'auto !important'
+                    },
+                    'a': {
+                         'color': 'inherit !important',
+                         'text-decoration': 'none !important',
+                         '-webkit-text-fill-color': 'inherit !important'
+                    },
+                    'a:hover': {
+                         'color': 'inherit !important',
+                         'text-decoration': 'none !important',
+                         '-webkit-text-fill-color': 'inherit !important'
                     }
                 });
                 
@@ -485,7 +503,7 @@ export default function ReaderPage() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (user && text) {
-                await supabase.from('highlights').insert({
+                const { error } = await supabase.from('highlights').insert({
                     user_id: user.id,
                     quote: text,
                     book_title: title || 'Unknown Book',
@@ -494,6 +512,15 @@ export default function ReaderPage() {
                     cfi_range: cfiRange,
                     book_id: id
                 });
+                
+                if (error) {
+                    console.error('Supabase error saving highlight:', error);
+                    // You might want to show a toast here if you have a toast component
+                } else {
+                    console.log('Highlight saved successfully to database');
+                }
+            } else {
+                console.error('Cannot save highlight: User not logged in or no text selected');
             }
         } catch (err) {
             console.error('Error saving highlight to database:', err);

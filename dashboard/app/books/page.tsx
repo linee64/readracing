@@ -65,14 +65,17 @@ export default function BooksPage() {
                     } else {
                         // For external URLs, use the proxy rotation system
                         const proxies = [
-                            (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
                             (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-                            (url: string) => `https://thingproxy.freeboard.io/fetch/${url}`,
+                            (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                            (url: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
                         ];
 
                         // Try direct fetch first (some servers might have CORS enabled)
                         try {
-                            const response = await fetch(bookToAdd.epubUrl!, { signal: AbortSignal.timeout(10000) });
+                            const controller = new AbortController();
+                            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+                            const response = await fetch(bookToAdd.epubUrl!, { signal: controller.signal });
+                            clearTimeout(timeoutId);
                             if (response.ok) {
                                 arrayBuffer = await response.arrayBuffer();
                             }
@@ -85,7 +88,12 @@ export default function BooksPage() {
                                 try {
                                     const targetUrl = getProxyUrl(bookToAdd.epubUrl!);
                                     console.log(`Trying proxy: ${targetUrl}`);
-                                    const response = await fetch(targetUrl, { signal: AbortSignal.timeout(45000) }); // Increased to 45s for proxies
+                                    const controller = new AbortController();
+                                    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s for proxies
+                                    
+                                    const response = await fetch(targetUrl, { signal: controller.signal });
+                                    clearTimeout(timeoutId);
+
                                     if (response.ok) {
                                         arrayBuffer = await response.arrayBuffer();
                                         if (arrayBuffer && arrayBuffer.byteLength > 0) {

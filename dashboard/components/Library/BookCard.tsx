@@ -33,7 +33,6 @@ const BookCard: React.FC<BookCardProps> = ({ book, onAdd, onPreview }) => {
                     src={book.coverUrl || 'https://via.placeholder.com/280x420?text=No+Cover'}
                     alt={book.title}
                     className="w-full h-full object-cover"
-                    crossOrigin="anonymous"
                 />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <button

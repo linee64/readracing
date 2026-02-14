@@ -1,0 +1,186 @@
+{
+  "classics": [
+    {
+      "id": "1",
+      "title": "Война и мир",
+      "author": "Лев Толстой",
+      "genre": "Классика",
+      "gutenbergId": "2600",
+      "epubUrl": "https://www.gutenberg.org/cache/epub/2600/pg2600.epub",
+      "apiUrl": "https://www.gutenberg.org/ebooks/2600",
+      "coverUrl": "https://www.gutenberg.org/cache/epub/2600/pg2600.cover.medium.jpg",
+      "totalPages": 1300
+    },
+    {
+      "id": "2",
+      "title": "Преступление и наказание",
+      "author": "Федор Достоевский",
+      "genre": "Классика",
+      "gutenbergId": "2554",
+      "epubUrl": "https://www.gutenberg.org/cache/epub/2554/pg2554.epub",
+      "apiUrl": "https://www.gutenberg.org/ebooks/2554",
+      "coverUrl": "https://www.gutenberg.org/cache/epub/2554/pg2554.cover.medium.jpg",
+      "totalPages": 670
+    },
+    {
+      "id": "3",
+      "title": "Анна Каренина",
+      "author": "Лев Толстой",
+      "genre": "Классика",
+      "gutenbergId": "1399",
+      "epubUrl": "https://www.gutenberg.org/cache/epub/1399/pg1399.epub",
+      "apiUrl": "https://www.gutenberg.org/ebooks/1399",
+      "coverUrl": "https://www.gutenberg.org/cache/epub/1399/pg1399.cover.medium.jpg",
+      "totalPages": 900
+    },
+    {
+      "id": "4",
+      "title": "Гордость и предубеждение",
+      "author": "Джейн Остин",
+      "genre": "Классика",
+      "gutenbergId": "1342",
+      "epubUrl": "https://www.gutenberg.org/cache/epub/1342/pg1342.epub",
+      "apiUrl": "https://www.gutenberg.org/ebooks/1342",
+      "coverUrl": "https://www.gutenberg.org/cache/epub/1342/pg1342.cover.medium.jpg",
+      "totalPages": 400
+    }
+  ],
+  "romance": [
+    {
+      "id": "5",
+      "title": "Грозовой перевал",
+      "author": "Эмили Бронте",
+      "genre": "Роман",
+      "gutenbergId": "768",
+      "epubUrl": "https://www.gutenberg.org/cache/epub/768/pg768.epub",
+      "apiUrl": "https://www.gutenberg.org/ebooks/768",
+      "coverUrl": "https://www.gutenberg.org/cache/epub/768/pg768.cover.medium.jpg",
+      "totalPages": 350
+    },
+    {
+      "id": "6",
+      "title": "Джейн Эйр",
+      "author": "Шарлотта Бронте",
+      "genre": "Роман",
+      "gutenbergId": "1260",
+      "epubUrl": "https://www.gutenberg.org/cache/epub/1260/pg1260.epub",
+      "apiUrl": "https://www.gutenberg.org/ebooks/1260",
+      "coverUrl": "https://www.gutenberg.org/cache/epub/1260/pg1260.cover.medium.jpg",
+      "totalPages": 500
+    },
+    {
+      "id": "7",
+      "title": "Граф Монте-Кристо",
+      "author": "Александр Дюма",
+      "genre": "Роман",
+      "gutenbergId": "1184",
+      "epubUrl": "https://www.gutenberg.org/cache/epub/1184/pg1184.epub",
+      "apiUrl": "https://www.gutenberg.org/ebooks/1184",
+      "coverUrl": "https://www.gutenberg.org/cache/epub/1184/pg1184.cover.medium.jpg",
+      "totalPages": 1200
+    },
+    {
+      "id": "8",
+      "title": "Три мушкетера",
+      "author": "Александр Дюма",
+      "genre": "Роман",
+      "gutenbergId": "1257",
+      "epubUrl": "https://www.gutenberg.org/cache/epub/1257/pg1257.epub",
+      "apiUrl": "https://www.gutenberg.org/ebooks/1257",
+      "coverUrl": "https://www.gutenberg.org/cache/epub/1257/pg1257.cover.medium.jpg",
+      "totalPages": 700
+    }
+  ],
+  "detective": [
+    {
+      "id": "9",
+      "title": "Приключения Шерлока Холмса",
+      "author": "Артур Конан Дойл",
+      "genre": "Детектив",
+      "gutenbergId": "1661",
+      "epubUrl": "https://www.gutenberg.org/cache/epub/1661/pg1661.epub",
+      "apiUrl": "https://www.gutenberg.org/ebooks/1661",
+      "coverUrl": "https://www.gutenberg.org/cache/epub/1661/pg1661.cover.medium.jpg",
+      "totalPages": 300
+    },
+    {
+      "id": "10",
+      "title": "Собака Баскервилей",
+      "author": "Артур Конан Дойл",
+      "genre": "Детектив",
+      "gutenbergId": "2852",
+      "epubUrl": "https://www.gutenberg.org/cache/epub/2852/pg2852.epub",
+      "apiUrl": "https://www.gutenberg.org/ebooks/2852",
+      "coverUrl": "https://www.gutenberg.org/cache/epub/2852/pg2852.cover.medium.jpg",
+      "totalPages": 250
+    },
+    {
+      "id": "11",
+      "title": "Этюд в багровых тонах",
+      "author": "Артур Конан Дойл",
+      "genre": "Детектив",
+      "gutenbergId": "244",
+      "epubUrl": "https://www.gutenberg.org/cache/epub/244/pg244.epub",
+      "apiUrl": "https://www.gutenberg.org/ebooks/244",
+      "coverUrl": "https://www.gutenberg.org/cache/epub/244/pg244.cover.medium.jpg",
+      "totalPages": 200
+    },
+    {
+      "id": "12",
+      "title": "Таинственное происшествие в Стайлз",
+      "author": "Агата Кристи",
+      "genre": "Детектив",
+      "gutenbergId": "863",
+      "epubUrl": "https://www.gutenberg.org/cache/epub/863/pg863.epub",
+      "apiUrl": "https://www.gutenberg.org/ebooks/863",
+      "coverUrl": "https://www.gutenberg.org/cache/epub/863/pg863.cover.medium.jpg",
+      "totalPages": 280
+    }
+  ],
+  "scifi": [
+    {
+      "id": "13",
+      "title": "Машина времени",
+      "author": "Герберт Уэллс",
+      "genre": "Фантастика",
+      "gutenbergId": "35",
+      "epubUrl": "https://www.gutenberg.org/cache/epub/35/pg35.epub",
+      "apiUrl": "https://www.gutenberg.org/ebooks/35",
+      "coverUrl": "https://www.gutenberg.org/cache/epub/35/pg35.cover.medium.jpg",
+      "totalPages": 150
+    },
+    {
+      "id": "14",
+      "title": "Война миров",
+      "author": "Герберт Уэллс",
+      "genre": "Фантастика",
+      "gutenbergId": "36",
+      "epubUrl": "https://www.gutenberg.org/cache/epub/36/pg36.epub",
+      "apiUrl": "https://www.gutenberg.org/ebooks/36",
+      "coverUrl": "https://www.gutenberg.org/cache/epub/36/pg36.cover.medium.jpg",
+      "totalPages": 250
+    },
+    {
+      "id": "15",
+      "title": "Франкенштейн",
+      "author": "Мэри Шелли",
+      "genre": "Фантастика",
+      "gutenbergId": "84",
+      "epubUrl": "https://www.gutenberg.org/cache/epub/84/pg84.epub",
+      "apiUrl": "https://www.gutenberg.org/ebooks/84",
+      "coverUrl": "https://www.gutenberg.org/cache/epub/84/pg84.cover.medium.jpg",
+      "totalPages": 220
+    },
+    {
+      "id": "16",
+      "title": "20 000 лье под водой",
+      "author": "Жюль Верн",
+      "genre": "Фантастика",
+      "gutenbergId": "164",
+      "epubUrl": "https://www.gutenberg.org/cache/epub/164/pg164.epub",
+      "apiUrl": "https://www.gutenberg.org/ebooks/164",
+      "coverUrl": "https://www.gutenberg.org/cache/epub/164/pg164.cover.medium.jpg",
+      "totalPages": 450
+    }
+  ]
+}

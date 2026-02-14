@@ -17,6 +17,7 @@ export default function LibraryPage() {
     const [isSyncing, setIsSyncing] = useState(false);
     const [username, setUsername] = useState<string>('Reader');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const deletedBookIds = useRef<Set<string>>(new Set());
 
     // Get current user for header
     useEffect(() => {
@@ -64,7 +65,8 @@ export default function LibraryPage() {
                     await set('readracing_library_v2', mergedBooks);
                     
                     // Download missing book files in background
-                    await downloadMissingBooks(mergedBooks);
+                    // Don't await this to prevent blocking UI
+                    downloadMissingBooks(mergedBooks).catch(console.error);
                     
                     // Upload local-only books to Supabase (Sync Up)
                     await uploadMissingBooks(localBooks, remoteBooks, user.id);
@@ -91,6 +93,8 @@ export default function LibraryPage() {
             const localBooks = await get('readracing_library_v2') as Book[];
             if (localBooks) {
                 setBooks(localBooks);
+                // Attempt to repair missing/blob covers
+                repairCovers(localBooks);
             }
             // Trigger silent sync
             await syncLibrary(true);
@@ -145,6 +149,9 @@ export default function LibraryPage() {
         
         // Merge remote books
         remote.forEach(r => {
+            // Skip books that were deleted in this session
+            if (deletedBookIds.current.has(r.id)) return;
+
             const existing = map.get(r.id);
             const remoteBook: Book = {
                 id: r.id,
@@ -172,58 +179,156 @@ export default function LibraryPage() {
     };
 
     const downloadMissingBooks = async (books: Book[]) => {
-        for (const book of books) {
-            // Check if file exists locally
-            const fileData = await get(book.id);
-            if (!fileData && book.epubUrl) {
+        const downloadQueue = books.filter(b => b.epubUrl && !b.epubUrl.startsWith('blob:'));
+        
+        // Process in chunks of 2 to avoid overwhelming network/browser
+        const CHUNK_SIZE = 2;
+        for (let i = 0; i < downloadQueue.length; i += CHUNK_SIZE) {
+            const chunk = downloadQueue.slice(i, i + CHUNK_SIZE);
+            await Promise.all(chunk.map(async (book) => {
                 try {
+                    // Check if file exists locally first
+                    const fileData = await get(book.id);
+                    if (fileData) return;
+
                     console.log(`Downloading book: ${book.title}`);
-                    const response = await fetch(book.epubUrl);
-                    if (response.ok) {
-                        const blob = await response.blob();
-                        const arrayBuffer = await blob.arrayBuffer();
+                    
+                    // Try direct fetch first
+                    let arrayBuffer: ArrayBuffer | null = null;
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+                    try {
+                        const response = await fetch(book.epubUrl!, { 
+                            signal: controller.signal,
+                            headers: { 'Accept': 'application/epub+zip' }
+                        });
+                        clearTimeout(timeoutId);
+                        if (response.ok) {
+                            arrayBuffer = await response.arrayBuffer();
+                        }
+                    } catch (e) {
+                        clearTimeout(timeoutId);
+                        console.warn(`Direct download failed for ${book.title}, trying proxy...`);
+                    }
+
+                    // If direct failed, try proxy
+                    if (!arrayBuffer) {
+                        const proxies = [
+                            (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                            (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                            (url: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+                        ];
+
+                        for (const proxy of proxies) {
+                            try {
+                                const proxyUrl = proxy(book.epubUrl!);
+                                const proxyController = new AbortController();
+                                const proxyTimeout = setTimeout(() => proxyController.abort(), 30000); // 30s for proxy
+
+                                const response = await fetch(proxyUrl, { signal: proxyController.signal });
+                                clearTimeout(proxyTimeout);
+                                
+                                if (response.ok) {
+                                    arrayBuffer = await response.arrayBuffer();
+                                    break;
+                                }
+                            } catch (e) {
+                                console.warn(`Proxy download failed for ${book.title}`);
+                            }
+                        }
+                    }
+
+                    if (arrayBuffer && arrayBuffer.byteLength > 0) {
                         await set(book.id, arrayBuffer);
                         console.log(`Downloaded and saved: ${book.title}`);
+                    } else {
+                        console.warn(`Failed to download ${book.title} after all attempts`);
                     }
                 } catch (e) {
-                    console.error(`Failed to download book ${book.title}`, e);
+                    console.error(`Error processing book ${book.title}`, e);
                 }
-            }
+            }));
         }
     };
 
     const repairCovers = async (currentBooks: Book[]) => {
         let needsUpdate = false;
         const updatedBooks = await Promise.all(currentBooks.map(async (book) => {
-            // If cover is missing or is an expired blob URL
-            if (!book.coverUrl || book.coverUrl.startsWith('blob:')) {
+            // Check if metadata (title, author) or cover is missing/placeholder
+            const isTitleMissing = !book.title || book.title === t.my_books.loading_author || book.title.startsWith('epub-');
+            const isAuthorMissing = !book.author || book.author === t.my_books.loading_author || book.author === t.my_books.unknown_author;
+            const isCoverMissing = !book.coverUrl || book.coverUrl.startsWith('blob:');
+
+            if (isTitleMissing || isAuthorMissing || isCoverMissing) {
                 if (book.id.startsWith('epub-')) {
                     try {
                         const arrayBuffer = await get(book.id);
                         if (arrayBuffer) {
                             const epub = ePub(arrayBuffer);
-                            // Add a timeout to epub.coverUrl()
-                            const coverPath = await Promise.race([
-                                epub.coverUrl(),
-                                new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
-                            ]) as string | null;
+                            
+                            // Wait for book to be ready
+                            await Promise.race([
+                                epub.ready,
+                                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 10000))
+                            ]);
 
-                            if (coverPath) {
-                                const response = await fetch(coverPath);
-                                if (response.ok) {
-                                    const blob = await response.blob();
-                                    const base64 = await new Promise<string>((resolve) => {
-                                        const reader = new FileReader();
-                                        reader.onloadend = () => resolve(reader.result as string);
-                                        reader.readAsDataURL(blob);
-                                    });
-                                    needsUpdate = true;
-                                    return { ...book, coverUrl: base64 };
+                            const metadata = await epub.loaded.metadata;
+                            let newTitle = book.title;
+                            let newAuthor = book.author;
+                            let newCoverUrl = book.coverUrl;
+                            let changed = false;
+
+                            // Update Title
+                            if (isTitleMissing && metadata.title) {
+                                newTitle = metadata.title;
+                                changed = true;
+                            }
+
+                            // Update Author
+                            if (isAuthorMissing && metadata.creator) {
+                                newAuthor = metadata.creator;
+                                changed = true;
+                            }
+
+                            // Update Cover
+                            if (isCoverMissing) {
+                                try {
+                                    const coverPath = await Promise.race([
+                                        epub.coverUrl(),
+                                        new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+                                    ]) as string | null;
+
+                                    if (coverPath) {
+                                        const response = await fetch(coverPath);
+                                        if (response.ok) {
+                                            const blob = await response.blob();
+                                            const base64 = await new Promise<string>((resolve) => {
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => resolve(reader.result as string);
+                                                reader.readAsDataURL(blob);
+                                            });
+                                            newCoverUrl = base64;
+                                            changed = true;
+                                        }
+                                    }
+                                } catch (coverErr) {
+                                    console.warn(`Cover repair failed for ${book.id}`, coverErr);
                                 }
+                            }
+
+                            if (changed) {
+                                needsUpdate = true;
+                                return { 
+                                    ...book, 
+                                    title: newTitle, 
+                                    author: newAuthor, 
+                                    coverUrl: newCoverUrl 
+                                };
                             }
                         }
                     } catch (e) {
-                        console.error(`Failed to repair cover for ${book.title}:`, e);
+                        console.error(`Failed to repair metadata for ${book.id}:`, e);
                     }
                 }
             }
@@ -242,15 +347,28 @@ export default function LibraryPage() {
     };
 
     const handleDeleteBook = async (id: string) => {
+        // Mark as deleted in session to prevent sync from bringing it back
+        deletedBookIds.current.add(id);
+
         const updatedBooks = books.filter(b => b.id !== id);
         await saveBooks(updatedBooks);
-        if (id.startsWith('epub-')) {
-            await del(id);
-            // Also delete from Supabase if online
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                await supabase.from('books').delete().eq('id', id);
-                await supabase.storage.from('books').remove([`${user.id}/${id}.epub`]);
+        
+        // Always attempt to delete from IndexedDB
+        await del(id);
+        
+        // Also delete from Supabase if online
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            try {
+                // Delete from DB first
+                const { error } = await supabase.from('books').delete().eq('id', id);
+                if (error) console.error('Supabase DB delete error:', error);
+
+                // Delete from Storage
+                const { error: storageError } = await supabase.storage.from('books').remove([`${user.id}/${id}.epub`]);
+                if (storageError) console.error('Supabase storage delete error:', storageError);
+            } catch (e) {
+                console.error('Failed to delete from Supabase:', e);
             }
         }
     };
