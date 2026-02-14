@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '@/context/LanguageContext';
 
 type Theme = 'auto' | 'light' | 'dark';
 type HighlightColor = 'blue' | 'green' | 'yellow' | 'gray';
@@ -23,6 +24,8 @@ export default function ReaderSettings({
     onUpdateSettings,
     isMobile 
 }: ReaderSettingsProps) {
+    const { t } = useLanguage();
+
     if (!isOpen) return null;
 
     const fonts = [
@@ -33,10 +36,10 @@ export default function ReaderSettings({
     ];
 
     const highlights: { color: string; value: HighlightColor; label: string }[] = [
-        { color: '#60a5fa', value: 'blue', label: 'Blue' }, // blue-400
-        { color: '#4ade80', value: 'green', label: 'Green' }, // green-400
-        { color: '#facc15', value: 'yellow', label: 'Yellow' }, // yellow-400
-        { color: '#9ca3af', value: 'gray', label: 'Gray' }, // gray-400
+        { color: '#60a5fa', value: 'blue', label: t.reader.blue }, // blue-400
+        { color: '#4ade80', value: 'green', label: t.reader.green }, // green-400
+        { color: '#facc15', value: 'yellow', label: t.reader.yellow }, // yellow-400
+        { color: '#9ca3af', value: 'gray', label: t.reader.gray }, // gray-400
     ];
 
     const isDark = settings.theme === 'dark' || (settings.theme === 'auto' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -44,7 +47,7 @@ export default function ReaderSettings({
     const Content = (
         <div className="space-y-8">
             <div className="flex justify-between items-center">
-                <h2 className={`text-xl font-serif font-bold ${isDark ? 'text-white' : 'text-[#4A3B32]'}`}>Appearance</h2>
+                <h2 className={`text-xl font-serif font-bold ${isDark ? 'text-white' : 'text-[#4A3B32]'}`}>{t.reader.appearance}</h2>
                 <button 
                     onClick={onClose} 
                     className={`p-2 rounded-full transition-colors ${isDark ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-[#EFE6D5] text-[#8C7B6C]'}`}
@@ -55,12 +58,12 @@ export default function ReaderSettings({
 
             {/* Theme Selection - Icons */}
             <div className="space-y-3">
-                <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-[#8C7B6C]'}`}>Theme</label>
+                <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-[#8C7B6C]'}`}>{t.reader.theme}</label>
                 <div className={`flex p-1 rounded-xl border ${isDark ? 'bg-gray-900/50 border-gray-700' : 'bg-[#F9F5F1] border-[#E8E1D5]'}`}>
                     {[
-                        { value: 'auto', icon: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>, label: 'Auto' },
-                        { value: 'light', icon: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41-1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>, label: 'Light' },
-                        { value: 'dark', icon: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>, label: 'Dark' }
+                        { value: 'auto', icon: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>, label: t.reader.auto },
+                        { value: 'light', icon: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41-1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>, label: t.reader.light },
+                        { value: 'dark', icon: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>, label: t.reader.dark }
                     ].map((t) => (
                         <button
                             key={t.value}
@@ -80,7 +83,7 @@ export default function ReaderSettings({
 
             {/* Font Family - Compact List */}
             <div className="space-y-3">
-                <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-[#8C7B6C]'}`}>Typeface</label>
+                <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-[#8C7B6C]'}`}>{t.reader.typeface}</label>
                 <div className={`flex flex-col rounded-xl overflow-hidden border ${isDark ? 'border-gray-700 bg-gray-900/30' : 'border-[#E8E1D5] bg-[#F9F5F1]'}`}>
                     {fonts.map((f, i) => (
                         <button
@@ -105,7 +108,7 @@ export default function ReaderSettings({
             {/* Font Size - Custom Slider */}
             <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                    <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-[#8C7B6C]'}`}>Size</label>
+                    <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-[#8C7B6C]'}`}>{t.reader.size}</label>
                     <span className={`text-xs font-mono ${isDark ? 'text-gray-400' : 'text-[#8C7B6C]'}`}>{settings.fontSize}px</span>
                 </div>
                 <div className={`flex items-center gap-4 p-2 rounded-xl border ${isDark ? 'bg-gray-900/50 border-gray-700' : 'bg-[#F9F5F1] border-[#E8E1D5]'}`}>
@@ -135,7 +138,7 @@ export default function ReaderSettings({
 
             {/* Highlight Color - Circles */}
             <div className="space-y-3">
-                <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-[#8C7B6C]'}`}>Highlight Color</label>
+                <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-[#8C7B6C]'}`}>{t.reader.highlight_color}</label>
                 <div className="flex items-center gap-4">
                     {highlights.map((h) => (
                         <button

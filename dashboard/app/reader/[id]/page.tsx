@@ -7,6 +7,7 @@ import { get, set } from 'idb-keyval';
 import { Book } from '@/types';
 import { supabase } from '@/lib/supabase';
 import ReaderSettings from '@/components/ReaderSettings';
+import { useLanguage } from '@/context/LanguageContext';
 
 type Theme = 'auto' | 'light' | 'dark';
 type HighlightColor = 'blue' | 'green' | 'yellow' | 'gray';
@@ -25,6 +26,7 @@ const HIGHLIGHT_COLORS = {
 };
 
 export default function ReaderPage() {
+    const { t } = useLanguage();
     const { id } = useParams();
     const router = useRouter();
     const viewerRef = useRef<HTMLDivElement>(null);
@@ -62,6 +64,15 @@ export default function ReaderPage() {
     
     const settingsRef = useRef(settings);
     const highlightsRef = useRef<Highlight[]>([]);
+    
+    // Selection state refs
+    const isMouseUpRef = useRef(true);
+    const pendingSelectionRef = useRef<{
+        cfiRange: string;
+        text: string;
+        rect: DOMRect;
+        iframeRect: DOMRect;
+    } | null>(null);
 
     // Theme configuration
     const applyTheme = (rendition: Rendition) => {
@@ -72,14 +83,16 @@ export default function ReaderPage() {
         // Base styles
         const styles = {
             'body': {
-                'padding': mobile ? '20px 20px !important' : '30px 30px !important',
+                'padding': mobile ? '20px 20px !important' : '40px 160px !important', // Измените 160px на желаемое значение отступов
                 'margin': '0 !important',
                 'font-size': `${mobile ? Math.max(12, fontSize - 2) : fontSize}px !important`,
-                'line-height': '1.45 !important',
+                'line-height': '1.6 !important',
                 'font-family': `${fontFamily} !important`,
                 'color': isDark ? '#e5e5e5 !important' : '#2C2416 !important',
                 'background-color': isDark ? '#1a1a1a !important' : '#ffffff !important',
-                'max-width': '100% !important',
+                'max-width': mobile ? '100% !important' : '800px !important',
+                'margin-left': mobile ? '0 !important' : 'auto !important',
+                'margin-right': mobile ? '0 !important' : 'auto !important',
                 'box-sizing': 'border-box !important'
             },
             'img': {
@@ -247,6 +260,29 @@ export default function ReaderPage() {
                     addHighlightAnnotation(h.cfiRange, h.color);
                 });
 
+                rendition.on('mousedown', () => {
+                    isMouseUpRef.current = false;
+                    setSelectionMenu(null);
+                    pendingSelectionRef.current = null;
+                });
+
+                rendition.on('mouseup', () => {
+                    isMouseUpRef.current = true;
+                    if (pendingSelectionRef.current) {
+                        const { cfiRange, text, rect, iframeRect } = pendingSelectionRef.current;
+                        const x = iframeRect.left + rect.left + (rect.width / 2);
+                        const y = iframeRect.top + rect.top;
+
+                        setSelectionMenu({
+                            x,
+                            y,
+                            cfiRange,
+                            text
+                        });
+                        pendingSelectionRef.current = null;
+                    }
+                });
+
                 rendition.on('selected', (cfiRange: string, contents: any) => {
                     const selection = contents.window.getSelection();
                     if (!selection || selection.rangeCount === 0) return;
@@ -257,25 +293,35 @@ export default function ReaderPage() {
                     
                     if (iframe) {
                         const iframeRect = iframe.getBoundingClientRect();
-                        // Position menu above selection
-                        const x = iframeRect.left + rect.left + (rect.width / 2);
-                        const y = iframeRect.top + rect.top;
+                        const text = selection.toString();
 
-                        setSelectionMenu({
-                            x,
-                            y,
-                            cfiRange,
-                            text: selection.toString()
-                        });
+                        if (isMouseUpRef.current) {
+                            const x = iframeRect.left + rect.left + (rect.width / 2);
+                            const y = iframeRect.top + rect.top;
+                            setSelectionMenu({
+                                x,
+                                y,
+                                cfiRange,
+                                text
+                            });
+                        } else {
+                            pendingSelectionRef.current = {
+                                cfiRange,
+                                text,
+                                rect,
+                                iframeRect
+                            };
+                        }
                     }
                 });
 
                 rendition.on('click', () => {
-                    setSelectionMenu(null);
+                    // setSelectionMenu(null);
                 });
                 
                 rendition.on('relocated', () => {
                     setSelectionMenu(null);
+                    pendingSelectionRef.current = null;
                 });
 
                 // Apply initial styles
@@ -286,7 +332,7 @@ export default function ReaderPage() {
                 const mobile = window.innerWidth < 1024;
                 rendition.themes.default({
                     'body': {
-                        'padding': mobile ? '20px 20px !important' : '30px 30px !important',
+                        'padding': mobile ? '20px 20px !important' : '40px 160px !important',
                         'margin': '0 !important',
                         'font-size': mobile ? '14px !important' : '16px !important',
                         'line-height': '1.45 !important',
@@ -408,11 +454,11 @@ export default function ReaderPage() {
     const prevPage = () => renditionRef.current?.prev();
     const nextPage = () => renditionRef.current?.next();
 
-    const handleHighlight = (colorKey: HighlightColor) => {
+    const handleHighlight = async (colorKey: HighlightColor) => {
         if (!selectionMenu || !renditionRef.current) return;
         
         const color = HIGHLIGHT_COLORS[colorKey];
-        const { cfiRange } = selectionMenu;
+        const { cfiRange, text } = selectionMenu;
 
         // Add annotation
         renditionRef.current.annotations.add('highlight', cfiRange, {}, (e: any) => {
@@ -421,23 +467,40 @@ export default function ReaderPage() {
             set(`highlights_${id}`, highlightsRef.current);
         }, 'hl', { fill: color, 'fill-opacity': '0.3', 'mix-blend-mode': 'multiply' });
 
-        // Save to state/storage
+        // Save to state/storage (local for rendering)
         const newHighlight = { cfiRange, color, created_at: Date.now() };
         highlightsRef.current = [...highlightsRef.current, newHighlight];
         set(`highlights_${id}`, highlightsRef.current);
 
-        // Clear selection and menu
-        // We need to access the iframe window to clear selection
-        // But we don't have direct access to 'contents' here easily unless we stored it
-        // OR we can just rely on user clicking elsewhere, but better to clear it.
-        // Actually, let's just close the menu. The selection might persist visually 
-        // until user clicks, which is fine, or we can try to clear it if we had the window reference.
-        // For now, just close menu.
+        // Map color key to dashboard class
+        const dashboardColorMap: Record<HighlightColor, string> = {
+            blue: 'bg-blue-100/50',
+            green: 'bg-green-100/50',
+            yellow: 'bg-brand-gold/20',
+            gray: 'bg-cream-200'
+        };
+        const dashboardColor = dashboardColorMap[colorKey] || 'bg-cream-200';
+
+        // Save to Supabase 'highlights' table for Dashboard Recent Highlights
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && text) {
+                await supabase.from('highlights').insert({
+                    user_id: user.id,
+                    quote: text,
+                    book_title: title || 'Unknown Book',
+                    page_number: currentPage || 0,
+                    color: dashboardColor,
+                    cfi_range: cfiRange,
+                    book_id: id
+                });
+            }
+        } catch (err) {
+            console.error('Error saving highlight to database:', err);
+        }
+
         setSelectionMenu(null);
         
-        // Try to clear selection if possible via epubjs internal (not always exposed easily)
-        // renditionRef.current.getContents()[0].window.getSelection().removeAllRanges();
-        // But getContents might be empty or array.
         const contents = renditionRef.current.getContents() as any;
         if (contents && (contents.length > 0 || Array.isArray(contents))) {
             const content = Array.isArray(contents) ? contents[0] : contents;
@@ -479,14 +542,14 @@ export default function ReaderPage() {
                             <div className={`p-1.5 rounded-md ${isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-[#E8E1D5] text-[#8C7B6C] group-hover:text-[#4A3B32]'}`}>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 3v4"/><path d="M3 5h4"/><path d="M3 9h4"/></svg>
                             </div>
-                            Explain AI
+                            {t.reader.explain_ai}
                         </button>
                         
                         <div className={`h-px mx-4 my-1 ${isDark ? 'bg-[#444]' : 'bg-[#E8E1D5]'}`} />
                         
                         <div className="px-4 py-2">
                             <span className={`text-[10px] font-bold uppercase tracking-wider mb-2 block ${isDark ? 'text-gray-500' : 'text-[#8C7B6C]'}`}>
-                                Highlight
+                                {t.reader.highlight}
                             </span>
                             <div className="flex items-center gap-2 justify-between">
                                 {(['blue', 'green', 'yellow', 'gray'] as HighlightColor[]).map((color) => (
@@ -526,7 +589,7 @@ export default function ReaderPage() {
                             <div className={`p-3 rounded-xl ${isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-[#E8E1D5] text-[#8C7B6C]'}`}>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
                             </div>
-                            <h3 className="text-lg font-bold font-serif">AI Explanation</h3>
+                            <h3 className="text-lg font-bold font-serif">{t.reader.ai_explanation}</h3>
                         </div>
 
                         <div className={`p-4 rounded-xl mb-4 text-sm italic border ${isDark ? 'bg-[#222] border-[#333] text-gray-400' : 'bg-white/50 border-[#E8E1D5] text-[#5C4D44]'}`}>
@@ -535,7 +598,7 @@ export default function ReaderPage() {
 
                         <div className="space-y-3">
                             <p className="text-sm leading-relaxed opacity-80">
-                                This is a placeholder for the AI explanation feature. In a production environment, this would call an AI endpoint to analyze the selected text.
+                                {t.reader.ai_placeholder}
                             </p>
                             <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-[#333]' : 'bg-[#E8E1D5]'}`}>
                                 <div className={`h-full w-2/3 animate-pulse ${isDark ? 'bg-purple-500' : 'bg-[#8C7B6C]'}`}></div>
@@ -552,7 +615,7 @@ export default function ReaderPage() {
                         className={`${isDark ? 'text-gray-300 hover:text-white' : 'text-brown-900'} font-bold flex items-center gap-1 hover:opacity-70 transition-opacity text-xs`}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                        Library
+                        {t.reader.library}
                     </button>
                     <h1 className={`font-serif font-bold truncate max-w-[50%] text-center flex-1 text-sm ${isDark ? 'text-gray-200' : 'text-brown-900'}`}>{title || 'Loading...'}</h1>
                     
@@ -561,7 +624,7 @@ export default function ReaderPage() {
                         onClick={() => setShowSettings(!showSettings)}
                         className={`p-2 rounded-full transition-colors
                             ${isDark ? 'text-gray-400 hover:bg-[#333] hover:text-white' : 'text-brown-900/60 hover:bg-cream-100 hover:text-brown-900'}`}
-                        title="Reader Settings"
+                        title={t.sidebar.settings}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                     </button>
@@ -576,7 +639,7 @@ export default function ReaderPage() {
                         {!isLoaded && (
                             <div className={`absolute inset-0 flex flex-col items-center justify-center z-50 ${isDark ? 'bg-[#1a1a1a]' : 'bg-white'}`}>
                                 <div className={`animate-pulse font-serif italic text-xl mb-4 ${isDark ? 'text-gray-400' : 'text-brown-900/40'}`}>
-                                    Opening book...
+                                    {t.reader.opening_book}
                                 </div>
                             </div>
                         )}
@@ -598,7 +661,7 @@ export default function ReaderPage() {
                     </div>
                     {totalPages > 0 && (
                         <div className={`text-[10px] font-black uppercase tracking-[0.2em] mt-0.5 ${isDark ? 'text-gray-600' : 'text-brown-800/20'}`}>
-                            Progress: {Math.round((currentPage / totalPages) * 100)}%
+                            {t.reader.progress}: {Math.round((currentPage / totalPages) * 100)}%
                         </div>
                     )}
                 </div>
