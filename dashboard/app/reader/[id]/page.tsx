@@ -438,9 +438,12 @@ export default function ReaderPage() {
         // Try to clear selection if possible via epubjs internal (not always exposed easily)
         // renditionRef.current.getContents()[0].window.getSelection().removeAllRanges();
         // But getContents might be empty or array.
-        const contents = renditionRef.current.getContents();
-        if (contents && contents.length > 0) {
-            contents[0].window.getSelection().removeAllRanges();
+        const contents = renditionRef.current.getContents() as any;
+        if (contents && (contents.length > 0 || Array.isArray(contents))) {
+            const content = Array.isArray(contents) ? contents[0] : contents;
+            if (content && content.window) {
+                content.window.getSelection()?.removeAllRanges();
+            }
         }
     };
 
