@@ -64,7 +64,16 @@ export const translations = {
             current_champion: 'Current Champion',
             reader: 'Reader',
             pages_read_stat: 'Pages Read',
-            view_full_board: 'View Full Leaderboard'
+            view_full_board: 'View Full Leaderboard',
+            share: {
+                title: 'Share Your Progress',
+                message_template: 'I just read {pages} pages on ReadRacing and I am ranked #{rank}! Join me:',
+                linkedin_title: 'My Reading Progress',
+                copy_link: 'Copy Link',
+                copied: 'Copied!',
+                share_via: 'Share via',
+                native_share_error: 'Could not open share menu'
+            }
         },
         my_books: {
             title: 'My Library',
@@ -349,7 +358,16 @@ export const translations = {
             current_champion: 'Текущий чемпион',
             reader: 'Читатель',
             pages_read_stat: 'Прочитано страниц',
-            view_full_board: 'Посмотреть весь рейтинг'
+            view_full_board: 'Посмотреть весь рейтинг',
+            share: {
+                title: 'Поделиться прогрессом',
+                message_template: 'Я прочитал {pages} страниц в ReadRacing и занимаю {rank}-е место! Присоединяйся:',
+                linkedin_title: 'Мой прогресс в чтении',
+                copy_link: 'Копировать ссылку',
+                copied: 'Скопировано!',
+                share_via: 'Поделиться через',
+                native_share_error: 'Не удалось открыть меню "Поделиться"'
+            }
         },
         my_books: {
             title: 'Моя библиотека',

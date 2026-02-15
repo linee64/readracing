@@ -7,6 +7,7 @@ import { get } from 'idb-keyval';
 import { formatDistanceToNow } from 'date-fns';
 import { useLanguage } from '@/context/LanguageContext';
 import { ru, enUS } from 'date-fns/locale';
+import ShareModal from '@/components/ShareModal';
 
 export default function LeaderboardPage() {
     const { t, language } = useLanguage();
@@ -14,6 +15,7 @@ export default function LeaderboardPage() {
     const [userData, setUserData] = useState({ name: 'You', booksCount: 0, pagesCount: 0 });
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -95,6 +97,34 @@ export default function LeaderboardPage() {
     const sortedData = leaderboard;
     const top3 = sortedData.slice(0, 3);
     const others = sortedData.slice(3);
+
+    const handleShareClick = async () => {
+        const userRank = sortedData.find(u => u.userName.includes('(You)'))?.rank || 0;
+        const userPages = userData.pagesCount;
+        const userName = userData.name.replace(' (You)', '');
+        const url = `https://readracing.vercel.app/share?rank=${userRank}&pages=${userPages}&name=${encodeURIComponent(userName)}`;
+        
+        const message = t.dashboard.share.message_template
+            .replace('{pages}', userPages.toString())
+            .replace('{rank}', userRank.toString());
+
+        if (typeof navigator !== 'undefined' && navigator.share) {
+            try {
+                await navigator.share({
+                    title: t.dashboard.share.title,
+                    text: message,
+                    url: url
+                });
+            } catch (err) {
+                console.error('Error sharing:', err);
+                if ((err as Error).name !== 'AbortError') {
+                     setIsShareModalOpen(true);
+                }
+            }
+        } else {
+            setIsShareModalOpen(true);
+        }
+    };
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700 pb-12 px-4 md:px-0">
@@ -317,10 +347,23 @@ export default function LeaderboardPage() {
                         })()}
                     </div>
                 </div>
-                <button className="relative z-10 w-full md:w-auto px-8 py-4 bg-brand-gold hover:bg-brand-gold-dark text-brown-900 font-bold rounded-2xl transition-all duration-300 shadow-lg active:scale-95">
+                <button 
+                    onClick={handleShareClick}
+                    className="relative z-10 w-full md:w-auto px-8 py-4 bg-brand-gold hover:bg-brand-gold-dark text-brown-900 font-bold rounded-2xl transition-all duration-300 shadow-lg active:scale-95"
+                >
                     {t.leaderboard.share_progress}
                 </button>
             </div>
+
+            <ShareModal 
+                isOpen={isShareModalOpen} 
+                onClose={() => setIsShareModalOpen(false)} 
+                stats={{
+                    rank: sortedData.find(u => u.userName.includes('(You)'))?.rank || 0,
+                    pages: userData.pagesCount,
+                    name: userData.name.replace(' (You)', '')
+                }}
+            />
         </div>
     );
 }

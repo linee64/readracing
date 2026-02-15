@@ -58,6 +58,21 @@ export default function RootLayout({
 
   return (
     <html lang="en" className={`${inter.variable} ${lora.variable}`}>
+      <head>
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://readracing.vercel.app/" />
+        <meta property="og:title" content="ReadRacing - Track Your Reading Journey" />
+        <meta property="og:description" content="Join the race to read more books! Track your progress, compete with friends, and discover new books." />
+        <meta property="og:image" content="https://readracing.vercel.app/landing-2pic.png" />
+
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://readracing.vercel.app/" />
+        <meta property="twitter:title" content="ReadRacing - Track Your Reading Journey" />
+        <meta property="twitter:description" content="Join the race to read more books! Track your progress, compete with friends, and discover new books." />
+        <meta property="twitter:image" content="https://readracing.vercel.app/landing-2pic.png" />
+      </head>
       <body className="font-sans text-brand-black bg-brand-beige antialiased">
         <Analytics />
         <LanguageProvider>
