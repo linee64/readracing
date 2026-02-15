@@ -131,29 +131,31 @@ export default function ReaderPage() {
         try {
             console.log('Attempting to update progress:', { curr, total });
             
-            // Log reading session if progress made
-            const delta = curr - lastLoggedPageRef.current;
-            const now = Date.now();
-            const timeDiff = (now - lastLogTimeRef.current) / 1000; // seconds
+            if (curr > 0) {
+                // Log reading session if progress made
+                const delta = curr - lastLoggedPageRef.current;
+                const now = Date.now();
+                const timeDiff = (now - lastLogTimeRef.current) / 1000; // seconds
 
-            if (delta > 0) {
-                // Only log if it seems like reasonable reading (or at least positive progress)
-                // We'll log it to Supabase 'reading_sessions'
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session?.user) {
-                    await supabase.from('reading_sessions').insert({
-                        user_id: session.user.id,
-                        book_id: id as string,
-                        pages_read: delta,
-                        duration_seconds: Math.round(timeDiff)
-                    });
+                if (delta > 0) {
+                    // Only log if it seems like reasonable reading (or at least positive progress)
+                    // We'll log it to Supabase 'reading_sessions'
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.user) {
+                        await supabase.from('reading_sessions').insert({
+                            user_id: session.user.id,
+                            book_id: id as string,
+                            pages_read: delta,
+                            duration_seconds: Math.round(timeDiff)
+                        });
+                    }
+                    lastLoggedPageRef.current = curr;
+                    lastLogTimeRef.current = now;
+                } else if (delta < 0) {
+                    // If went back, just update ref so we don't double count when they go forward again
+                    lastLoggedPageRef.current = curr;
+                    lastLogTimeRef.current = now;
                 }
-                lastLoggedPageRef.current = curr;
-                lastLogTimeRef.current = now;
-            } else if (delta < 0) {
-                // If went back, just update ref so we don't double count when they go forward again
-                lastLoggedPageRef.current = curr;
-                lastLogTimeRef.current = now;
             }
 
             const library = await get('readracing_library_v2') as Book[];
@@ -223,10 +225,36 @@ export default function ReaderPage() {
                     renditionRef.current = null;
                 }
 
-                const data = await get(id as string);
+                const recoverBook = async () => {
+                    try {
+                        const library = await get('readracing_library_v2') as Book[];
+                        const bookMeta = library?.find(b => b.id === id);
+                        
+                        if (bookMeta?.epubUrl) {
+                            console.log('Attempting to recover book from URL:', bookMeta.epubUrl);
+                            const response = await fetch(bookMeta.epubUrl);
+                            if (response.ok) {
+                                const arrayBuffer = await response.arrayBuffer();
+                                await set(id as string, arrayBuffer);
+                                return arrayBuffer;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Failed to recover book:', e);
+                    }
+                    return null;
+                };
+
+                let data = await get(id as string);
+                
+                if (!data) {
+                    // Try to recover if missing
+                    data = await recoverBook();
+                }
+
                 if (!data || !isMounted) {
                     if (!data) {
-                        alert('Book not found in local storage');
+                        alert('Book content not found. Please try removing and re-adding the book from the library.');
                         router.push('/library');
                     }
                     return;
@@ -386,16 +414,23 @@ export default function ReaderPage() {
                 setIsLoaded(true);
 
                 // 2. Background location generation
-                book.ready.then(() => {
-                    return book.locations.generate(1000);
-                }).then(() => {
-                    if (!isMounted) return;
-                    const total = book.locations.length();
-                    setTotalPages(total);
-                    setIsPaginated(true);
-                }).catch(() => {
-                    if (isMounted) setIsPaginated(true);
-                });
+                const generateLocations = async () => {
+                    try {
+                        await book.ready;
+                        console.log('Generating locations...');
+                        await book.locations.generate(1000);
+                        if (!isMounted) return;
+                        const total = book.locations.length();
+                        console.log('Locations generated, total:', total);
+                        setTotalPages(total);
+                        setIsPaginated(true);
+                    } catch (err) {
+                        console.error('Location generation failed:', err);
+                        if (isMounted) setIsPaginated(true); // Fallback to allow reading
+                    }
+                };
+
+                generateLocations();
 
                 // Handle location changes
                 rendition.on('relocated', async (relocatedLocation: any) => {
@@ -408,14 +443,19 @@ export default function ReaderPage() {
                         const percent = bookRef.current.locations.percentageFromCfi(cfi);
                         curr = Math.floor(percent * total) + 1;
                     } else {
-                        curr = relocatedLocation.start.index + 1;
+                        // If locations not ready, don't fallback to chapter index as it confuses page count
+                        // Just use 0 so we don't overwrite existing progress with a small number
+                        console.log('Locations not ready yet, skipping page calculation');
+                        curr = 0;
                     }
 
                     if (curr > 0) {
                         setCurrentPage(curr);
-                        const actualTotal = total > 0 ? total : bookRef.current.spine.length;
-                        updateLibraryProgress(curr, actualTotal, cfi);
                     }
+
+                    // Always update CFI to save position
+                    const actualTotal = total > 0 ? total : bookRef.current.spine.length;
+                    updateLibraryProgress(curr, actualTotal, cfi);
                 });
 
                 resizeObserver = new ResizeObserver(() => {

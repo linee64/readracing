@@ -6,6 +6,7 @@ import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import { SidebarProvider } from "@/context/SidebarContext";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { DownloadProvider } from "@/context/DownloadContext";
 import MainContent from "@/components/MainContent";
 import { Analytics } from "@vercel/analytics/next";
 import { usePathname } from 'next/navigation';
@@ -60,18 +61,20 @@ export default function RootLayout({
       <body className="font-sans text-brand-black bg-brand-beige antialiased">
         <Analytics />
         <LanguageProvider>
-          <SidebarProvider>
-            {isAuthPage ? (
-              <main className="min-h-screen">
-                {children}
-              </main>
-            ) : (
-              <div className="flex overflow-x-hidden max-w-full">
-                <Sidebar />
-                <MainContent>{children}</MainContent>
-              </div>
-            )}
-          </SidebarProvider>
+          <DownloadProvider>
+            <SidebarProvider>
+              {isAuthPage ? (
+                <main className="min-h-screen">
+                  {children}
+                </main>
+              ) : (
+                <div className="flex overflow-x-hidden max-w-full">
+                  <Sidebar />
+                  <MainContent>{children}</MainContent>
+                </div>
+              )}
+            </SidebarProvider>
+          </DownloadProvider>
         </LanguageProvider>
       </body>
     </html>
