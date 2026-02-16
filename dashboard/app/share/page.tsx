@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { Suspense } from 'react';
 import ShareContent from './ShareContent';
 
 type Props = {
@@ -36,5 +37,9 @@ export async function generateMetadata(
 }
 
 export default function SharePage() {
-  return <ShareContent />;
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#f9f5e9]" />}>
+      <ShareContent />
+    </Suspense>
+  );
 }
