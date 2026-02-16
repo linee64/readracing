@@ -17,8 +17,9 @@ export default function ShareModal({ isOpen, onClose, stats }: ShareModalProps) 
 
     if (!isOpen) return null;
 
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://readracing.vercel.app';
-    const domain = typeof window !== 'undefined' ? window.location.host : 'readracing.vercel.app';
+    // Always use production URL for sharing
+    const origin = 'https://readracing.vercel.app';
+    const domain = 'readracing.vercel.app';
     
     const shareUrl = `${origin}/share?rank=${stats.rank}&pages=${stats.pages}&name=${encodeURIComponent(stats.name)}`;
     const previewImageUrl = `/api/og?rank=${stats.rank}&pages=${stats.pages}&name=${encodeURIComponent(stats.name)}`;

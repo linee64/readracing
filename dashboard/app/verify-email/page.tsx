@@ -29,7 +29,7 @@ export default function VerifyEmailPage() {
                             Return to Login
                         </Link>
                         <Link 
-                            href="/" 
+                            href="https://readracing.vercel.app/" 
                             className="text-brand-black/60 hover:text-brand-black transition-colors text-sm font-medium underline underline-offset-4"
                         >
                             Back to Home

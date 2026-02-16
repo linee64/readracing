@@ -1,43 +1,12 @@
-import { Metadata } from 'next';
-import Link from 'next/link';
+import React from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 
-type Props = {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
-}
- 
-export async function generateMetadata(
-  { searchParams }: Props
-): Promise<Metadata> {
-  const params = await searchParams;
-  const rank = params.rank || '0';
-  const pages = params.pages || '0';
- 
-  const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL 
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}`
-    : 'https://readracing.vercel.app';
-
-  const imageUrl = `${baseUrl}/api/og?rank=${rank}&pages=${pages}`;
- 
-  return {
-    title: `I reached Rank #${rank} on ReadRacing!`,
-    description: `I have read ${pages} pages. Join me on ReadRacing and track your reading progress!`,
-    openGraph: {
-      images: [imageUrl],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      images: [imageUrl],
-    },
-  };
-}
- 
-export default async function Page({ searchParams }: Props) {
-  const params = await searchParams;
-  const rank = typeof params.rank === 'string' ? params.rank : '0';
-  const pages = typeof params.pages === 'string' ? params.pages : '0';
-  const name = typeof params.name === 'string' ? decodeURIComponent(params.name) : 'Reader';
+export default function Share() {
+  const [searchParams] = useSearchParams();
+  const rank = searchParams.get('rank') || '0';
+  const pages = searchParams.get('pages') || '0';
+  const rawName = searchParams.get('name') || 'Reader';
+  const name = decodeURIComponent(rawName);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f9f5e9] p-4 font-serif text-[#3d1c0b]">
@@ -48,13 +17,13 @@ export default async function Page({ searchParams }: Props) {
         <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-[#e9c46a]/80 rounded-bl pointer-events-none"></div>
         <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-[#e9c46a]/80 rounded-br pointer-events-none"></div>
 
-        <div className="font-bold text-xl mb-8 tracking-tight animate-in fade-in duration-700">ReadRacing</div>
+        <div className="font-bold text-xl mb-8 tracking-tight animate-fade-in">ReadRacing</div>
 
         {/* Hero */}
-        <div className="mb-10 relative animate-in slide-in-from-bottom-4 fade-in duration-700 delay-100">
+        <div className="mb-10 relative animate-slide-up delay-100">
             <div className="inline-flex flex-col items-center justify-center w-[120px] h-[120px] rounded-full border border-[#e9c46a]/50 bg-gradient-to-br from-[#fffcf5] to-[#f9f5e9] shadow-[0_0_30px_rgba(233,196,106,0.3)] mb-6 relative">
                 {/* SVG Wreath */}
-                <svg className="absolute inset-0 w-full h-full opacity-60 animate-[spin_60s_linear_infinite]" viewBox="0 0 100 100" fill="none" stroke="#e9c46a" strokeWidth="1.5">
+                <svg className="absolute inset-0 w-full h-full opacity-60 animate-spin-slow" viewBox="0 0 100 100" fill="none" stroke="#e9c46a" strokeWidth="1.5">
                     <circle cx="50" cy="50" r="45" strokeDasharray="4 6" />
                 </svg>
                 <div className="text-[3.5rem] font-bold leading-none text-[#3d1c0b] relative z-10">{rank}</div>
@@ -71,7 +40,7 @@ export default async function Page({ searchParams }: Props) {
         </div>
 
         {/* Leaderboard Preview */}
-        <div className="bg-white rounded-xl p-6 shadow-sm mb-10 border border-[#e9c46a]/20 animate-in slide-in-from-bottom-4 fade-in duration-700 delay-200">
+        <div className="bg-white rounded-xl p-6 shadow-sm mb-10 border border-[#e9c46a]/20 animate-slide-up delay-200">
             <div className="text-sm uppercase tracking-widest mb-4 text-[#5c3a2a] font-semibold border-b border-[#3d1c0b]/5 pb-2">
                 Global Top
             </div>
@@ -119,9 +88,9 @@ export default async function Page({ searchParams }: Props) {
         </div>
 
         {/* CTA */}
-        <div className="animate-in slide-in-from-bottom-4 fade-in duration-700 delay-300">
+        <div className="animate-slide-up delay-300">
             <Link 
-                href="/"
+                to="/"
                 className="block w-full bg-[#e9c46a] text-[#3d1c0b] py-4 rounded-lg font-semibold text-lg hover:bg-[#f0cd7d] transition-all shadow-[0_4px_12px_rgba(233,196,106,0.3)] hover:shadow-[0_6px_16px_rgba(233,196,106,0.4)] hover:-translate-y-0.5"
             >
                 Start Reading Smarter

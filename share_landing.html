@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой прогресс | ReadRacing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Brand Colors */
+            --color-bg: #f9f5e9;
+            --color-text: #3d1c0b;
+            --color-text-light: #5c3a2a;
+            --color-accent: #e9c46a;
+            --color-accent-dark: #d5941d;
+            --color-white: #ffffff;
+            --color-glass: rgba(255, 255, 255, 0.6);
+            
+            /* Shadows */
+            --shadow-sm: 0 2px 8px rgba(61, 28, 11, 0.05);
+            --shadow-md: 0 8px 24px rgba(61, 28, 11, 0.08);
+            --shadow-glow: 0 0 30px rgba(233, 196, 106, 0.3);
+            
+            /* Typography */
+            --font-main: 'Lora', serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .main-card {
+            width: 100%;
+            max-width: 500px;
+            background: var(--color-bg);
+            position: relative;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+        }
+
+        /* Corner Accents */
+        .corner-accent {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-color: rgba(233, 196, 106, 0.8); /* Brand Gold */
+            border-style: solid;
+            pointer-events: none;
+        }
+        .tl { top: 0; left: 0; border-width: 2px 0 0 2px; border-radius: 4px 0 0 0; }
+        .tr { top: 0; right: 0; border-width: 2px 2px 0 0; border-radius: 0 4px 0 0; }
+        .bl { bottom: 0; left: 0; border-width: 0 0 2px 2px; border-radius: 0 0 0 4px; }
+        .br { bottom: 0; right: 0; border-width: 0 2px 2px 0; border-radius: 0 0 4px 0; }
+
+        /* Typography & Layout */
+        .brand-logo {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            display: inline-block;
+            letter-spacing: -0.02em;
+        }
+        
+        .hero-section {
+            margin-bottom: 2.5rem;
+            position: relative;
+        }
+
+        .rank-badge {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 1px solid rgba(233, 196, 106, 0.5);
+            background: linear-gradient(135deg, #fffcf5 0%, #f9f5e9 100%);
+            box-shadow: var(--shadow-glow);
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        
+        /* Minimalist Wreath/Circle SVG */
+        .rank-circle-svg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            animation: spin-slow 60s linear infinite;
+            opacity: 0.6;
+        }
+        
+        @keyframes spin-slow { to { transform: rotate(360deg); } }
+
+        .rank-number {
+            font-size: 3.5rem;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--color-text);
+            position: relative;
+            z-index: 2;
+        }
+        
+        .rank-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--color-accent-dark);
+            margin-top: 0.2rem;
+            font-weight: 600;
+        }
+
+        h1 {
+            font-size: 2rem;
+            line-height: 1.2;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .highlight-text {
+            color: var(--color-accent-dark);
+            font-style: italic;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--color-text-light);
+            margin-bottom: 2rem;
+            font-style: italic;
+        }
+
+        /* Leaderboard Minimal */
+        .leaderboard-container {
+            background: var(--color-white);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 2.5rem;
+            border: 1px solid rgba(233, 196, 106, 0.2);
+        }
+
+        .leaderboard-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+            color: var(--color-text-light);
+            font-weight: 600;
+            border-bottom: 1px solid rgba(61, 28, 11, 0.05);
+            padding-bottom: 0.5rem;
+        }
+
+        .user-row {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(61, 28, 11, 0.03);
+        }
+        
+        .user-row:last-child {
+            border-bottom: none;
+        }
+
+        .user-rank {
+            width: 24px;
+            font-weight: 700;
+            color: var(--color-accent-dark);
+            font-size: 1rem;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #eee;
+            margin: 0 0.75rem;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--color-white);
+        }
+
+        .user-name {
+            flex: 1;
+            text-align: left;
+            font-weight: 500;
+        }
+        
+        .user-name .you-tag {
+            font-size: 0.7rem;
+            background: rgba(233, 196, 106, 0.2);
+            color: var(--color-text);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        .user-score {
+            font-weight: 700;
+            color: var(--color-text);
+        }
+        
+        .user-score span {
+            font-weight: 400;
+            font-size: 0.8rem;
+            color: var(--color-text-light);
+            margin-left: 4px;
+        }
+
+        /* Buttons */
+        .cta-button {
+            display: block;
+            width: 100%;
+            background-color: var(--color-accent);
+            color: var(--color-text);
+            text-decoration: none;
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(233, 196, 106, 0.3);
+            margin-bottom: 1.5rem;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(233, 196, 106, 0.4);
+            background-color: #f0cd7d;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .social-icon {
+            color: var(--color-text-light);
+            transition: color 0.2s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .social-icon:hover {
+            color: var(--color-accent-dark);
+            transform: translateY(-1px);
+        }
+        
+        /* Animations */
+        .fade-in {
+            opacity: 0;
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+        
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="main-card">
+        <!-- Decorative Corners -->
+        <div class="corner-accent tl"></div>
+        <div class="corner-accent tr"></div>
+        <div class="corner-accent bl"></div>
+        <div class="corner-accent br"></div>
+
+        <div class="brand-logo fade-in">ReadRacing</div>
+
+        <!-- Hero -->
+        <div class="hero-section fade-in delay-1">
+            <div class="rank-badge">
+                <!-- Simple SVG Wreath Ring -->
+                <svg class="rank-circle-svg" viewBox="0 0 100 100" fill="none" stroke="#e9c46a" stroke-width="1.5">
+                    <circle cx="50" cy="50" r="45" stroke-dasharray="4 6" />
+                </svg>
+                <div class="rank-number">2</div>
+                <div class="rank-label">Место</div>
+            </div>
+            
+            <h1>Я читаю больше,<br>чем <span class="highlight-text">98%</span> людей</h1>
+            <p class="subtitle">16 страниц на этой неделе</p>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="leaderboard-container fade-in delay-2">
+            <div class="leaderboard-title">Глобальный Топ</div>
+            
+            <div class="user-row">
+                <div class="user-rank">1</div>
+                <div class="user-avatar" style="background: #e9c46a;">A</div>
+                <div class="user-name">aidar <span class="you-tag">Вы</span></div>
+                <div class="user-score">16 <span>стр</span></div>
+            </div>
+            
+            <div class="user-row">
+                <div class="user-rank">2</div>
+                <div class="user-avatar" style="background: #d5d5d5; color: #666;">P</div>
+                <div class="user-name">Pups</div>
+                <div class="user-score">13 <span>стр</span></div>
+            </div>
+            
+            <div class="user-row">
+                <div class="user-rank">3</div>
+                <div class="user-avatar" style="background: #cd7f32;">D</div>
+                <div class="user-name">Daniyal</div>
+                <div class="user-score">10 <span>стр</span></div>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="fade-in delay-3">
+            <a href="#" class="cta-button">Начать читать умно</a>
+            
+            <div class="social-links">
+                <a href="#" class="social-icon" title="Telegram">
+                    <!-- Simple Feather/Paper Plane Icon -->
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    Telegram
+                </a>
+                <a href="#" class="social-icon" title="Twitter">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path></svg>
+                    Twitter
+                </a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -117,6 +117,7 @@ export default function LeaderboardPage() {
                 });
             } catch (err) {
                 console.error('Error sharing:', err);
+                // If share is aborted or fails, fallback to modal
                 if ((err as Error).name !== 'AbortError') {
                      setIsShareModalOpen(true);
                 }

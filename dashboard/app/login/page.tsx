@@ -45,7 +45,7 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen flex flex-col items-center justify-center px-4 py-20 bg-brand-beige">
             <div className="w-full max-w-md mb-6">
-                <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-brand-black/60 hover:text-brand-black transition-colors group">
+                <Link href="https://readracing.vercel.app/" className="inline-flex items-center gap-2 text-sm font-medium text-brand-black/60 hover:text-brand-black transition-colors group">
                     <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                     </svg>

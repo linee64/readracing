@@ -29,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
-  const isAuthPage = ['/login', '/signup', '/verify-email'].includes(pathname);
+  const isAuthPage = ['/login', '/signup', '/verify-email', '/share'].includes(pathname);
 
   // Clear IndexedDB when account changes or on first load if no user
   useEffect(() => {
