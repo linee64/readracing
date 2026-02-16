@@ -14,15 +14,17 @@ interface ShareModalProps {
 export default function ShareModal({ isOpen, onClose, stats }: ShareModalProps) {
     const { t } = useLanguage();
     const [copied, setCopied] = useState(false);
-    const [origin, setOrigin] = useState('https://readracing.vercel.app');
-    const domain = origin.replace(/^https?:\/\//, '');
-
+    // Use window.location.origin (Dashboard URL) for share links to ensure dynamic OG tags work
+    // The Dashboard (/share) will handle the preview image and link back to Landing
+    const [origin, setOrigin] = useState('');
+    
     React.useEffect(() => {
-        if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-            // Assuming the landing page runs on port 5173 locally
-            setOrigin('http://localhost:5173');
+        if (typeof window !== 'undefined') {
+            setOrigin(window.location.origin);
         }
     }, []);
+
+    const domain = origin.replace(/^https?:\/\//, '');
 
     if (!isOpen) return null;
 
