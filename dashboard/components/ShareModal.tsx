@@ -85,8 +85,8 @@ export default function ShareModal({ isOpen, onClose, stats }: ShareModalProps) 
     return (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-[#3D2817]/40 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative bg-[#F5F1E8] w-full max-w-md rounded-[24px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-                <div className="p-6 md:p-8">
+            <div className="relative bg-[#F5F1E8] w-full max-w-sm rounded-[24px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="p-6">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-serif text-[#3D2817] font-bold">{t.dashboard.share.title}</h2>
                         <button onClick={onClose} className="text-[#8B7E6A] hover:text-[#3D2817] transition-colors">

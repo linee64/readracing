@@ -38,32 +38,36 @@ export default function Share() {
 
   // Helper to determine what to show for each rank position
   const getRankData = (position) => {
-    // If this position matches the sharer's rank, show sharer data (snapshot from URL)
-    if (position === rank) {
-      return {
-        rank: position,
-        name: name,
-        pages: pages,
-        isSharer: true
-      };
-    }
-
-    // Otherwise, show real data from Supabase if available
+    // 1. Try to get real data from Supabase first
     const realEntry = leaderboard[position - 1];
+    
     if (realEntry) {
       return {
         rank: position,
         name: realEntry.full_name || 'Anonymous',
         pages: realEntry.pages_read || 0,
-        isSharer: false
+        avatar_url: realEntry.avatar_url,
+        isSharer: position === rank // It's the sharer if ranks match
       };
     }
 
-    // Fallback if no real data (e.g. loading error or empty DB)
+    // 2. If no real data but it's the sharer's rank, use URL params
+    if (position === rank) {
+      return {
+        rank: position,
+        name: name,
+        pages: pages,
+        avatar_url: null, // URL doesn't carry avatar
+        isSharer: true
+      };
+    }
+
+    // 3. Fallback for empty slots (shouldn't happen often if DB has users)
     return {
       rank: position,
       name: `Reader ${position}`,
-      pages: Math.max(0, pages - (position - rank) * 10), // Simple fallback math
+      pages: Math.max(0, pages - (position - rank) * 10),
+      avatar_url: null,
       isSharer: false
     };
   };
@@ -80,14 +84,21 @@ export default function Share() {
     return (
       <div key={position} className="flex items-center py-2 border-b border-[#3d1c0b]/5 last:border-0">
         <div className="w-6 font-bold text-[#d5941d]">{data.rank}</div>
-        <div className={`w-9 h-9 rounded-full mx-3 flex items-center justify-center text-xs font-bold ${badgeColor}`}>
-          {data.name.charAt(0).toUpperCase()}
+        
+        {/* Avatar or Initials */}
+        <div className={`w-9 h-9 rounded-full mx-3 flex items-center justify-center overflow-hidden shrink-0 ${!data.avatar_url ? badgeColor : ''}`}>
+          {data.avatar_url ? (
+            <img src={data.avatar_url} alt={data.name} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-xs font-bold">{data.name.charAt(0).toUpperCase()}</span>
+          )}
         </div>
-        <div className="flex-1 text-left font-medium flex items-center">
-          {data.name}
-          {data.isSharer && <span className="text-[0.65rem] bg-[#e9c46a]/20 px-1.5 py-0.5 rounded ml-2 text-[#3d1c0b]">YOU</span>}
+
+        <div className="flex-1 text-left font-medium flex items-center min-w-0">
+          <span className="truncate">{data.name}</span>
+          {data.isSharer && <span className="text-[0.65rem] bg-[#e9c46a]/20 px-1.5 py-0.5 rounded ml-2 text-[#3d1c0b] shrink-0">YOU</span>}
         </div>
-        <div className="font-bold">{data.pages} <span className="font-normal text-xs text-[#5c3a2a] ml-1">pgs</span></div>
+        <div className="font-bold whitespace-nowrap ml-2">{data.pages} <span className="font-normal text-xs text-[#5c3a2a] ml-1">pgs</span></div>
       </div>
     );
   };
@@ -161,6 +172,7 @@ export default function Share() {
         <div className="animate-slide-up delay-300">
             <Link 
                 to="/"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 className="block w-full bg-[#e9c46a] text-[#3d1c0b] py-4 rounded-lg font-semibold text-lg hover:bg-[#f0cd7d] transition-all shadow-[0_4px_12px_rgba(233,196,106,0.3)] hover:shadow-[0_6px_16px_rgba(233,196,106,0.4)] hover:-translate-y-0.5"
             >
                 Start Reading Smarter
