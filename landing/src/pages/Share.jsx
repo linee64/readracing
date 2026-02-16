@@ -1,12 +1,96 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 export default function Share() {
   const [searchParams] = useSearchParams();
-  const rank = searchParams.get('rank') || '0';
-  const pages = searchParams.get('pages') || '0';
+  const rank = parseInt(searchParams.get('rank')) || 0;
+  const pages = parseInt(searchParams.get('pages')) || 0;
   const rawName = searchParams.get('name') || 'Reader';
   const name = decodeURIComponent(rawName);
+
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('full_name, pages_read, avatar_url')
+          .order('pages_read', { ascending: false })
+          .limit(5);
+
+        if (error) {
+          console.error('Error fetching leaderboard:', error);
+        } else {
+          setLeaderboard(profiles || []);
+        }
+      } catch (err) {
+        console.error('Unexpected error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLeaderboard();
+  }, []);
+
+  // Helper to determine what to show for each rank position
+  const getRankData = (position) => {
+    // If this position matches the sharer's rank, show sharer data (snapshot from URL)
+    if (position === rank) {
+      return {
+        rank: position,
+        name: name,
+        pages: pages,
+        isSharer: true
+      };
+    }
+
+    // Otherwise, show real data from Supabase if available
+    const realEntry = leaderboard[position - 1];
+    if (realEntry) {
+      return {
+        rank: position,
+        name: realEntry.full_name || 'Anonymous',
+        pages: realEntry.pages_read || 0,
+        isSharer: false
+      };
+    }
+
+    // Fallback if no real data (e.g. loading error or empty DB)
+    return {
+      rank: position,
+      name: `Reader ${position}`,
+      pages: Math.max(0, pages - (position - rank) * 10), // Simple fallback math
+      isSharer: false
+    };
+  };
+
+  const renderRankRow = (position) => {
+    const data = getRankData(position);
+    
+    // Different styling for top 3
+    let badgeColor = 'bg-[#f0f0f0] text-[#666]'; // Default
+    if (data.rank === 1) badgeColor = 'bg-[#e9c46a] text-white';
+    if (data.rank === 2) badgeColor = 'bg-[#d5d5d5] text-[#666]';
+    if (data.rank === 3) badgeColor = 'bg-[#cd7f32] text-white';
+
+    return (
+      <div key={position} className="flex items-center py-2 border-b border-[#3d1c0b]/5 last:border-0">
+        <div className="w-6 font-bold text-[#d5941d]">{data.rank}</div>
+        <div className={`w-9 h-9 rounded-full mx-3 flex items-center justify-center text-xs font-bold ${badgeColor}`}>
+          {data.name.charAt(0).toUpperCase()}
+        </div>
+        <div className="flex-1 text-left font-medium flex items-center">
+          {data.name}
+          {data.isSharer && <span className="text-[0.65rem] bg-[#e9c46a]/20 px-1.5 py-0.5 rounded ml-2 text-[#3d1c0b]">YOU</span>}
+        </div>
+        <div className="font-bold">{data.pages} <span className="font-normal text-xs text-[#5c3a2a] ml-1">pgs</span></div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f9f5e9] p-4 font-serif text-[#3d1c0b]">
@@ -46,44 +130,30 @@ export default function Share() {
             </div>
             
             <div className="space-y-3">
-                {/* Rank 1 (Mock or You) */}
-                <div className="flex items-center py-2 border-b border-[#3d1c0b]/5 last:border-0">
-                    <div className="w-6 font-bold text-[#d5941d]">1</div>
-                    <div className="w-9 h-9 rounded-full bg-[#e9c46a] mx-3 flex items-center justify-center text-xs font-bold text-white">
-                        {rank === '1' ? name.charAt(0).toUpperCase() : 'A'}
-                    </div>
-                    <div className="flex-1 text-left font-medium flex items-center">
-                         {rank === '1' ? name : 'aidar'} 
-                         {rank === '1' && <span className="text-[0.65rem] bg-[#e9c46a]/20 px-1.5 py-0.5 rounded ml-2 text-[#3d1c0b]">YOU</span>}
-                    </div>
-                    <div className="font-bold">{rank === '1' ? pages : '16'} <span className="font-normal text-xs text-[#5c3a2a] ml-1">pgs</span></div>
-                </div>
-                
-                {/* Rank 2 */}
-                <div className="flex items-center py-2 border-b border-[#3d1c0b]/5 last:border-0">
-                    <div className="w-6 font-bold text-[#d5941d]">2</div>
-                    <div className="w-9 h-9 rounded-full bg-[#d5d5d5] text-[#666] mx-3 flex items-center justify-center text-xs font-bold">
-                        {rank === '2' ? name.charAt(0).toUpperCase() : 'P'}
-                    </div>
-                    <div className="flex-1 text-left font-medium flex items-center">
-                        {rank === '2' ? name : 'Pups'}
-                        {rank === '2' && <span className="text-[0.65rem] bg-[#e9c46a]/20 px-1.5 py-0.5 rounded ml-2 text-[#3d1c0b]">YOU</span>}
-                    </div>
-                    <div className="font-bold">{rank === '2' ? pages : '13'} <span className="font-normal text-xs text-[#5c3a2a] ml-1">pgs</span></div>
-                </div>
+                {isLoading ? (
+                  <div className="flex justify-center py-4">
+                    <div className="w-6 h-6 border-2 border-[#e9c46a] border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Always show Top 1-5 (or fewer if DB is small) */}
+                    {[1, 2, 3, 4, 5].map(pos => {
+                       // Only show if we have data or if it's the sharer's rank
+                       if (leaderboard[pos-1] || pos === rank) {
+                         return renderRankRow(pos);
+                       }
+                       return null;
+                    })}
 
-                 {/* Rank 3 or User Rank if > 3 */}
-                 <div className="flex items-center py-2 border-b border-[#3d1c0b]/5 last:border-0">
-                    <div className="w-6 font-bold text-[#d5941d]">{parseInt(rank) > 2 ? rank : '3'}</div>
-                    <div className="w-9 h-9 rounded-full bg-[#cd7f32] text-white mx-3 flex items-center justify-center text-xs font-bold">
-                        {parseInt(rank) > 2 ? name.charAt(0).toUpperCase() : 'D'}
-                    </div>
-                    <div className="flex-1 text-left font-medium flex items-center">
-                        {parseInt(rank) > 2 ? name : 'Daniyal'}
-                        {parseInt(rank) > 2 && <span className="text-[0.65rem] bg-[#e9c46a]/20 px-1.5 py-0.5 rounded ml-2 text-[#3d1c0b]">YOU</span>}
-                    </div>
-                    <div className="font-bold">{parseInt(rank) > 2 ? pages : '10'} <span className="font-normal text-xs text-[#5c3a2a] ml-1">pgs</span></div>
-                </div>
+                    {/* If sharer is outside Top 5, show divider and sharer row */}
+                    {rank > 5 && (
+                      <>
+                        <div className="flex justify-center py-2 opacity-50 text-[#d5941d]">•••</div>
+                        {renderRankRow(rank)}
+                      </>
+                    )}
+                  </>
+                )}
             </div>
         </div>
 

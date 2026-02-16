@@ -14,13 +14,18 @@ interface ShareModalProps {
 export default function ShareModal({ isOpen, onClose, stats }: ShareModalProps) {
     const { t } = useLanguage();
     const [copied, setCopied] = useState(false);
+    const [origin, setOrigin] = useState('https://readracing.vercel.app');
+    const domain = origin.replace(/^https?:\/\//, '');
+
+    React.useEffect(() => {
+        if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+            // Assuming the landing page runs on port 5173 locally
+            setOrigin('http://localhost:5173');
+        }
+    }, []);
 
     if (!isOpen) return null;
 
-    // Always use production URL for sharing
-    const origin = 'https://readracing.vercel.app';
-    const domain = 'readracing.vercel.app';
-    
     const shareUrl = `${origin}/share?rank=${stats.rank}&pages=${stats.pages}&name=${encodeURIComponent(stats.name)}`;
     const previewImageUrl = `/api/og?rank=${stats.rank}&pages=${stats.pages}&name=${encodeURIComponent(stats.name)}`;
     

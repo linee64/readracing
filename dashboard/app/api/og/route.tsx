@@ -1,12 +1,12 @@
 import { ImageResponse } from 'next/og';
- 
-export const runtime = 'edge';
- 
+
+// export const runtime = 'edge';
+
 export async function GET(request: Request) {
   try {
+    console.log('OG Route hit:', request.url);
     const { searchParams } = new URL(request.url);
- 
-    // ?rank=...&pages=...
+
     const hasRank = searchParams.has('rank');
     const rank = hasRank ? searchParams.get('rank')?.slice(0, 10) : '0';
     const pages = searchParams.get('pages')?.slice(0, 10) || '0';
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     } catch (e) {
       console.error('Failed to fetch font:', e);
     }
- 
+
     return new ImageResponse(
       (
         <div
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#F5EFE6', // brand-beige
+            backgroundColor: '#F5EFE6',
             fontFamily: fontData ? '"Lora"' : 'sans-serif',
           }}
         >
@@ -45,21 +45,31 @@ export async function GET(request: Request) {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              border: '4px solid #3D2817', // brand-brown
+              border: '4px solid #3D2817',
               borderRadius: '20px',
               padding: '40px 60px',
-              backgroundColor: 'white',
-              boxShadow: '10px 10px 0px #3D2817',
+              backgroundColor: '#f9f5e9',
+              boxShadow: '10px 10px 0px #3d1c0b',
+              width: '80%',
+              height: '80%',
             }}
           >
+            {/* Decorative Corners */}
+            <div style={{ position: 'absolute', top: 20, left: 20, width: 40, height: 40, borderTop: '4px solid #e9c46a', borderLeft: '4px solid #e9c46a', display: 'flex' }} />
+            <div style={{ position: 'absolute', top: 20, right: 20, width: 40, height: 40, borderTop: '4px solid #e9c46a', borderRight: '4px solid #e9c46a', display: 'flex' }} />
+            <div style={{ position: 'absolute', bottom: 20, left: 20, width: 40, height: 40, borderBottom: '4px solid #e9c46a', borderLeft: '4px solid #e9c46a', display: 'flex' }} />
+            <div style={{ position: 'absolute', bottom: 20, right: 20, width: 40, height: 40, borderBottom: '4px solid #e9c46a', borderRight: '4px solid #e9c46a', display: 'flex' }} />
+
             <div
               style={{
-                fontSize: 30,
-                color: '#8B7E6A', // brand-text-light
+                display: 'flex',
+                fontSize: 40,
+                color: '#8B7E6A',
                 marginBottom: 20,
                 textTransform: 'uppercase',
                 letterSpacing: '2px',
                 fontWeight: 'bold',
+                textAlign: 'center',
               }}
             >
               ReadRacing Leaderboard
@@ -70,40 +80,36 @@ export async function GET(request: Request) {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-              }}
-            >
-              <div style={{ fontSize: 80, fontWeight: 'bold', color: '#3D2817', lineHeight: 1 }}>
-                RANK #{rank}
-              </div>
-              <div style={{ fontSize: 40, color: '#3D2817', marginTop: 10 }}>
-                {pages} Pages Read
-              </div>
-              {name !== 'Reader' && (
-                <div style={{ fontSize: 30, color: '#8B7E6A', marginTop: 10 }}>
-                  Reader: {name}
-                </div>
-              )}
-            </div>
-
-            <div
-              style={{
-                marginTop: 40,
-                fontSize: 24,
-                color: '#8B7E6A',
-                display: 'flex',
-                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
               <div
                 style={{
-                  width: 10,
-                  height: 10,
-                  backgroundColor: '#E65100', // orange dot
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 200,
+                  height: 200,
                   borderRadius: '50%',
-                  marginRight: 10,
+                  backgroundColor: '#e9c46a',
+                  marginBottom: 10,
+                  boxShadow: '0 15px 35px rgba(61, 28, 11, 0.4)',
+                  border: '4px solid white',
                 }}
-              />
-              readracing.vercel.app
+              >
+                <div style={{ display: 'flex', fontSize: 90, fontWeight: 'bold', color: '#3d1c0b', lineHeight: 1 }}>
+                  #{rank}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', fontSize: 50, color: '#3d1c0b', marginTop: 10 }}>
+                {pages} Pages
+              </div>
+              {name !== 'Reader' && (
+                <div style={{ display: 'flex', fontSize: 30, color: '#8B7E6A', marginTop: 20 }}>
+                  Reader: {name}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -111,18 +117,20 @@ export async function GET(request: Request) {
       {
         width: 1200,
         height: 630,
-        fonts: fontData ? [
-          {
-            name: 'Lora',
-            data: fontData,
-            style: 'normal',
-          },
-        ] : undefined,
-      },
+        fonts: fontData
+          ? [
+              {
+                name: 'Lora',
+                data: fontData,
+                style: 'normal',
+              },
+            ]
+          : undefined,
+      }
     );
   } catch (e: any) {
-    console.log(`${e.message}`);
-    return new Response(`Failed to generate the image`, {
+    console.error('OG Image Generation Error:', e);
+    return new Response(`Failed to generate the image: ${e.message}`, {
       status: 500,
     });
   }
