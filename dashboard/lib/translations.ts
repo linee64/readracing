@@ -312,6 +312,28 @@ export const translations = {
                 add_manual: 'Add book manually'
             }
         },
+        ai_chat_page: {
+            hello: "Hello, {name}!",
+            intro: "I can help you create reading plans, analyze your habits, or suggest your next favorite book.",
+            actions: {
+                plan: {
+                    title: "Reading Plan",
+                    desc: "Personalized schedule and rhythm"
+                },
+                habit: {
+                    title: "Habit Analysis",
+                    desc: "How to overcome slumps"
+                },
+                similar: {
+                    title: "Similar Books",
+                    desc: "Recommendations based on taste"
+                },
+                analysis: {
+                    title: "Full Analysis",
+                    desc: "Everything about your reading"
+                }
+            }
+        }
     },
     Russian: {
         sidebar: {
@@ -622,7 +644,29 @@ export const translations = {
             empty: {
                 title: 'Книги не найдены',
                 desc: 'Попробуйте изменить запрос или добавьте книгу вручную.',
-                add_manual: 'Добавить вручную'
+                add_manual: 'Добавить книгу вручную'
+            }
+        },
+        ai_chat_page: {
+            hello: "Привет, {name}!",
+            intro: "Я помогу создать план чтения, проанализировать привычки или подобрать следующую книгу.",
+            actions: {
+                plan: {
+                    title: "План чтения",
+                    desc: "Персональный график и ритм"
+                },
+                habit: {
+                    title: "Анализ привычек",
+                    desc: "Как преодолеть «застой»"
+                },
+                similar: {
+                    title: "Похожие книги",
+                    desc: "Подборка по вкусам"
+                },
+                analysis: {
+                    title: "Полный анализ",
+                    desc: "Все о твоем чтении"
+                }
             }
         }
     }

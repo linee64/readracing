@@ -1,8 +1,8 @@
 
 import { useState, useCallback, useRef } from 'react';
-import { generateAIResponse, ChatMessage, BookContext } from '@/services/geminiService';
+import { generateAIResponse, ChatMessage, BookContext, UserContext } from '@/services/geminiService';
 
-export const useAIChat = (bookContext: BookContext) => {
+export const useAIChat = (context: BookContext | UserContext, language: string = 'Russian') => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -26,14 +26,7 @@ export const useAIChat = (bookContext: BookContext) => {
         setMessages(prev => [...prev, newUserMessage]);
 
         try {
-            // Pass current history + new message implicitly handled by service or we pass explicit history
-            // In service implementation we passed 'history' argument. 
-            // We should pass the *current* messages state (before the new user message is fully committed to state potentially? 
-            // Actually setMessages is async. So using 'prev' in setMessages is good for UI, but for API call we need the list.
-            // Let's rely on the messages passed to the hook? No, state inside hook.
-            // We'll pass the *current* messages array + the new one.
-
-            const responseText = await generateAIResponse(messages, text, bookContext);
+            const responseText = await generateAIResponse(messages, text, context, language);
 
             const newAIMessage: ChatMessage = {
                 id: (Date.now() + 1).toString(),
@@ -50,7 +43,7 @@ export const useAIChat = (bookContext: BookContext) => {
             setIsLoading(false);
             isProcessingRef.current = false;
         }
-    }, [messages, bookContext]);
+    }, [messages, context, language]);
 
     const clearHistory = useCallback(() => {
         setMessages([]);
@@ -59,6 +52,7 @@ export const useAIChat = (bookContext: BookContext) => {
 
     return {
         messages,
+        setMessages,
         isLoading,
         error,
         sendMessage,

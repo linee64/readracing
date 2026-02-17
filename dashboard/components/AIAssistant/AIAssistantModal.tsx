@@ -14,9 +14,9 @@ interface AIAssistantModalProps {
 }
 
 export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ isOpen, onClose, bookContext, isDark }) => {
-    const { messages, sendMessage, isLoading, error, clearHistory } = useAIChat(bookContext);
+    const { t, language } = useLanguage();
+    const { messages, sendMessage, isLoading, error, clearHistory } = useAIChat(bookContext, language);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const { t } = useLanguage();
 
     // Scroll to bottom when messages change
     useEffect(() => {

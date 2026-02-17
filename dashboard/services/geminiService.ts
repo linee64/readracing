@@ -14,32 +14,73 @@ export interface BookContext {
     cfiRange?: string; // Current reading position
 }
 
+export interface UserContext {
+    username: string;
+    library: any[]; // Using any[] to avoid circular dependency with Book type, or I should import it. 
+    // Ideally should be Book[] but let's keep it simple for now or import it if possible.
+    // I will use 'any' for now to be safe, but really it expects Book[]-like structure.
+    availableBooks?: any[];
+}
+
 const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 export const generateAIResponse = async (
     history: ChatMessage[],
     question: string,
-    context: BookContext
+    context: BookContext | UserContext,
+    language: string = 'Russian' // Default to Russian but allow override
 ): Promise<string> => {
     if (!GEMINI_API_KEY) {
         throw new Error('API key not found');
     }
 
-    const systemPrompt = `You are a helpful and knowledgeable reading assistant for the book "${context.title}"${context.author ? ` by ${context.author}` : ''}.
+    let systemPrompt = '';
+    const languageInstruction = `Respond in ${language}.`;
+
+    if ('library' in context) {
+        // User Context (General Chat)
+        const librarySummary = context.library.map((b: any) => 
+            `- "${b.title}" by ${b.author} (Page ${b.currentPage}/${b.totalPages}, Status: ${b.currentPage === b.totalPages ? 'Finished' : b.currentPage > 0 ? 'Reading' : 'Not Started'})`
+        ).join('\n');
+        
+        systemPrompt = `You are a smart and personalized reading assistant for ${context.username}.
+        
+        User's Library:
+        ${librarySummary}
+        
+        Your capabilities:
+        1. **Reading Plan**: Create personalized reading plans based on user's pace (e.g., pages per day, best time to read).
+        2. **Analysis**: Analyze reading habits based on progress (e.g., getting stuck, reading speed). Suggest easier books if stuck.
+        3. **Recommendations**: Suggest books from the library or general knowledge based on reading history.
+        4. **General Support**: Answer questions about literature, reading techniques, etc.
+
+        Guidelines:
+        - Be encouraging and insightful.
+        - If the user asks for a plan, ask for their preferred pace if not known.
+        - If the user is stuck on a book (e.g., no progress for a while), suggest a "fast-paced" alternative.
+        - Use the provided library data to give specific advice.
+        - ${languageInstruction}
+        
+        User Question: ${question}`;
+
+    } else {
+        // Book Context (Specific Book Chat)
+        systemPrompt = `You are a helpful and knowledgeable reading assistant for the book "${context.title}"${context.author ? ` by ${context.author}` : ''}.
     
-    Current Reading Context:
-    - Page: ${context.currentPage || 'Unknown'}
-    - Chapter: ${context.currentChapter || 'Unknown'}
-    
-    Your goals:
-    1. Answer the user's questions about the book, its characters, plot, and themes.
-    2. Provide concise and relevant explanations for terms or concepts.
-    3. Avoid spoilers for future events in the book unless explicitly asked.
-    4. Maintain a helpful, encouraging, and literary tone.
-    5. Respond in the same language as the user's question (likely Russian or English).
-    
-    User Question: ${question}`;
+        Current Reading Context:
+        - Page: ${context.currentPage || 'Unknown'}
+        - Chapter: ${context.currentChapter || 'Unknown'}
+        
+        Your goals:
+        1. Answer the user's questions about the book, its characters, plot, and themes.
+        2. Provide concise and relevant explanations for terms or concepts.
+        3. Avoid spoilers for future events in the book unless explicitly asked.
+        4. Maintain a helpful, encouraging, and literary tone.
+        5. ${languageInstruction}
+        
+        User Question: ${question}`;
+    }
 
     // Format history for Gemini API
     // The API expects 'user' and 'model' roles. 
