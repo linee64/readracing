@@ -50,7 +50,10 @@ export default function CurrentBook() {
         return null; // Don't show skeleton if we don't know yet
     }
 
-    if (!book || book.currentPage === 0) {
+    // If we have a book, but it hasn't been started (currentPage 0) AND hasn't been touched (no lastReadAt),
+    // then show the "Start Journey" screen.
+    // If it HAS been touched (lastReadAt exists), we show it even if page is 0 (e.g. just opened).
+    if (!book || (book.currentPage === 0 && !book.lastReadAt)) {
         return (
             <div className="bg-white rounded-2xl p-10 shadow-sm mt-8 border border-cream-200 text-center flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brown-900/10 via-brown-900/30 to-brown-900/10"></div>
@@ -135,7 +138,10 @@ export default function CurrentBook() {
                         >
                             {t.dashboard.continue_reading}
                         </button>
-                        <button className="border-2 border-brown-900 text-brown-900 px-8 py-3.5 rounded-full font-bold hover:bg-cream-100 active:scale-95 transition-all duration-200 w-full md:w-auto">
+                        <button 
+                            onClick={() => router.push(`/reader/${book.id}?openAi=true`)}
+                            className="border-2 border-brown-900 text-brown-900 px-8 py-3.5 rounded-full font-bold hover:bg-cream-100 active:scale-95 transition-all duration-200 w-full md:w-auto"
+                        >
                             {t.dashboard.ask_ai}
                         </button>
                     </div>

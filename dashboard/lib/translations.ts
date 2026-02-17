@@ -215,7 +215,26 @@ export const translations = {
             blue: 'Blue',
             green: 'Green',
             yellow: 'Yellow',
-            gray: 'Gray'
+            gray: 'Gray',
+            ask_ai_placeholder: 'Ask a question about the book...',
+            ai_disclaimer: 'AI uses Gemini Flash 2.5. Answers may be inaccurate.',
+            you: 'You',
+            suggestions: {
+                explain_chapter: 'Explain this chapter',
+                character_list: 'Character list',
+                key_themes: 'Key themes',
+                historical_context: 'Historical context'
+            },
+            ai_assistant: {
+                title: 'AI Assistant',
+                asking_about: 'Asking about',
+                clear_history: 'Clear History',
+                how_can_help: 'How can I help you read?',
+                help_desc: 'Ask me about characters, plot points, or meanings of specific terms.',
+                input_placeholder: 'Ask a question...',
+                send: 'Send',
+                copy: 'Copy'
+            }
         },
         library: {
             search_placeholder: 'Search books by title, author, genre...',
@@ -509,7 +528,26 @@ export const translations = {
             blue: 'Синий',
             green: 'Зеленый',
             yellow: 'Желтый',
-            gray: 'Серый'
+            gray: 'Серый',
+            ask_ai_placeholder: 'Задайте вопрос о книге...',
+            ai_disclaimer: 'AI использует Gemini Flash 2.5. Ответы могут быть неточными.',
+            you: 'Вы',
+            suggestions: {
+                explain_chapter: 'Объясни эту главу',
+                character_list: 'Список персонажей',
+                key_themes: 'Ключевые темы',
+                historical_context: 'Исторический контекст'
+            },
+            ai_assistant: {
+                title: 'AI Ассистент',
+                asking_about: 'Обсуждаем',
+                clear_history: 'Очистить историю',
+                how_can_help: 'Чем я могу помочь?',
+                help_desc: 'Спросите меня о персонажах, сюжете или значении конкретных терминов.',
+                input_placeholder: 'Задайте вопрос...',
+                send: 'Отправить',
+                copy: 'Копировать'
+            }
         },
         library: {
             search_placeholder: 'Поиск книг по названию, автору, жанру...',

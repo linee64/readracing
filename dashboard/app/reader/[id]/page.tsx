@@ -1,13 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import ePub, { Rendition } from 'epubjs';
 import { get, set } from 'idb-keyval';
 import { Book } from '@/types';
 import { supabase } from '@/lib/supabase';
 import ReaderSettings from '@/components/ReaderSettings';
 import { useLanguage } from '@/context/LanguageContext';
+import { AIAssistantModal } from '@/components/AIAssistant/AIAssistantModal';
+import { BookContext } from '@/services/geminiService';
 
 type Theme = 'auto' | 'light' | 'dark';
 type HighlightColor = 'blue' | 'green' | 'yellow' | 'gray';
@@ -29,10 +31,11 @@ export default function ReaderPage() {
     const { t } = useLanguage();
     const { id } = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const viewerRef = useRef<HTMLDivElement>(null);
     const bookRef = useRef<any>(null);
     const renditionRef = useRef<Rendition | null>(null);
-    
+
     const [isLoaded, setIsLoaded] = useState(false);
     const [isPaginated, setIsPaginated] = useState(false);
     const [title, setTitle] = useState('');
@@ -48,7 +51,7 @@ export default function ReaderPage() {
         highlightColor: 'yellow' as HighlightColor
     });
     const [isMobile, setIsMobile] = useState(false);
-    
+
     // Context Menu State
     const [selectionMenu, setSelectionMenu] = useState<{
         x: number;
@@ -58,13 +61,24 @@ export default function ReaderPage() {
     } | null>(null);
     const [showExplanation, setShowExplanation] = useState(false);
     const [explanationText, setExplanationText] = useState('');
+    const [showAIAssistant, setShowAIAssistant] = useState(false);
+
+    // Handle query params
+    useEffect(() => {
+        if (searchParams.get('openAi') === 'true') {
+            setShowAIAssistant(true);
+            // Clean up the URL without reloading
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+        }
+    }, [searchParams]);
 
     const lastLoggedPageRef = useRef(0);
     const lastLogTimeRef = useRef(Date.now());
-    
+
     const settingsRef = useRef(settings);
     const highlightsRef = useRef<Highlight[]>([]);
-    
+
     // Selection state refs
     const isMouseUpRef = useRef(true);
     const pendingSelectionRef = useRef<{
@@ -79,7 +93,7 @@ export default function ReaderPage() {
         const { theme, fontFamily, fontSize } = settings;
         const isDark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
         const mobile = window.innerWidth < 1024;
-        
+
         // Base styles
         const styles = {
             'body': {
@@ -130,7 +144,7 @@ export default function ReaderPage() {
     const updateLibraryProgress = async (curr: number, total: number, cfi?: string) => {
         try {
             console.log('Attempting to update progress:', { curr, total });
-            
+
             if (curr > 0) {
                 // Log reading session if progress made
                 const delta = curr - lastLoggedPageRef.current;
@@ -163,8 +177,8 @@ export default function ReaderPage() {
                 const updatedLibrary = library.map(b => {
                     if (b.id === id) {
                         const newPage = Math.max(b.currentPage || 0, curr);
-                        return { 
-                            ...b, 
+                        return {
+                            ...b,
                             currentPage: newPage,
                             currentPageCfi: cfi || b.currentPageCfi,
                             totalPages: total > 0 ? total : b.totalPages,
@@ -173,21 +187,21 @@ export default function ReaderPage() {
                     }
                     return b;
                 });
-                
+
                 await set('readracing_library_v2', updatedLibrary);
-                
+
                 const { data: { session } } = await supabase.auth.getSession();
                 const user = session?.user;
                 if (user) {
                     const totalPagesRead = updatedLibrary.reduce((acc, book) => acc + (book.currentPage || 0), 0);
                     const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown Reader';
-                    
+
                     // Update user profile
                     await supabase
                         .from('profiles')
-                        .upsert({ 
-                            id: user.id, 
-                            full_name: name, 
+                        .upsert({
+                            id: user.id,
+                            full_name: name,
                             pages_read: totalPagesRead,
                             updated_at: new Date().toISOString()
                         });
@@ -213,7 +227,7 @@ export default function ReaderPage() {
     useEffect(() => {
         let isMounted = true;
         let resizeObserver: ResizeObserver | null = null;
-        
+
         const loadBook = async () => {
             if (!id || !viewerRef.current) return;
 
@@ -221,7 +235,7 @@ export default function ReaderPage() {
                 if (renditionRef.current) {
                     try {
                         renditionRef.current.destroy();
-                    } catch (e) {}
+                    } catch (e) { }
                     renditionRef.current = null;
                 }
 
@@ -229,7 +243,7 @@ export default function ReaderPage() {
                     try {
                         const library = await get('readracing_library_v2') as Book[];
                         const bookMeta = library?.find(b => b.id === id);
-                        
+
                         if (bookMeta?.epubUrl) {
                             console.log('Attempting to recover book from URL:', bookMeta.epubUrl);
                             const response = await fetch(bookMeta.epubUrl);
@@ -246,7 +260,7 @@ export default function ReaderPage() {
                 };
 
                 let data = await get(id as string);
-                
+
                 if (!data) {
                     // Try to recover if missing
                     data = await recoverBook();
@@ -326,7 +340,7 @@ export default function ReaderPage() {
                     const range = selection.getRangeAt(0);
                     const rect = range.getBoundingClientRect();
                     const iframe = viewerRef.current?.querySelector('iframe');
-                    
+
                     if (iframe) {
                         const iframeRect = iframe.getBoundingClientRect();
                         const text = selection.toString();
@@ -354,7 +368,7 @@ export default function ReaderPage() {
                 rendition.on('click', () => {
                     // setSelectionMenu(null);
                 });
-                
+
                 rendition.on('relocated', () => {
                     setSelectionMenu(null);
                     pendingSelectionRef.current = null;
@@ -382,20 +396,20 @@ export default function ReaderPage() {
                         'height': 'auto !important'
                     },
                     'a': {
-                         'color': 'inherit !important',
-                         'text-decoration': 'none !important',
-                         '-webkit-text-fill-color': 'inherit !important'
+                        'color': 'inherit !important',
+                        'text-decoration': 'none !important',
+                        '-webkit-text-fill-color': 'inherit !important'
                     },
                     'a:hover': {
-                         'color': 'inherit !important',
-                         'text-decoration': 'none !important',
-                         '-webkit-text-fill-color': 'inherit !important'
+                        'color': 'inherit !important',
+                        'text-decoration': 'none !important',
+                        '-webkit-text-fill-color': 'inherit !important'
                     }
                 });
-                
+
                 const library = await get('readracing_library_v2') as Book[];
                 const currentBook = library?.find(b => b.id === id);
-                
+
                 if (currentBook) {
                     if (currentBook.currentPage) {
                         setCurrentPage(currentBook.currentPage);
@@ -409,7 +423,7 @@ export default function ReaderPage() {
                 } else {
                     await rendition.display();
                 }
-                
+
                 if (!isMounted) return;
                 setIsLoaded(true);
 
@@ -460,14 +474,14 @@ export default function ReaderPage() {
 
                 resizeObserver = new ResizeObserver(() => {
                     if (renditionRef.current && isMounted) {
-                        try { 
+                        try {
                             (renditionRef.current as any).resize();
                             // Re-apply styles on resize via the settings effect or re-call applyTheme here?
                             // Actually the useEffect([settings]) handles updates, but resize needs responsive updates.
                             // We can trigger a re-apply of theme.
                             // But applyTheme depends on 'settings' state which might be stale in this callback?
                             // Use a ref for settings if needed, but for now simple re-render is okay.
-                        } catch (e) {}
+                        } catch (e) { }
                     }
                 });
                 resizeObserver.observe(viewerRef.current);
@@ -490,11 +504,11 @@ export default function ReaderPage() {
             clearTimeout(timer);
             if (resizeObserver) resizeObserver.disconnect();
             if (renditionRef.current) {
-                try { renditionRef.current.destroy(); } catch (e) {}
+                try { renditionRef.current.destroy(); } catch (e) { }
                 renditionRef.current = null;
             }
             if (bookRef.current) {
-                try { bookRef.current.destroy(); } catch (e) {}
+                try { bookRef.current.destroy(); } catch (e) { }
                 bookRef.current = null;
             }
         };
@@ -514,7 +528,7 @@ export default function ReaderPage() {
 
     const handleHighlight = async (colorKey: HighlightColor) => {
         if (!selectionMenu || !renditionRef.current) return;
-        
+
         const color = HIGHLIGHT_COLORS[colorKey];
         const { cfiRange, text } = selectionMenu;
 
@@ -552,7 +566,7 @@ export default function ReaderPage() {
                     cfi_range: cfiRange,
                     book_id: id
                 });
-                
+
                 if (error) {
                     console.error('Supabase error saving highlight:', error);
                     // You might want to show a toast here if you have a toast component
@@ -567,7 +581,7 @@ export default function ReaderPage() {
         }
 
         setSelectionMenu(null);
-        
+
         const contents = renditionRef.current.getContents() as any;
         if (contents && (contents.length > 0 || Array.isArray(contents))) {
             const content = Array.isArray(contents) ? contents[0] : contents;
@@ -590,11 +604,11 @@ export default function ReaderPage() {
         <div className={`h-[100dvh] w-full max-w-[100vw] flex flex-row overflow-hidden ${isDark ? 'bg-[#1a1a1a]' : 'bg-cream-50'}`}>
             {/* Context Menu */}
             {selectionMenu && (
-                <div 
+                <div
                     className={`fixed z-50 flex flex-col min-w-[180px] rounded-xl shadow-2xl transform -translate-x-1/2 -translate-y-full mb-3 overflow-hidden
                         ${isDark ? 'bg-[#2a2a2a] border border-[#444] text-gray-200' : 'bg-[#F9F5F1] border border-[#E8E1D5] text-[#4A3B32]'}`}
-                    style={{ 
-                        left: selectionMenu.x, 
+                    style={{
+                        left: selectionMenu.x,
                         top: selectionMenu.y - 10,
                         animation: 'fadeIn 0.2s ease-out'
                     }}
@@ -607,13 +621,13 @@ export default function ReaderPage() {
                                 ${isDark ? 'hover:bg-[#333]' : 'hover:bg-[#EFE6D5]'}`}
                         >
                             <div className={`p-1.5 rounded-md ${isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-[#E8E1D5] text-[#8C7B6C] group-hover:text-[#4A3B32]'}`}>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 3v4"/><path d="M3 5h4"/><path d="M3 9h4"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /><path d="M5 3v4" /><path d="M9 3v4" /><path d="M3 5h4" /><path d="M3 9h4" /></svg>
                             </div>
                             {t.reader.explain_ai}
                         </button>
-                        
+
                         <div className={`h-px mx-4 my-1 ${isDark ? 'bg-[#444]' : 'bg-[#E8E1D5]'}`} />
-                        
+
                         <div className="px-4 py-2">
                             <span className={`text-[10px] font-bold uppercase tracking-wider mb-2 block ${isDark ? 'text-gray-500' : 'text-[#8C7B6C]'}`}>
                                 {t.reader.highlight}
@@ -625,7 +639,7 @@ export default function ReaderPage() {
                                         onClick={() => handleHighlight(color)}
                                         className={`w-6 h-6 rounded-full border transition-transform hover:scale-110 relative group
                                             ${isDark ? 'border-transparent' : 'border-[#E8E1D5]'}`}
-                                        style={{ 
+                                        style={{
                                             backgroundColor: HIGHLIGHT_COLORS[color],
                                             cursor: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%234A3B32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>') 0 20, pointer`
                                         }}
@@ -645,16 +659,16 @@ export default function ReaderPage() {
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                     <div className={`w-full max-w-md rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 relative
                         ${isDark ? 'bg-[#1a1a1a] text-gray-100 border border-[#333]' : 'bg-[#F9F5F1] text-[#4A3B32] border border-[#E8E1D5]'}`}>
-                        <button 
+                        <button
                             onClick={() => setShowExplanation(false)}
                             className={`absolute top-4 right-4 p-2 rounded-full transition-colors ${isDark ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-[#EFE6D5] text-[#8C7B6C]'}`}
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                         </button>
-                        
+
                         <div className="flex items-center gap-3 mb-4">
                             <div className={`p-3 rounded-xl ${isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-[#E8E1D5] text-[#8C7B6C]'}`}>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /></svg>
                             </div>
                             <h3 className="text-lg font-bold font-serif">{t.reader.ai_explanation}</h3>
                         </div>
@@ -677,29 +691,40 @@ export default function ReaderPage() {
 
             <div className={`flex flex-col flex-1 h-full min-w-0 transition-all duration-300 relative overflow-hidden`}>
                 <div className={`${isDark ? 'bg-[#1a1a1a] border-[#333]' : 'bg-white border-cream-200'} border-b px-4 py-2 flex justify-between items-center shadow-sm z-10 shrink-0 w-full max-w-full overflow-hidden`}>
-                    <button 
+                    <button
                         onClick={() => router.push('/library')}
                         className={`${isDark ? 'text-gray-300 hover:text-white' : 'text-brown-900'} font-bold flex items-center gap-1 hover:opacity-70 transition-opacity text-xs`}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
                         {t.reader.library}
                     </button>
                     <h1 className={`font-serif font-bold truncate max-w-[50%] text-center flex-1 text-sm ${isDark ? 'text-gray-200' : 'text-brown-900'}`}>{title || 'Loading...'}</h1>
-                    
+
                     {/* Settings Button in Header */}
-                    <button 
+                    <button
                         onClick={() => setShowSettings(!showSettings)}
                         className={`p-2 rounded-full transition-colors
                             ${isDark ? 'text-gray-400 hover:bg-[#333] hover:text-white' : 'text-brown-900/60 hover:bg-cream-100 hover:text-brown-900'}`}
                         title={t.sidebar.settings}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+                    </button>
+
+                    {/* AI Assistant Button */}
+                    <button
+                        onClick={() => setShowAIAssistant(true)}
+                        className={`p-2 ml-2 rounded-full transition-colors flex items-center gap-2
+                            ${isDark ? 'text-purple-400 hover:bg-[#333]' : 'text-[#8B6F47] hover:bg-cream-100'}`}
+                        title="Ask AI Assistant"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                        <span className="hidden md:inline font-serif font-bold text-sm">Ask AI</span>
                     </button>
                 </div>
 
                 <div className="flex-1 relative p-2 md:p-8 flex justify-center items-center overflow-hidden w-full max-w-[100vw]">
-                    <div 
-                        ref={viewerRef} 
+                    <div
+                        ref={viewerRef}
                         className={`w-full max-w-2xl shadow-2xl rounded-lg border h-full max-h-[85vh] overflow-hidden transition-colors duration-300
                             ${isDark ? 'bg-[#1a1a1a] border-[#333]' : 'bg-white border-cream-200'}`}
                     >
@@ -733,6 +758,18 @@ export default function ReaderPage() {
                     )}
                 </div>
             </div>
+
+
+            <AIAssistantModal
+                isOpen={showAIAssistant}
+                onClose={() => setShowAIAssistant(false)}
+                bookContext={{
+                    title: title,
+                    currentPage: currentPage,
+                    // author: currentBook?.author // If author is available in Book type
+                }}
+                isDark={isDark}
+            />
 
             <ReaderSettings
                 isOpen={showSettings}

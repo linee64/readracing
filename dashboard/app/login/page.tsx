@@ -5,6 +5,7 @@ import CornerAccent from '@/components/CornerAccent';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -94,6 +95,14 @@ export default function LoginPage() {
                     >
                         {loading ? 'Logging In...' : 'Log In'}
                     </button>
+
+                    <div className="relative flex items-center py-2">
+                        <div className="flex-grow border-t border-brand-black/10"></div>
+                        <span className="flex-shrink-0 mx-4 text-xs font-medium text-brand-black/40 uppercase tracking-wider">Or</span>
+                        <div className="flex-grow border-t border-brand-black/10"></div>
+                    </div>
+
+                    <GoogleSignInButton />
                 </form>
 
                 <p className="mt-8 text-center text-sm opacity-60 font-sans text-brand-black">
