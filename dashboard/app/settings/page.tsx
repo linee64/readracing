@@ -4,11 +4,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useLanguage } from '@/context/LanguageContext';
 import { Language } from '@/lib/translations';
+import { X, Check } from 'lucide-react';
 
 export default function SettingsPage() {
     const { language, setLanguage, t } = useLanguage();
     const [notifications, setNotifications] = useState(true);
     const [readingGoal, setReadingGoal] = useState('30');
+    const [showSubDetails, setShowSubDetails] = useState(false);
     // const [language, setLanguage] = useState('English'); // Removed local state
     const [isLangOpen, setIsLangOpen] = useState(false);
     const [isGoalOpen, setIsGoalOpen] = useState(false);
@@ -438,9 +440,17 @@ export default function SettingsPage() {
                                     <p className="font-bold text-lg">{user.isPro ? t.settings.price_per_year : t.settings.upgrade_feature_text}</p>
                                 </div>
                             </div>
-                            <button className="w-full md:w-auto bg-brand-gold text-brown-900 font-bold px-8 py-4 rounded-2xl shadow-lg hover:scale-105 transition-transform">
-                                {user.isPro ? t.settings.manage_sub : t.settings.upgrade}
-                            </button>
+                            <div className="flex flex-col md:flex-row gap-4">
+                                <button className="w-full md:w-auto bg-brand-gold text-brown-900 font-bold px-8 py-4 rounded-2xl shadow-lg hover:scale-105 transition-transform">
+                                    {user.isPro ? t.settings.manage_sub : t.settings.upgrade}
+                                </button>
+                                <button 
+                                    onClick={() => setShowSubDetails(true)}
+                                    className="w-full md:w-auto bg-white/10 text-cream-50 font-bold px-8 py-4 rounded-2xl border border-white/20 hover:bg-white/20 transition-all"
+                                >
+                                    {t.settings.view_details}
+                                </button>
+                            </div>
                         </div>
                     </section>
 
@@ -508,6 +518,77 @@ export default function SettingsPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Subscription Details Modal */}
+            {showSubDetails && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <button 
+                        onClick={() => setShowSubDetails(false)}
+                        className="fixed top-6 right-6 p-3 bg-brown-900 text-cream-50 hover:bg-brown-800 rounded-full transition-all z-[60] shadow-xl border border-cream-200"
+                    >
+                        <X className="w-8 h-8" />
+                    </button>
+                    
+                    <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in zoom-in-95 duration-200">
+                        <div className="p-6 md:p-8">
+                            <h2 className="text-3xl font-serif font-bold text-center mb-2 text-brown-900">{t.settings.subscription_details}</h2>
+                            <p className="text-center text-brown-600 mb-8">{t.settings.upgrade_feature_text}</p>
+                            
+                            <div className="grid md:grid-cols-2 gap-8">
+                                {/* Free Plan */}
+                                <div className="border border-gray-200 rounded-2xl p-6 bg-gray-50 flex flex-col">
+                                    <div className="text-center mb-6">
+                                        <h3 className="text-xl font-bold text-gray-700">{t.settings.free_plan_features}</h3>
+                                        <div className="text-3xl font-bold text-gray-900 mt-2">$0</div>
+                                    </div>
+                                    <ul className="space-y-4 flex-1">
+                                        <FeatureItem label={t.settings.feature_basic_reader} included={true} />
+                                        <FeatureItem label={t.settings.feature_limited_stats} included={true} />
+                                        <FeatureItem label={t.settings.feature_cloud_sync} included={true} />
+                                        <FeatureItem label={t.settings.feature_unlimited_books} included={false} />
+                                        <FeatureItem label={t.settings.feature_ai_assistant} included={false} />
+                                        <FeatureItem label={t.settings.feature_advanced_stats} included={false} />
+                                        <FeatureItem label={t.settings.feature_priority_support} included={false} />
+                                    </ul>
+                                </div>
+
+                                {/* Pro Plan */}
+                                <div className="border-2 border-brand-gold rounded-2xl p-6 bg-white relative overflow-hidden flex flex-col shadow-lg transform md:-translate-y-2">
+                                    <div className="absolute top-0 right-0 bg-brand-gold text-brown-900 text-xs font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
+                                        Recommended
+                                    </div>
+                                    <div className="text-center mb-6">
+                                        <h3 className="text-xl font-bold text-brown-900">{t.settings.pro_plan_features}</h3>
+                                        <div className="text-3xl font-bold text-brown-900 mt-2">$19.99<span className="text-lg font-normal text-brown-600"> / {t.settings.annual}</span></div>
+                                    </div>
+                                    <ul className="space-y-4 flex-1">
+                                        <FeatureItem label={t.settings.feature_basic_reader} included={true} isPro />
+                                        <FeatureItem label={t.settings.feature_limited_stats} included={true} isPro />
+                                        <FeatureItem label={t.settings.feature_cloud_sync} included={true} isPro />
+                                        <FeatureItem label={t.settings.feature_unlimited_books} included={true} isPro />
+                                        <FeatureItem label={t.settings.feature_ai_assistant} included={true} isPro />
+                                        <FeatureItem label={t.settings.feature_advanced_stats} included={true} isPro />
+                                        <FeatureItem label={t.settings.feature_priority_support} included={true} isPro />
+                                    </ul>
+                                    
+                                    <button className="w-full mt-8 bg-brand-gold text-brown-900 font-bold py-3 rounded-xl shadow-lg hover:brightness-110 transition-all">
+                                        {t.settings.upgrade}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
+
+const FeatureItem = ({ label, included, isPro }: { label: string, included: boolean, isPro?: boolean }) => (
+    <li className={`flex items-center gap-3 ${included ? 'text-brown-900' : 'text-gray-400'}`}>
+        <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${included ? (isPro ? 'bg-brand-gold text-brown-900' : 'bg-gray-200 text-gray-700') : 'bg-gray-100 text-gray-300'}`}>
+            {included ? <Check size={14} strokeWidth={3} /> : <X size={14} strokeWidth={3} />}
+        </div>
+        <span className={`font-medium text-sm ${included ? '' : 'line-through decoration-gray-300'}`}>{label}</span>
+    </li>
+);
