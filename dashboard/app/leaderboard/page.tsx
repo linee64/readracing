@@ -1,13 +1,16 @@
 'use client';
 
-import { LeaderboardEntry, Book } from '@/types';
+import { LeaderboardEntry, Book, Profile } from '@/types';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { get } from 'idb-keyval';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, differenceInDays } from 'date-fns';
 import { useLanguage } from '@/context/LanguageContext';
 import { ru, enUS } from 'date-fns/locale';
 import ShareModal from '@/components/ShareModal';
+
+const SEASON_DURATION_DAYS = 20;
+const SEASON_START_DATE = new Date('2026-02-15'); // Start fresh from Season 1 (assuming today is March 1st, 2026)
 
 export default function LeaderboardPage() {
     const { t, language } = useLanguage();
@@ -16,10 +19,21 @@ export default function LeaderboardPage() {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [seasonInfo, setSeasonInfo] = useState({ id: 1, daysLeft: 0 });
 
     useEffect(() => {
         const fetchData = async () => {
             try {
+                // Calculate Season Info
+                const now = new Date();
+                const daysSinceStart = differenceInDays(now, SEASON_START_DATE);
+                const currentSeasonId = Math.floor(daysSinceStart / SEASON_DURATION_DAYS) + 1;
+                const nextSeasonStart = new Date(SEASON_START_DATE);
+                nextSeasonStart.setDate(SEASON_START_DATE.getDate() + (currentSeasonId * SEASON_DURATION_DAYS));
+                const daysLeft = differenceInDays(nextSeasonStart, now);
+                
+                setSeasonInfo({ id: currentSeasonId, daysLeft: Math.max(0, daysLeft) });
+
                 // 1. Get current user data
                 const { data: { session } } = await supabase.auth.getSession();
                 const user = session?.user;
@@ -27,7 +41,7 @@ export default function LeaderboardPage() {
 
                 const library = await get('readracing_library_v2') as Book[];
                 let booksCount = 0;
-                let pagesCount = 0;
+                let pagesCount = 0; // This is TOTAL pages read
 
                 if (library && library.length > 0) {
                     booksCount = library.filter(book =>
@@ -36,40 +50,74 @@ export default function LeaderboardPage() {
                     pagesCount = library.reduce((acc, book) => acc + (book.currentPage || 0), 0);
                 }
 
-                setUserData({ name: `${name} (You)`, booksCount, pagesCount });
-
-                // Forced sync of current user progress to Supabase
+                // Forced sync of current user progress to Supabase with Season Logic
                 if (user) {
+                    // Fetch current profile to check season status
+                    const { data: currentProfile } = await supabase
+                        .from('profiles')
+                        .select('season_id, season_start_pages')
+                        .eq('id', user.id)
+                        .single<Profile>();
+
+                    let seasonPagesRead = 0;
+                    let seasonStartPages = currentProfile?.season_start_pages || 0;
+                    let seasonId = currentProfile?.season_id || 0;
+
+                    // Season Logic
+                    if (currentSeasonId === 1) {
+                        // Season 1 Special Case: Use Total Pages Read (All-time history)
+                        seasonId = 1;
+                        seasonStartPages = 0;
+                        seasonPagesRead = pagesCount;
+                    } else if (seasonId < currentSeasonId) {
+                        // New Season (2+) ! Reset seasonal progress
+                        seasonId = currentSeasonId;
+                        seasonStartPages = pagesCount; // Snapshot current total as start
+                        seasonPagesRead = 0;
+                    } else {
+                        // Same Season (2+)
+                        seasonPagesRead = Math.max(0, pagesCount - seasonStartPages);
+                    }
+
+                    // Update local user data for UI (showing SEASON pages for leaderboard context)
+                    setUserData({ name: `${name} (You)`, booksCount, pagesCount: seasonPagesRead });
+
                     const { error: syncError } = await supabase
                         .from('profiles')
                         .upsert({
                             id: user.id,
                             full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown Reader',
-                            pages_read: pagesCount,
+                            pages_read: pagesCount, // Always update TOTAL pages
+                            season_id: seasonId,
+                            season_start_pages: seasonStartPages,
+                            season_pages_read: seasonPagesRead,
                             updated_at: new Date().toISOString()
                         });
 
                     if (syncError) {
                         console.error('Leaderboard page sync error:', syncError.message);
                     }
+                } else {
+                     setUserData({ name: `${name} (You)`, booksCount, pagesCount: 0 }); // Guest sees 0
                 }
 
                 // 2. Get global leaderboard from Supabase
+                // We order by season_pages_read now
                 const { data: profiles, error } = await supabase
                     .from('profiles')
                     .select('*')
-                    .order('pages_read', { ascending: false })
+                    .order('season_pages_read', { ascending: false })
                     .limit(10);
 
                 if (error) throw error;
 
-                const finalBoard: LeaderboardEntry[] = (profiles || []).map((p, index) => ({
+                const finalBoard: LeaderboardEntry[] = ((profiles as unknown as Profile[]) || []).map((p, index) => ({
                     id: p.id,
                     userId: p.id,
                     userName: p.id === user?.id ? `${p.full_name} (You)` : p.full_name,
                     userAvatar: p.avatar_url,
                     booksCount: 0,
-                    pagesCount: p.pages_read,
+                    pagesCount: p.season_pages_read || 0, // Show SEASON pages
                     rank: index + 1,
                     joinedAt: p.created_at || p.updated_at
                 }));
@@ -128,8 +176,29 @@ export default function LeaderboardPage() {
     };
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700 pb-12 px-4 md:px-0">
-            {/* Header Section */}
+        <div className="max-w-6xl mx-auto pb-12 px-4 md:px-0">
+            {/* Season Banner - Sticky & Always Visible */}
+            <div className="sticky top-20 md:top-6 z-30 w-[95%] md:w-[calc(100%-2rem)] mx-auto mb-8 bg-cream-50/80 backdrop-blur-xl bg-gradient-to-r from-brand-gold/10 to-brand-gold/5 border border-brand-gold/20 rounded-2xl p-4 flex items-center justify-between shadow-xl shadow-brand-gold/10 transition-all duration-300">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-brand-gold/20 flex items-center justify-center text-brand-gold-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86l-3 3.87L9 11.47l-3 4.53h12l-3.86-5.14z"/></svg>
+                    </div>
+                    <div>
+                        <h3 className="font-serif font-bold text-brown-900">{t.leaderboard.season} {seasonInfo.id}</h3>
+                        <p className="text-xs font-bold text-brand-gold-dark uppercase tracking-wider">
+                            {t.leaderboard.season_reset.replace('{days}', seasonInfo.daysLeft.toString())}
+                        </p>
+                    </div>
+                </div>
+                <div className="text-right hidden sm:block">
+                     <div className="text-2xl font-black text-brand-gold-dark">{seasonInfo.daysLeft}</div>
+                     <div className="text-[10px] font-bold text-brown-800/40 uppercase tracking-widest">{t.leaderboard.ends_in}</div>
+                </div>
+            </div>
+
+            {/* Main Content - Animated */}
+            <div className="space-y-8 animate-in fade-in duration-700 md:px-4">
+                {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
                     <h1 className="text-3xl md:text-4xl font-serif font-black text-brown-900">{t.leaderboard.title}</h1>
@@ -365,6 +434,7 @@ export default function LeaderboardPage() {
                     name: userData.name.replace(' (You)', '')
                 }}
             />
+            </div>
         </div>
     );
 }

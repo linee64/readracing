@@ -559,7 +559,7 @@ export default function SettingsPage() {
                                     </div>
                                     <div className="text-center mb-6">
                                         <h3 className="text-xl font-bold text-brown-900">{t.settings.pro_plan_features}</h3>
-                                        <div className="text-3xl font-bold text-brown-900 mt-2">$19.99<span className="text-lg font-normal text-brown-600"> / {t.settings.annual}</span></div>
+                                        <div className="text-3xl font-bold text-brown-900 mt-2">$5.99<span className="text-lg font-normal text-brown-600"> / {t.settings.annual}</span></div>
                                     </div>
                                     <ul className="space-y-4 flex-1">
                                         <FeatureItem label={t.settings.feature_basic_reader} included={true} isPro />

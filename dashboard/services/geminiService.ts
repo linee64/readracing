@@ -1,3 +1,8 @@
+import { ChatMessage, BookContext, UserContext } from './types'; // Assuming types are moved or I should keep them here if no separate file
+
+// Re-exporting interfaces if they are not in a separate file yet, 
+// but based on previous read they were defined in this file.
+// I will keep them here for now to avoid breaking imports.
 
 export interface ChatMessage {
     id: string;
@@ -16,9 +21,7 @@ export interface BookContext {
 
 export interface UserContext {
     username: string;
-    library: any[]; // Using any[] to avoid circular dependency with Book type, or I should import it. 
-    // Ideally should be Book[] but let's keep it simple for now or import it if possible.
-    // I will use 'any' for now to be safe, but really it expects Book[]-like structure.
+    library: any[]; 
     availableBooks?: any[];
 }
 
@@ -29,7 +32,7 @@ export const generateAIResponse = async (
     history: ChatMessage[],
     question: string,
     context: BookContext | UserContext,
-    language: string = 'Russian' // Default to Russian but allow override
+    language: string = 'Russian' 
 ): Promise<string> => {
     if (!GEMINI_API_KEY) {
         throw new Error('API key not found');
@@ -82,16 +85,11 @@ export const generateAIResponse = async (
         User Question: ${question}`;
     }
 
-    // Format history for Gemini API
-    // The API expects 'user' and 'model' roles. 
-    // We'll limit history to last 10 messages to save tokens/context window if needed, 
-    // but Flash has a large window so it's likely fine.
     const contents = history.map(msg => ({
         role: msg.role,
         parts: [{ text: msg.text }]
     }));
 
-    // Add current turn
     contents.push({
         role: 'user',
         parts: [{ text: systemPrompt }]
@@ -109,7 +107,7 @@ export const generateAIResponse = async (
                     temperature: 0.7,
                     topK: 40,
                     topP: 0.95,
-                    maxOutputTokens: 1024,
+                    maxOutputTokens: 8192,
                 },
             }),
         });
@@ -128,6 +126,60 @@ export const generateAIResponse = async (
         }
     } catch (error) {
         console.error('Gemini API Error:', error);
+        throw error;
+    }
+};
+
+export const explainText = async (
+    text: string,
+    bookContext: { title: string; author?: string },
+    language: string = 'Russian'
+): Promise<string> => {
+    if (!GEMINI_API_KEY) {
+        throw new Error('API key not found');
+    }
+
+    const prompt = `
+    You are a literary assistant. 
+    The user is reading "${bookContext.title}"${bookContext.author ? ` by ${bookContext.author}` : ''}.
+    
+    Please explain the following text from the book in ${language}:
+    "${text}"
+    
+    Provide a VERY concise explanation of the meaning, context, or significance of this text.
+    If it contains difficult words, define them briefly.
+    If it refers to a specific concept, explain it simply.
+    Keep the explanation short and helpful (max 2-3 sentences).
+    Respond in Russian.
+    `;
+
+    try {
+        const response = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.3,
+                    maxOutputTokens: 1024,
+                },
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error?.message || 'Failed to generate explanation');
+        }
+
+        const data = await response.json();
+
+        if (data.candidates && data.candidates.length > 0 && data.candidates[0].content) {
+            return data.candidates[0].content.parts[0].text;
+        } else {
+            throw new Error('No response content from AI');
+        }
+    } catch (error) {
+        console.error('Gemini API Error (Explain):', error);
         throw error;
     }
 };

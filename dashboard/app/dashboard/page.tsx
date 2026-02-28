@@ -12,7 +12,7 @@ import { useReadingPlan } from '@/hooks/useReadingPlan';
 
 export default function DashboardPage() {
     const [username, setUsername] = useState<string>('Reader');
-    const { weeklyGoal, getWeeklyProgress, logSession, resetProgress } = useReadingPlan();
+    const { weeklyGoal, getWeeklyProgress, logSession, resetProgress, streak } = useReadingPlan();
 
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -38,7 +38,7 @@ export default function DashboardPage() {
         <div className="min-h-screen bg-cream-50">
             <div className="max-w-7xl mx-auto p-4 md:p-8 pb-20">
                 <DashboardHeader username={username} />
-                <MetricsCards />
+                <MetricsCards streak={streak} />
                 <CurrentBook />
                 <ReadingPlan 
                     weeklyGoal={weeklyGoal}

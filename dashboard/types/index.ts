@@ -44,6 +44,18 @@ export interface Highlight {
     page: number;
 }
 
+export interface Profile {
+    id: string;
+    full_name: string;
+    avatar_url?: string;
+    pages_read: number;
+    season_id?: number;
+    season_start_pages?: number;
+    season_pages_read?: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
 export interface LeaderboardEntry {
     id: string;
     userId: string;

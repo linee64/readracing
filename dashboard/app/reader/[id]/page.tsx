@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 import ReaderSettings from '@/components/ReaderSettings';
 import { useLanguage } from '@/context/LanguageContext';
 import { AIAssistantModal } from '@/components/AIAssistant/AIAssistantModal';
-import { BookContext } from '@/services/geminiService';
+import { BookContext, explainText } from '@/services/geminiService';
 
 type Theme = 'auto' | 'light' | 'dark';
 type HighlightColor = 'blue' | 'green' | 'yellow' | 'gray';
@@ -61,6 +61,8 @@ export default function ReaderPage() {
     } | null>(null);
     const [showExplanation, setShowExplanation] = useState(false);
     const [explanationText, setExplanationText] = useState('');
+    const [aiExplanation, setAiExplanation] = useState('');
+    const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
     const [showAIAssistant, setShowAIAssistant] = useState(false);
 
     // Handle query params
@@ -365,7 +367,47 @@ export default function ReaderPage() {
                     }
                 });
 
-                rendition.on('click', () => {
+                rendition.on('click', (e: any) => {
+                    const width = window.innerWidth;
+                    const containerWidth = viewerRef.current?.clientWidth || width;
+                    
+                    // Only for mobile (width < 1024)
+                    if (width < 1024) {
+                        // Handle potential large clientX values (paginated content often returns document-relative coordinates)
+                        // Use modulo to get position relative to the current page/viewport
+                        const rawX = e.clientX;
+                        const x = rawX > containerWidth ? rawX % containerWidth : rawX;
+                        
+                        console.log('Tap detected:', { rawX, x, containerWidth, width });
+
+                        // Check if text is selected - if so, don't turn page
+                        const selection = window.getSelection();
+                        if (selection && selection.toString().length > 0) return;
+                        
+                        // Also check iframe selection if available
+                        const iframe = viewerRef.current?.querySelector('iframe');
+                        if (iframe && iframe.contentWindow) {
+                            const iframeSelection = iframe.contentWindow.getSelection();
+                            if (iframeSelection && iframeSelection.toString().length > 0) return;
+                        }
+
+                        // Use direct rendition instance for navigation
+                        // Left 35% -> Prev Page
+                        if (x < containerWidth * 0.35) {
+                            console.log('Navigating Prev (Tap):', x, '/', containerWidth);
+                            rendition.prev();
+                            e.preventDefault?.();
+                            e.stopPropagation?.();
+                        } 
+                        // Right 35% -> Next Page
+                        else if (x > containerWidth * 0.65) {
+                            console.log('Navigating Next (Tap):', x, '/', containerWidth);
+                            rendition.next();
+                            e.preventDefault?.();
+                            e.stopPropagation?.();
+                        }
+                    }
+                    
                     // setSelectionMenu(null);
                 });
 
@@ -591,11 +633,25 @@ export default function ReaderPage() {
         }
     };
 
-    const handleExplainAI = () => {
+    const handleExplainAI = async () => {
         if (!selectionMenu) return;
-        setExplanationText(selectionMenu.text);
+        const text = selectionMenu.text;
+        setExplanationText(text);
         setShowExplanation(true);
         setSelectionMenu(null);
+        
+        setIsLoadingExplanation(true);
+        setAiExplanation('');
+        
+        try {
+            const explanation = await explainText(text, { title: title }, 'Russian');
+            setAiExplanation(explanation);
+        } catch (error) {
+            console.error('Failed to explain text:', error);
+            setAiExplanation('Не удалось получить объяснение. Пожалуйста, попробуйте позже.');
+        } finally {
+            setIsLoadingExplanation(false);
+        }
     };
 
     const isDark = settings.theme === 'dark' || (settings.theme === 'auto' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -673,17 +729,26 @@ export default function ReaderPage() {
                             <h3 className="text-lg font-bold font-serif">{t.reader.ai_explanation}</h3>
                         </div>
 
-                        <div className={`p-4 rounded-xl mb-4 text-sm italic border ${isDark ? 'bg-[#222] border-[#333] text-gray-400' : 'bg-white/50 border-[#E8E1D5] text-[#5C4D44]'}`}>
+                        <div className={`p-4 rounded-xl mb-4 text-sm italic border max-h-[120px] overflow-y-auto scrollbar-thin ${isDark ? 'bg-[#222] border-[#333] text-gray-400' : 'bg-white/50 border-[#E8E1D5] text-[#5C4D44]'}`}>
                             "{explanationText}"
                         </div>
 
-                        <div className="space-y-3">
-                            <p className="text-sm leading-relaxed opacity-80">
-                                {t.reader.ai_placeholder}
-                            </p>
-                            <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-[#333]' : 'bg-[#E8E1D5]'}`}>
-                                <div className={`h-full w-2/3 animate-pulse ${isDark ? 'bg-purple-500' : 'bg-[#8C7B6C]'}`}></div>
-                            </div>
+                        <div className="space-y-3 max-h-[300px] overflow-y-auto scrollbar-thin pr-2">
+                            {isLoadingExplanation ? (
+                                <div className="flex flex-col items-center justify-center py-6 space-y-4">
+                                    <div className={`relative w-12 h-12 flex items-center justify-center`}>
+                                        <div className={`absolute inset-0 rounded-full animate-ping opacity-20 ${isDark ? 'bg-purple-500' : 'bg-[#8B6F47]'}`}></div>
+                                        <div className={`w-8 h-8 rounded-full animate-spin border-2 border-t-transparent ${isDark ? 'border-purple-500' : 'border-[#8B6F47]'}`}></div>
+                                    </div>
+                                    <p className={`text-sm font-medium animate-pulse ${isDark ? 'text-gray-400' : 'text-[#8C7B6C]'}`}>
+                                        {t.reader.ai_placeholder || 'AI is thinking...'}
+                                    </p>
+                                </div>
+                            ) : (
+                                <p className="text-sm leading-relaxed whitespace-pre-line">
+                                    {aiExplanation}
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>

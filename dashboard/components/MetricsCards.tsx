@@ -39,7 +39,11 @@ function MetricCard({ icon, number, subtitle, hasProgressBar, progress }: Metric
     );
 }
 
-export default function MetricsCards() {
+interface MetricsCardsProps {
+    streak?: number;
+}
+
+export default function MetricsCards({ streak: propStreak }: MetricsCardsProps) {
     const { t } = useLanguage();
     const [stats, setStats] = useState({ pagesCurrent: 0, pagesTotal: 0, booksCount: 0, streak: 0 });
 
@@ -53,7 +57,8 @@ export default function MetricsCards() {
             }
 
             const savedStreak = localStorage.getItem('readracing_streak');
-            const streakValue = savedStreak ? parseInt(savedStreak, 10) : 0;
+            // Prioritize prop, then local storage, then 0
+            const streakValue = propStreak !== undefined ? propStreak : (savedStreak ? parseInt(savedStreak, 10) : 0);
 
             // Sum up pages from all books in library
             const totalCurrent = library.reduce((acc, book) => acc + (book.currentPage || 0), 0);
@@ -72,7 +77,7 @@ export default function MetricsCards() {
             });
         };
         loadStats();
-    }, []);
+    }, [propStreak]); // Re-run if propStreak changes
 
     const progressPercent = stats.pagesTotal > 0 
         ? Math.min(Math.round((stats.pagesCurrent / stats.pagesTotal) * 100), 100) 

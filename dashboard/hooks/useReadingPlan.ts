@@ -30,6 +30,7 @@ export function useReadingPlan() {
     const [weeklyGoal, setWeeklyGoal] = useState(150);
     const [sessions, setSessions] = useState<ReadingSession[]>([]);
     const [loading, setLoading] = useState(true);
+    const [streak, setStreak] = useState(0);
 
     useEffect(() => {
         fetchData();
@@ -53,15 +54,22 @@ export function useReadingPlan() {
             }
 
             // Fetch sessions for this month (plus a bit more for context if needed)
-            const start = startOfMonth(new Date()).toISOString();
+            // Actually, for streak we need more history, maybe last 60 days?
+            // Or just fetch all sessions? Fetching all might be heavy if lots of sessions.
+            // Let's fetch last 60 days.
+            const sixtyDaysAgo = new Date();
+            sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
             const { data: sessionData } = await supabase
                 .from('reading_sessions')
                 .select('*')
                 .eq('user_id', user.id)
-                .gte('created_at', start);
+                .gte('created_at', sixtyDaysAgo.toISOString())
+                .order('created_at', { ascending: false });
 
             if (sessionData) {
                 setSessions(sessionData);
+                calculateStreak(sessionData);
             }
         } catch (error) {
             console.error('Error fetching reading plan data:', error);
@@ -69,6 +77,49 @@ export function useReadingPlan() {
             setLoading(false);
         }
     };
+
+    const calculateStreak = (sessions: ReadingSession[]) => {
+        if (!sessions || sessions.length === 0) {
+            setStreak(0);
+            return;
+        }
+
+        const uniqueDates = new Set(
+            sessions.map(s => format(new Date(s.created_at), 'yyyy-MM-dd'))
+        );
+        
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const yesterday = format(new Date(Date.now() - 86400000), 'yyyy-MM-dd');
+        
+        let currentStreak = 0;
+        let checkDate = new Date();
+
+        // Check if streak is active (read today or yesterday)
+        if (!uniqueDates.has(today) && !uniqueDates.has(yesterday)) {
+            setStreak(0);
+            return;
+        }
+
+        // If read today, start checking from today. If not, start from yesterday.
+        if (!uniqueDates.has(today)) {
+            checkDate.setDate(checkDate.getDate() - 1);
+        }
+
+        while (true) {
+            const dateStr = format(checkDate, 'yyyy-MM-dd');
+            if (uniqueDates.has(dateStr)) {
+                currentStreak++;
+                checkDate.setDate(checkDate.getDate() - 1);
+            } else {
+                break;
+            }
+        }
+        
+        setStreak(currentStreak);
+        // Also save to localStorage for other components to use immediately if needed
+        localStorage.setItem('readracing_streak', currentStreak.toString());
+    };
+
 
     const getWeeklyProgress = (): DailyProgress[] => {
         const start = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday
@@ -166,6 +217,7 @@ export function useReadingPlan() {
         setWeeklyGoal, // To be implemented: update DB
         sessions,
         loading,
+        streak,
         getWeeklyProgress,
         getWeeklyStats,
         logSession,
