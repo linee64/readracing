@@ -1,4 +1,4 @@
-import { ChatMessage, BookContext, UserContext } from './types'; // Assuming types are moved or I should keep them here if no separate file
+// import { ChatMessage, BookContext, UserContext } from './types'; // Removed to avoid build error as they are defined below
 
 // Re-exporting interfaces if they are not in a separate file yet, 
 // but based on previous read they were defined in this file.
