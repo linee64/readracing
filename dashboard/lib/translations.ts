@@ -532,9 +532,8 @@ export const translations = {
             days: 'дн.',
             season_reset: 'Сезон заканчивается через {days} дн.',
             timeframes: {
-                weekly: 'Неделя',
-                monthly: 'Месяц',
-                all_time: 'Все время'
+                current_season: 'Текущий сезон',
+                last_season: 'Прошлый сезон'
             }
         },
         reading_plan: {

@@ -14,7 +14,7 @@ const SEASON_START_DATE = new Date('2026-02-15'); // Start fresh from Season 1 (
 
 export default function LeaderboardPage() {
     const { t, language } = useLanguage();
-    const [timeframe, setTimeframe] = useState<'weekly' | 'monthly' | 'all-time'>('weekly');
+    const [timeframe, setTimeframe] = useState<'current_season' | 'last_season'>('current_season');
     const [userData, setUserData] = useState({ name: 'You', booksCount: 0, pagesCount: 0 });
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -38,6 +38,13 @@ export default function LeaderboardPage() {
                 const { data: { session } } = await supabase.auth.getSession();
                 const user = session?.user;
                 const name = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'You';
+
+                if (timeframe === 'last_season') {
+                    setLeaderboard([]);
+                    setUserData({ name: `${name} (You)`, booksCount: 0, pagesCount: 0 });
+                    setIsLoading(false);
+                    return;
+                }
 
                 const library = await get('readracing_library_v2') as Book[];
                 let booksCount = 0;
@@ -132,7 +139,7 @@ export default function LeaderboardPage() {
         };
 
         fetchData();
-    }, []);
+    }, [timeframe]);
 
     if (isLoading) {
         return (
@@ -208,7 +215,9 @@ export default function LeaderboardPage() {
                 <div className="flex flex-col sm:flex-row gap-4">
                     {/* Timeframe Toggle */}
                     <div className="flex bg-cream-200/50 p-1.5 rounded-2xl border border-cream-200 overflow-x-auto">
-                        {(['weekly', 'monthly', 'all-time'] as const).map((tf) => (
+                        {(['last_season', 'current_season'] as const)
+                            .filter(tf => seasonInfo.id > 1 || tf === 'current_season')
+                            .map((tf) => (
                             <button
                                 key={tf}
                                 onClick={() => setTimeframe(tf)}
@@ -217,7 +226,7 @@ export default function LeaderboardPage() {
                                         : 'text-brown-800/60 hover:text-brown-900'
                                     }`}
                             >
-                                {t.leaderboard.timeframes[tf.replace('-', '_') as keyof typeof t.leaderboard.timeframes]}
+                                {t.leaderboard.timeframes[tf]}
                             </button>
                         ))}
                     </div>
@@ -225,7 +234,7 @@ export default function LeaderboardPage() {
             </div>
 
             {/* Podium Section */}
-            {top3.length > 0 && (
+            {top3.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end pt-10 pb-4">
                 {/* 1st Place (Mobile: First) */}
                 {top3[0] && (
@@ -314,9 +323,18 @@ export default function LeaderboardPage() {
                 </div>
                 )}
             </div>
+            ) : (
+                <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in zoom-in-95 duration-500">
+                     <div className="w-24 h-24 bg-cream-100 rounded-full flex items-center justify-center mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" className="text-brown-800/40"><path fill="currentColor" d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 9c-1.66 0-3-1.34-3-3s1.34-3 3-3s3 1.34 3 3s-1.34 3-3 3zm0-8c-2.76 0-5 2.24-5 5s2.24 5 5 5s5-2.24 5-5s-2.24-5-5-5z"/></svg>
+                     </div>
+                     <h3 className="text-xl font-serif font-bold text-brown-900 mb-2">{t.leaderboard?.no_data_title || "No History Yet"}</h3>
+                     <p className="text-brown-800/60 max-w-xs">{t.leaderboard?.no_data_desc || "The previous season's archives are empty. Start reading to make history!"}</p>
+                </div>
             )}
 
             {/* List Section */}
+            {leaderboard.length > 0 && (
             <div className="bg-white rounded-[2.5rem] p-4 md:p-8 shadow-sm border border-cream-200 overflow-hidden relative">
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-cream-200 to-transparent opacity-30"></div>
 
@@ -381,6 +399,7 @@ export default function LeaderboardPage() {
                     </table>
                 </div>
             </div>
+            )}
 
             {/* User Personal Stats Banner */}
             <div className="bg-brown-900 rounded-[2.5rem] p-6 md:p-8 text-cream-50 flex flex-col md:flex-row items-center justify-between shadow-2xl shadow-brown-900/20 relative overflow-hidden group gap-6 md:gap-0 text-center md:text-left">
