@@ -177,10 +177,11 @@ export const translations = {
             ends_in: 'Ends in',
             days: 'days',
             season_reset: 'Season ends in {days} days',
+            no_data_title: 'No History Yet',
+            no_data_desc: "The previous season's archives are empty. Start reading to make history!",
             timeframes: {
-                weekly: 'Weekly',
-                monthly: 'Monthly',
-                all_time: 'All Time'
+                current_season: 'Current Season',
+                last_season: 'Last Season'
             }
         },
         reading_plan: {
@@ -531,6 +532,8 @@ export const translations = {
             ends_in: 'До конца',
             days: 'дн.',
             season_reset: 'Сезон заканчивается через {days} дн.',
+            no_data_title: 'Пока нет истории',
+            no_data_desc: 'Архивы прошлого сезона пусты. Начните читать, чтобы войти в историю!',
             timeframes: {
                 current_season: 'Текущий сезон',
                 last_season: 'Прошлый сезон'
